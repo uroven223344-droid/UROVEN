@@ -1,5 +1,5 @@
 // ============================================================
-// СТРОЙУЧЁТ — ФИНАЛЬНАЯ ВЕРСИЯ С ИСПРАВЛЕННЫМИ КНОПКАМИ
+// СТРОЙУЧЁТ — ЭКСПОРТ / ИМПОРТ + СПРАВОЧНИК ID
 // ============================================================
 
 const SUPABASE_URL = 'https://tcdanvvfxcdravgpdyat.supabase.co';
@@ -246,6 +246,95 @@ async function loadFromSupabase() {
     } catch (e) {
         console.error('Load error:', e);
     }
+}
+
+// ============================================================
+// ЭКСПОРТ / ИМПОРТ ВСЕХ ДАННЫХ
+// ============================================================
+window.exportAllData = function() {
+    const data = {
+        objects,
+        reports,
+        designProjects,
+        recommendations,
+        checks,
+        purchaseOrders,
+        notes,
+        electricianTasks,
+        passwords
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stroychet_backup_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('📤 Данные экспортированы');
+};
+
+window.importAllData = function() {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.json';
+    inp.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            try {
+                const data = JSON.parse(ev.target.result);
+                if (data.objects) objects = data.objects;
+                if (data.reports) reports = data.reports;
+                if (data.designProjects) designProjects = data.designProjects;
+                if (data.recommendations) recommendations = data.recommendations;
+                if (data.checks) checks = data.checks;
+                if (data.purchaseOrders) purchaseOrders = data.purchaseOrders;
+                if (data.notes) notes = data.notes;
+                if (data.electricianTasks) electricianTasks = data.electricianTasks;
+                if (data.passwords) passwords = data.passwords;
+                saveDataToLocal();
+                syncToSupabase();
+                render();
+                showToast('✅ Данные успешно импортированы!');
+            } catch (err) {
+                showToast('❌ Ошибка: неверный формат файла');
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    };
+    inp.click();
+};
+
+// ============================================================
+// СПРАВОЧНИК ID → НАЗВАНИЕ
+// ============================================================
+function renderIdReference() {
+    if (!objects.length) return '<div style="color:#666;font-size:14px;">Нет объектов</div>';
+    let html = '<div style="max-height:300px;overflow-y:auto;font-size:14px;">';
+    html += '<table style="width:100%;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid #333;"><th style="text-align:left;padding:4px 8px;">ID</th><th style="text-align:left;padding:4px 8px;">Название</th><th style="text-align:left;padding:4px 8px;">Этапы</th></tr>';
+    objects.forEach(obj => {
+        const worksNames = obj.works.map(w => w.name).join(', ') || '—';
+        html += `<tr style="border-bottom:1px solid #222;">
+            <td style="padding:4px 8px;color:#888;">${obj.id}</td>
+            <td style="padding:4px 8px;">${escapeHtml(obj.name)}</td>
+            <td style="padding:4px 8px;color:#aaa;font-size:13px;">${escapeHtml(worksNames)}</td>
+        </tr>`;
+        // Дочерние строки для этапов
+        obj.works.forEach(w => {
+            html += `<tr style="border-bottom:1px solid #1a1a1a;font-size:13px;color:#666;">
+                <td style="padding:2px 8px;padding-left:24px;">└ ${w.id}</td>
+                <td style="padding:2px 8px;padding-left:24px;color:#888;">${escapeHtml(w.name)}</td>
+                <td style="padding:2px 8px;">—</td>
+            </tr>`;
+        });
+    });
+    html += '</table></div>';
+    return html;
 }
 
 // ============================================================
@@ -496,7 +585,7 @@ window.scrollToObject = function(v) {
 };
 
 // ============================================================
-// ЗАГРУЗКА ФОТО ДЛЯ ЭТАПА (ОБНОВЛЁННАЯ)
+// ЗАГРУЗКА ФОТО ДЛЯ ЭТАПА
 // ============================================================
 window.uploadWorkPhoto = async function(id, wi) {
     const o = getObject(id);
@@ -606,6 +695,25 @@ function renderBossObjects() {
     if (filter === 'active') objectsToShow = objects.filter(o => !o.archived && !o.completed);
     else if (filter === 'completed') objectsToShow = objects.filter(o => !o.archived && o.completed);
     else if (filter === 'archived') objectsToShow = objects.filter(o => o.archived);
+
+    // Кнопки экспорта/импорта и справочник ID
+    const toolsHtml = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;padding:12px;background:#121212;border-radius:12px;border:1px solid #282828;">
+      <button class="btn btn-primary" onclick="exportAllData()">📤 Экспорт всех данных</button>
+      <button class="btn btn-primary" onclick="importAllData()">📥 Импорт данных</button>
+    </div>
+    <div style="margin:12px 0;padding:12px;background:#121212;border-radius:12px;border:1px solid #282828;">
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="document.getElementById('idReferenceBody').style.display=document.getElementById('idReferenceBody').style.display==='none'?'block':'none'">
+        <h4 style="color:#c9a959;">🆔 Справочник ID → Название</h4>
+        <span style="color:#888;">▼</span>
+      </div>
+      <div id="idReferenceBody" style="margin-top:8px;">
+        ${renderIdReference()}
+      </div>
+    </div>
+    <hr>
+    `;
+
     const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span><span class="tab ${filter === 'archived' ? 'active' : ''}" onclick="setBossObjectFilter('archived')">Архив</span></div>`;
     let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><button class="btn" onclick="uploadCSV()">📊 Загрузить CSV</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
     let list = objectsToShow.map(obj => {
@@ -682,7 +790,8 @@ function renderBossObjects() {
         }
         return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}${!obj.archived ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();archiveObject(${obj.id})">📦</button>` : ''}${archiveButtons}<button class="btn btn-sm" onclick="event.stopPropagation();addWork(${obj.id})">➕ Этап</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}">${addButtons}<hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
     }).join('');
-    container.innerHTML = filterTabs + sel + list;
+
+    container.innerHTML = toolsHtml + filterTabs + sel + list;
 }
 
 // ============================================================
@@ -871,9 +980,1126 @@ function showModal(src) {
 }
 
 // ============================================================
-// ОСТАЛЬНЫЕ ФУНКЦИИ (ДИЗАЙН, РЕКОМЕНДАЦИИ, ЧЕКИ, ПАРОЛИ, ЗАМЕТКИ)
+// ДИЗАЙН-ПРОЕКТЫ
 // ============================================================
-// ... (все остальные функции остаются без изменений, я не стал их копировать, чтобы не перегружать сообщение, но в полной версии они все есть)
+window.addDesignProjectForObject = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const title = prompt('Название проекта:');
+    if (!title) return;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.multiple = !0;
+    inp.accept = '*/*';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = function(e) {
+        const files = e.target.files;
+        let data = [];
+        if (!files.length) { createDesignProject(obj.id, title, []); inp.remove(); return; }
+        const readers = [];
+        for (let f of files) {
+            const r = new FileReader();
+            readers.push(new Promise(res => {
+                r.onload = function(ev) { data.push(ev.target.result);
+                    res(); };
+                r.readAsDataURL(f);
+            }));
+        }
+        Promise.all(readers).then(() => { createDesignProject(obj.id, title, data);
+            inp.remove(); });
+    };
+    setTimeout(() => inp.click(), 50);
+};
+
+function createDesignProject(objId, title, files) {
+    designProjects.push({ id: Date.now(), objectId: objId, title, files, roles: ['boss', 'wolf', 'client', 'electrician'], comments: [], approvedByClient: !1 });
+    saveDataToLocal();
+    syncToSupabase();
+    renderBossObjects();
+    showToast('📐 Дизайн-проект создан');
+}
+
+window.deleteDesign = function(id) {
+    if (confirm('Удалить проект?')) {
+        designProjects = designProjects.filter(p => p.id !== id);
+        saveDataToLocal();
+        syncToSupabase();
+        renderBossObjects();
+        showToast('🗑 Проект удалён');
+    }
+};
+
+window.deleteDesignFile = function(pid, fi) {
+    if (confirm('Удалить файл?')) {
+        const p = designProjects.find(x => x.id === pid);
+        if (p) {
+            p.files.splice(fi, 1);
+            saveDataToLocal();
+            syncToSupabase();
+            renderBossObjects();
+            showToast('🗑 Файл удалён');
+        }
+    }
+};
+
+window.addDesignComment = function(id) {
+    const p = designProjects.find(x => x.id === id);
+    if (!p) return;
+    const t = prompt('Комментарий:');
+    if (t) {
+        if (!p.comments) p.comments = [];
+        p.comments.push({ author: 'Руководитель', text: t, date: new Date() });
+        saveDataToLocal();
+        syncToSupabase();
+        renderBossObjects();
+        showToast('💬 Комментарий добавлен');
+    }
+};
+
+window.toggleDesignApprove = function(id) {
+    const p = designProjects.find(x => x.id === id);
+    if (p) {
+        p.approvedByClient = !p.approvedByClient;
+        saveDataToLocal();
+        syncToSupabase();
+        renderBossObjects();
+        showToast(p.approvedByClient ? '✅ Проект утверждён' : '⏳ Утверждение снято');
+    }
+};
+
+// ============================================================
+// РЕКОМЕНДАЦИИ
+// ============================================================
+window.addRecommendationForObject = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const text = prompt('Текст рекомендации:');
+    if (text === null || text.trim() === '') return;
+    const deadline = prompt('Срок (ГГГГ-ММ-ДД) или оставьте пустым:');
+    if (deadline !== null && deadline.trim() !== '' && !isValidDate(deadline.trim())) { showToast('Неверный формат даты'); return; }
+    recommendations.push({ id: Date.now(), objectId: objId, text: text.trim(), deadline: deadline ? deadline.trim() : null, photos: [], purchased: !1, purchasedDate: null, purchasedPhotos: [] });
+    saveDataToLocal();
+    syncToSupabase();
+    renderBossObjects();
+    showToast('📋 Рекомендация добавлена');
+};
+
+window.deleteRecommend = function(id) {
+    if (confirm('Удалить рекомендацию?')) {
+        recommendations = recommendations.filter(r => r.id !== id);
+        saveDataToLocal();
+        syncToSupabase();
+        renderBossObjects();
+        showToast('🗑 Рекомендация удалена');
+    }
+};
+
+window.markPurchased = function(id) {
+    const r = recommendations.find(x => x.id === id);
+    if (r) {
+        r.purchased = !r.purchased;
+        if (r.purchased) r.purchasedDate = new Date().toISOString().slice(0, 10);
+        else r.purchasedDate = null;
+        saveDataToLocal();
+        syncToSupabase();
+        renderBossObjects();
+        showToast(r.purchased ? '✅ Отмечено куплено' : '↩ Отмена покупки');
+    }
+};
+
+window.addRecommendationPhoto = async function(id) {
+    const r = recommendations.find(x => x.id === id);
+    if (!r) return;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) { inp.remove(); return; }
+        try {
+            const compressed = await compressImage(file);
+            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+            if (publicUrl) {
+                if (!r.photos) r.photos = [];
+                r.photos.push(publicUrl);
+                saveDataToLocal();
+                await syncToSupabase();
+                renderBossObjects();
+                showToast('📸 Фото добавлено');
+            }
+        } catch (err) { console.error('Error:', err);
+            showToast('❌ Ошибка загрузки фото'); }
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+};
+
+window.addPurchasedPhoto = async function(id) {
+    const r = recommendations.find(x => x.id === id);
+    if (!r) return;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) { inp.remove(); return; }
+        try {
+            const compressed = await compressImage(file);
+            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+            if (publicUrl) {
+                if (!r.purchasedPhotos) r.purchasedPhotos = [];
+                r.purchasedPhotos.push(publicUrl);
+                saveDataToLocal();
+                await syncToSupabase();
+                renderBossObjects();
+                showToast('📸 Фото покупки добавлено');
+            }
+        } catch (err) { console.error('Error:', err);
+            showToast('❌ Ошибка загрузки фото'); }
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+};
+
+window.deleteRecommendPhoto = function(id, idx, type) {
+    if (confirm('Удалить фото?')) {
+        const r = recommendations.find(x => x.id === id);
+        if (r) {
+            if (type === 'photos') r.photos.splice(idx, 1);
+            else if (type === 'purchasedPhotos') r.purchasedPhotos.splice(idx, 1);
+            saveDataToLocal();
+            syncToSupabase();
+            renderBossObjects();
+            showToast('🗑 Фото удалено');
+        }
+    }
+};
+
+// ============================================================
+// ЗАМЕТКИ (ЕЖЕДНЕВНИК)
+// ============================================================
+function renderBossNotes() {
+    const container = document.getElementById('bossContent');
+    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addNoteForDate()">➕ Запись</button></div><div id="bossNotesCalendar"></div>`;
+    renderNotesCalendar('boss');
+}
+
+function renderNotesCalendar(role) {
+    const container = document.getElementById(role === 'boss' ? 'bossNotesCalendar' : 'wolfNotesCalendar');
+    if (!container) return;
+    const now = new Date();
+    const year = now.getFullYear(),
+        month = now.getMonth() + calendarOffset;
+    const firstDayOfMonth = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startDay = firstDayOfMonth.getDay();
+    const today = new Date();
+    const notesByDate = {};
+    notes.forEach(n => {
+        if (n.date && n.author === role) {
+            const d = new Date(n.date);
+            const key = d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+            if (!notesByDate[key]) notesByDate[key] = [];
+            notesByDate[key].push(n);
+        }
+    });
+    let html = `<div class="card"><div class="month-nav"><button class="nav-btn" onclick="changeMonth(-1)">‹</button><span>${firstDayOfMonth.toLocaleString('ru', { month: 'long', year: 'numeric' })}</span><button class="nav-btn" onclick="changeMonth(1)">›</button></div><div class="calendar">`;
+    for (let i = 0; i < startDay; i++) { html += `<div class="day other-month"></div>`; }
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dt = new Date(year, month, d);
+        const key = dt.getFullYear() + '-' + (dt.getMonth() + 1).toString().padStart(2, '0') + '-' + dt.getDate().toString().padStart(2, '0');
+        const hasNotes = notesByDate[key] && notesByDate[key].length;
+        const isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+        html += `<div class="day ${isToday ? 'today' : ''} ${hasNotes ? 'has-tasks' : ''}" onclick="showNotesForDay('${key}','${role}')"><span class="day-number">${d}</span>${hasNotes ? '<span class="indicator">●</span>' : ''}</div>`;
+    }
+    html += `</div></div><div id="${role}NotesDayDetail"></div>`;
+    container.innerHTML = html;
+}
+
+function changeMonth(delta) {
+    calendarOffset += delta;
+    saveUiState();
+    if (currentUser === 'boss') renderBossNotes();
+    else renderWolfNotes();
+}
+
+function showNotesForDay(key, role) {
+    const container = document.getElementById(role + 'NotesDayDetail');
+    if (!container) return;
+    const dayNotes = notes.filter(n => {
+        if (!n.date || n.author !== role) return !1;
+        const d = new Date(n.date);
+        return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0') === key;
+    });
+    if (!dayNotes.length) { container.innerHTML = `<div class="card">Нет записей. <button class="btn btn-sm btn-primary" onclick="addNoteForDate('${key}')">➕ Добавить</button></div>`; return; }
+    container.innerHTML = `<div class="card"><h4>Записи на ${new Date(key).toLocaleDateString()}</h4>${dayNotes.map(n => `<div class="flex"><span>${escapeHtml(n.text)}</span><span><span class="badge">${n.author === 'boss' ? 'Руководитель' : 'Волк'}</span><button class="btn btn-sm btn-danger" onclick="deleteNote(${n.id})">🗑</button></span></div>`).join('')}<button class="btn btn-sm btn-primary" onclick="addNoteForDate('${key}')">➕ Добавить запись на этот день</button></div>`;
+}
+
+window.addNoteForDate = function(dateKey) {
+    let dateStr = dateKey;
+    if (!dateStr) {
+        const now = new Date();
+        dateStr = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padStart(2, '0') + '-' + now.getDate().toString().padStart(2, '0');
+    }
+    const text = prompt('Текст заметки:');
+    if (!text) return;
+    const parts = dateStr.split('-');
+    const noteDate = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    notes.push({ id: Date.now(), author: currentUser, text, date: noteDate });
+    saveDataToLocal();
+    syncToSupabase();
+    if (currentUser === 'boss') renderBossNotes();
+    else if (currentUser === 'wolf') renderWolfNotes();
+    showToast('📝 Заметка добавлена');
+};
+
+window.deleteNote = function(id) {
+    if (confirm('Удалить заметку?')) {
+        notes = notes.filter(n => n.id !== id);
+        saveDataToLocal();
+        syncToSupabase();
+        if (currentUser === 'boss') renderBossNotes();
+        else renderWolfNotes();
+        showToast('🗑 Заметка удалена');
+    }
+};
+
+// ============================================================
+// ЧЕКИ
+// ============================================================
+let checkFilterObjectId = 'all';
+
+function renderBossChecks() {
+    const container = document.getElementById('bossContent');
+    const available = objects.filter(o => !o.archived);
+    let selectHtml = `<select id="checkObjectFilter" onchange="updateCheckFilter(this.value)"><option value="all" ${checkFilterObjectId === 'all' ? 'selected' : ''}>Все объекты</option>${available.map(o => `<option value="${o.id}" ${checkFilterObjectId == o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('')}</select>`;
+    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button>${selectHtml}<div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderBossChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderBossChecksFilter('unpaid')">Неоплаченные</button><button class="btn btn-sm" onclick="renderBossChecksFilter('paid')">Оплаченные</button></div></div><div id="bossChecksList"></div>`;
+    renderChecksList('boss', 'all');
+}
+
+window.updateCheckFilter = function(val) { checkFilterObjectId = val;
+    renderBossChecks(); };
+
+function renderBossChecksFilter(f) { renderChecksList('boss', f); }
+
+function renderChecksList(role, filter) {
+    const container = document.getElementById(role === 'boss' ? 'bossChecksList' : (role === 'wolf' ? 'wolfChecksList' : 'clientChecksList'));
+    if (!container) return;
+    let objFilter = checkFilterObjectId;
+    if (role === 'client') objFilter = currentObjectId;
+    let list = checks.slice();
+    if (objFilter !== 'all') list = list.filter(c => c.objectId == objFilter);
+    if (filter === 'paid') list = list.filter(c => c.paid);
+    else if (filter === 'unpaid') list = list.filter(c => !c.paid);
+    if (role === 'client') list = list.filter(c => c.objectId === currentObjectId);
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const totalUnpaid = list.filter(c => !c.paid).reduce((sum, c) => sum + (c.amount || 0), 0);
+    const totalPaid = list.filter(c => c.paid).reduce((sum, c) => sum + (c.amount || 0), 0);
+    let html = '';
+    if (role === 'boss') html += `<div class="checks-total"><span>💰 Неоплаченные: ${totalUnpaid.toFixed(2)} ₽</span><span>✅ Оплаченные: ${totalPaid.toFixed(2)} ₽</span></div>`;
+    else if (role === 'wolf') html += `<div class="checks-total"><span>💰 Неоплаченные: ${totalUnpaid.toFixed(2)} ₽</span></div>`;
+    else if (role === 'client') html += `<div class="checks-total"><span>💰 Неоплаченные: ${totalUnpaid.toFixed(2)} ₽</span></div>`;
+    if (!list.length) { container.innerHTML = html + '<div class="card">Нет чеков</div>'; return; }
+    container.innerHTML = html + list.map(c => {
+        const obj = getObject(c.objectId);
+        const paidStatus = c.paid ? '✅ Оплачен' : '⏳ Не оплачен';
+        const paidInfo = c.paid ? ` (${c.paidBy === 'client' ? 'клиентом' : 'руководителем'}, ${fmtTime(c.paidDate)})` : '';
+        return `<div class="check-item ${c.paid ? 'paid' : ''}" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">
+      <div class="flex"><span><b>${obj ? escapeHtml(obj.name) : 'Объект удалён'}</b> — ${c.amount ? c.amount.toFixed(2) + ' ₽' : 'сумма не указана'}</span><span class="badge">${paidStatus}${paidInfo}</span></div>
+      <div style="margin:4px 0;">Дата: ${fmtTime(c.date)}</div>
+      ${c.fileData ? `<div><img src="${c.fileData}" class="check-file" onclick="showModal('${c.fileData}')"></div>` : ''}
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+        ${!c.paid && role === 'boss' ? `<button class="btn btn-sm btn-primary" onclick="markCheckPaid(${c.id})">✅ Отметить оплату</button>` : ''}
+        ${role === 'boss' ? `<button class="btn btn-sm btn-danger" onclick="deleteCheck(${c.id})">🗑</button>` : ''}
+      </div>
+    </div>`;
+    }).join('');
+}
+
+window.addCheck = function() {
+    if (currentUser === 'client') { showToast('Клиент не может добавлять чеки'); return; }
+    const available = objects.filter(o => !o.archived);
+    if (!available.length) { showToast('Нет объектов'); return; }
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:1000';
+    modal.innerHTML = `<div style="background:#1a1a1a;padding:20px;border-radius:12px;max-width:400px;width:90%;"><h3 style="color:#e0e0e0;margin-bottom:12px;">Выберите объект</h3><select id="checkObjectSelect" style="width:100%;padding:10px;border-radius:8px;background:#222;color:#e0e0e0;border:1px solid #333;font-size:16px;">${available.map(o => `<option value="${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select><div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;"><button class="btn" onclick="this.closest('div[style]').parentElement.remove()">Отмена</button><button class="btn btn-primary" id="confirmCheckObject">Выбрать</button></div></div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#confirmCheckObject').onclick = function() {
+        const select = modal.querySelector('#checkObjectSelect');
+        const objId = parseInt(select.value);
+        modal.remove();
+        proceedWithCheck(objId);
+    };
+};
+
+function proceedWithCheck(objId) {
+    const amount = parseFloat(prompt('Введите сумму (руб):') || '0');
+    if (isNaN(amount) || amount <= 0) { showToast('Введите корректную сумму'); return; }
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*,application/pdf';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) { inp.remove(); return; }
+        try {
+            let fileData;
+            if (file.type.startsWith('image/')) {
+                const compressed = await compressImage(file);
+                const publicUrl = await uploadPhotoToStorage(objId, Date.now(), compressed);
+                fileData = publicUrl;
+            } else {
+                const reader = new FileReader();
+                fileData = await new Promise(res => { reader.onload = function(ev) { res(ev.target.result); }; reader.readAsDataURL(file); });
+            }
+            checks.push({ id: Date.now(), objectId: objId, amount, fileData, date: new Date(), paid: !1, paidDate: null, paidBy: null });
+            saveDataToLocal();
+            await syncToSupabase();
+            showToast('🧾 Чек загружен');
+            if (currentUser === 'boss') renderBossChecks();
+            else if (currentUser === 'wolf') renderWolfChecks();
+            else if (currentUser === 'client') renderClientChecks();
+        } catch (err) { console.error('Error:', err);
+            showToast('❌ Ошибка загрузки чека'); }
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+}
+
+window.markCheckPaid = function(checkId) {
+    const c = checks.find(ch => ch.id === checkId);
+    if (!c || c.paid) return;
+    c.paid = !0;
+    c.paidDate = new Date();
+    c.paidBy = currentUser;
+    saveDataToLocal();
+    syncToSupabase();
+    if (currentUser === 'boss') renderBossChecks();
+    else if (currentUser === 'wolf') renderWolfChecks();
+    else if (currentUser === 'client') renderClientChecks();
+    showToast('✅ Чек оплачен');
+};
+
+window.deleteCheck = function(checkId) {
+    if (confirm('Удалить чек?')) {
+        checks = checks.filter(c => c.id !== checkId);
+        saveDataToLocal();
+        syncToSupabase();
+        if (currentUser === 'boss') renderBossChecks();
+        else if (currentUser === 'wolf') renderWolfChecks();
+        showToast('🗑 Чек удалён');
+    }
+};
+
+// ============================================================
+// ПАРОЛИ
+// ============================================================
+function renderPasswords() {
+    const container = document.getElementById('bossContent');
+    container.innerHTML = `<div class="card"><h3>Пароли для ролей</h3><p style="color:#888;font-size:13px;">Если пароль пустой — вход без пароля.</p>${['boss', 'wolf', 'client', 'master', 'designer', 'purchaser', 'electrician'].map(r => `<div class="flex"><span>${getUserLabel(r)}</span><span><input type="text" id="pass-${r}" placeholder="Новый пароль" value="${passwords[r] || ''}" style="width:200px;"><button class="btn btn-sm btn-primary" onclick="setRolePassword('${r}')">Установить</button></span></div>`).join('')}</div><div class="card"><h3>Пароли объектов</h3><p style="color:#888;font-size:13px;">Клиенты и мастера входят по паролю объекта.</p>${objects.map(o => `<div class="flex"><span>${escapeHtml(o.name)} (код: ${escapeHtml(o.code)})</span><span><input type="text" id="pass-obj-${o.id}" placeholder="Пароль для входа" value="${passwords.objects[o.id] || ''}" style="width:200px;"><button class="btn btn-sm btn-primary" onclick="setObjectPassword(${o.id})">Установить</button></span></div>`).join('')}</div><div class="card"><button class="btn btn-sm" onclick="savePasswords()">Сохранить пароли</button></div>`;
+}
+
+window.setRolePassword = function(r) {
+    const val = document.getElementById('pass-' + r).value.trim();
+    if (val) passwords[r] = val;
+    else delete passwords[r];
+    saveDataToLocal();
+    syncToSupabase();
+    renderPasswords();
+    showToast('🔑 Пароль для ' + getUserLabel(r) + ' установлен' + (val ? '' : ' (сброшен)'));
+};
+
+window.setObjectPassword = function(objId) {
+    const val = document.getElementById('pass-obj-' + objId).value.trim();
+    const obj = objects.find(o => o.id === objId);
+    if (!obj) return;
+    if (val) {
+        passwords.objects[objId] = val;
+        showToast('🔑 Пароль для "' + obj.name + '" установлен на "' + val + '"');
+    } else {
+        const newPwd = Math.random().toString(36).substring(2, 8).toUpperCase();
+        passwords.objects[objId] = newPwd;
+        showToast('🔑 Пароль сброшен на: ' + newPwd);
+        document.getElementById('pass-obj-' + objId).value = newPwd;
+    }
+    saveDataToLocal();
+    syncToSupabase();
+    renderPasswords();
+};
+
+window.savePasswords = function() {
+    saveDataToLocal();
+    syncToSupabase();
+    showToast('🔐 Пароли сохранены');
+};
+
+// ============================================================
+// ВОЛК
+// ============================================================
+function renderWolf() {
+    document.getElementById('app').innerHTML = `
+    <div class="card">
+      <div class="flex">
+        <h2>🐺 Волк (инженер)</h2>
+        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active" data-tab="objects">Объекты</div>
+      <div class="tab" data-tab="notes">Ежедневник</div>
+      <div class="tab" data-tab="purchases">Закупки</div>
+      <div class="tab" data-tab="checks">Чеки</div>
+    </div>
+    <div id="wolfContent"></div>`;
+    document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        this.classList.add('active');
+        switch (this.dataset.tab) {
+            case 'objects':
+                renderWolfObjects();
+                break;
+            case 'notes':
+                renderWolfNotes();
+                break;
+            case 'purchases':
+                renderWolfPurchases();
+                break;
+            case 'checks':
+                renderWolfChecks();
+                break;
+        }
+    });
+    renderWolfObjects();
+}
+
+function renderWolfObjects() {
+    const container = document.getElementById('wolfContent');
+    const active = objects.filter(o => !o.archived);
+    let sel = `<div class="flex" style="margin-bottom:16px;"><select class="object-selector" id="wolfObjectSelector" onchange="wolfScrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${active.map(o => `<option value="wolf-obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
+    let list = active.map(obj => {
+        const objKey = 'wolf-obj-' + obj.id,
+            objOpen = uiState[objKey] !== undefined ? uiState[objKey] : false;
+        const projs = designProjects.filter(p => p.objectId === obj.id);
+        const designKey = 'wolf-design-' + obj.id,
+            designOpen = uiState[designKey] !== undefined ? uiState[designKey] : false;
+        let designBlocks = projs.length ? projs.map(p => {
+            const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
+            const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
+            const files = (p.files || []).map(f => {
+                const isImg = f.startsWith('data:image/') || f.startsWith('http');
+                return isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:100px;max-height:100px;">` : `<a href="${f}" target="_blank">📄</a>`;
+            }).join(' ') || 'нет';
+            return `<div class="design-block"><div class="design-header" onclick="toggleDesignBlock(this,'${designKey}')"><span><span class="design-title">${escapeHtml(p.title)}</span><span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span></span></div><div class="design-detail ${designOpen ? 'open' : ''}"><div class="design-meta"><b>Доступ:</b> ${escapeHtml(roles)}</div><div class="design-files"><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div></div></div>`;
+        }).join('') : '<span style="color:#666;font-size:14px;">Нет проектов</span>';
+        const recs = recommendations.filter(r => r.objectId === obj.id);
+        const recKey = 'wolf-rec-' + obj.id,
+            recOpen = uiState[recKey] !== undefined ? uiState[recKey] : false;
+        let recBlocks = recs.length ? recs.map(r => {
+            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
+            const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
+            const phPur = (r.purchasedPhotos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
+            return `<div class="rec-block"><div class="rec-header" onclick="toggleRecBlock(this,'${recKey}')"><span><span class="rec-title">📋 ${escapeHtml(r.text)}</span><span class="badge">${status}</span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span></span></div><div class="rec-detail ${recOpen ? 'open' : ''}"><div class="rec-body"><div class="rec-text"><div class="rec-meta"><b>Срок:</b> ${r.deadline ? fmt(r.deadline) : 'не указан'}</div></div><div class="rec-photos">${phRec}${phPur}</div></div></div></div>`;
+        }).join('') : '<span style="color:#666;font-size:14px;">Нет рекомендаций</span>';
+        const statusTabs = `<div class="flex" style="margin:8px 0;"><button class="btn btn-sm btn-primary" onclick="setWolfWorkFilter('${obj.id}','all')">Все</button><button class="btn btn-sm" onclick="setWolfWorkFilter('${obj.id}','done')">✅ Выполненные</button><button class="btn btn-sm" onclick="setWolfWorkFilter('${obj.id}','undone')">⏳ Не выполненные</button></div>`;
+        if (!uiState['wolf-filter-' + obj.id]) uiState['wolf-filter-' + obj.id] = 'all';
+        const currentFilter = uiState['wolf-filter-' + obj.id] || 'all';
+        let filteredWorks = obj.works;
+        if (currentFilter === 'done') filteredWorks = obj.works.filter(w => w.done === true);
+        else if (currentFilter === 'undone') filteredWorks = obj.works.filter(w => w.done === false);
+        const worksHtml = filteredWorks.map((w, wi) => {
+            const originalIndex = obj.works.indexOf(w);
+            const wKey = 'wolf-work-' + obj.id + '-' + wi;
+            const wOpen = uiState[wKey] !== undefined ? uiState[wKey] : false;
+            const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
+            const hasPhoto = photos.length > 0;
+            const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button><span class="status-badge">${r.approved ? '✅ одобр.' : '⏳ модер.'}</span></span>`).join('');
+            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}"><div class="work-header" onclick="toggleWork(event, this, '${wKey}')"><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;"><span class="drag-handle">⠿</span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}<span class="work-status-check" onclick="event.stopPropagation();wolfToggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}<span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}"></span><span class="work-arrow ${wOpen ? 'open' : ''}">▶</span></span><span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;"><button class="icon-btn" onclick="event.stopPropagation();wolfUploadWorkPhoto(${obj.id},${originalIndex})">📸</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkUp(${obj.id},${originalIndex})">⬆</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkDown(${obj.id},${originalIndex})">⬇</button></span></div><div class="work-detail ${wOpen ? 'open' : ''}"><div style="margin:6px 0;"><b>📸 Фото:</b></div><div class="photo-grid">${phHtml || 'Нет фото'}</div></div></div>`;
+        }).join('');
+        const addWorkButton = `<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="wolfAddWork(${obj.id})">➕ Добавить этап</button></div>`;
+        return `<div class="card" id="wolf-obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="wolf-work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div>${addWorkButton}</div></div>`;
+    }).join('');
+    container.innerHTML = sel + list;
+    setTimeout(() => initDragDrop(), 50);
+}
+
+window.setWolfWorkFilter = function(objId, filter) { uiState['wolf-filter-' + objId] = filter;
+    saveUiState();
+    renderWolfObjects(); };
+
+window.wolfAddWork = function(id) {
+    const n = prompt('Название этапа');
+    if (n) {
+        const o = getObject(id);
+        if (o) {
+            o.works.push({ id: Date.now(), name: n, done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !0 });
+            saveDataToLocal();
+            syncToSupabase();
+            renderWolfObjects();
+            showToast('➕ Этап добавлен (ручной)');
+        }
+    }
+};
+
+window.wolfToggleWorkStatus = function(id, wi) {
+    const o = getObject(id);
+    if (o) {
+        o.works[wi].done = !o.works[wi].done;
+        saveDataToLocal();
+        syncToSupabase();
+        renderWolfObjects();
+    }
+};
+
+window.wolfMoveWorkUp = function(objId, idx) { const obj = getObject(objId); if (!obj) return; const works = obj.works; if (idx <= 0) return;
+    [works[idx - 1], works[idx]] = [works[idx], works[idx - 1]];
+    saveDataToLocal();
+    syncToSupabase();
+    renderWolfObjects(); };
+
+window.wolfMoveWorkDown = function(objId, idx) { const obj = getObject(objId); if (!obj) return; const works = obj.works; if (idx >= works.length - 1) return;
+    [works[idx], works[idx + 1]] = [works[idx + 1], works[idx]];
+    saveDataToLocal();
+    syncToSupabase();
+    renderWolfObjects(); };
+
+window.wolfUploadWorkPhoto = async function(id, wi) {
+    const o = getObject(id);
+    if (!o) return;
+    const work = o.works[wi];
+    if (!work) return;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.multiple = true;
+    inp.accept = 'image/*';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const files = e.target.files;
+        if (!files.length) { inp.remove(); return; }
+        showToast('⏳ Загрузка фото...');
+        let uploadedCount = 0;
+        for (let f of files) {
+            try {
+                const compressed = await compressImage(f);
+                const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
+                if (publicUrl) {
+                    reports.push({
+                        id: Date.now() + Math.random() * 1000,
+                        objectId: id,
+                        workId: work.id,
+                        photos: [publicUrl],
+                        text: '',
+                        date: new Date(),
+                        approved: true
+                    });
+                    uploadedCount++;
+                }
+            } catch (err) { console.error('Error:', err);
+                showToast('❌ Ошибка загрузки фото'); }
+        }
+        if (uploadedCount > 0) {
+            saveDataToLocal();
+            await syncToSupabase();
+            showToast('📸 Загружено ' + uploadedCount + ' фото');
+            renderWolfObjects();
+        } else {
+            showToast('❌ Не удалось загрузить фото');
+        }
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+};
+
+window.wolfScrollToObject = function(v) {
+    if (!v) return;
+    const el = document.getElementById(v);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const key = v.replace('wolf-', '');
+        uiState['wolf-' + key] = !0;
+        saveUiState();
+        renderWolfObjects();
+    }
+};
+
+// ============================================================
+// ЗАКУПКИ (ДЛЯ ВОЛКА)
+// ============================================================
+function renderWolfNotes() {
+    const container = document.getElementById('wolfContent');
+    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addNoteForDate()">➕ Запись</button></div><div id="wolfNotesCalendar"></div>`;
+    renderNotesCalendar('wolf');
+}
+
+function renderWolfPurchases() {
+    const container = document.getElementById('wolfContent');
+    container.innerHTML = `<button class="btn btn-primary" onclick="addPurchaseOrder()">➕ Новая заявка</button><div id="wolfOrdersList"></div>`;
+    const list = document.getElementById('wolfOrdersList');
+    const orders = purchaseOrders.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (!orders.length) { list.innerHTML = '<div class="card">Нет заявок</div>'; return; }
+    list.innerHTML = orders.map(order => {
+        const obj = getObject(order.objectId);
+        const items = order.items.map((item, idx) => `<div class="flex"><span>${escapeHtml(item.name)} (${escapeHtml(item.quantity)} шт.)</span><span class="badge">${item.purchased ? '✅ Куплено' : '⏳ Не куплено'}</span><button class="btn btn-sm" onclick="wolfTogglePurchasedItem(${order.id},${idx})">Отметить</button><button class="btn btn-sm btn-danger" onclick="wolfDeleteItemFromOrder(${order.id},${idx})">🗑</button></div>`).join('');
+        return `<div class="card"><div class="flex"><b>Заявка на объект: ${obj ? escapeHtml(obj.name) : '—'}</b><span class="badge">${fmt(order.date)}</span><button class="btn btn-sm btn-danger" onclick="wolfDeleteOrder(${order.id})">🗑</button></div><div><b>Товары:</b> ${items}</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"><input type="text" id="wolfNewItemName-${order.id}" placeholder="Наименование" style="width:40%;"><input type="text" id="wolfNewItemQty-${order.id}" placeholder="Кол-во" style="width:20%;"><button class="btn btn-sm" onclick="wolfAddItemToOrder(${order.id})">➕ Добавить</button></div><div><b>Фото накладных:</b> ${order.photos ? order.photos.map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('') : 'нет'}</div><button class="btn btn-sm" onclick="wolfUploadOrderPhoto(${order.id})">📸 Добавить фото</button></div>`;
+    }).join('');
+}
+
+window.addPurchaseOrder = function() {
+    const available = objects.filter(o => !o.archived);
+    if (!available.length) { showToast('Нет объектов'); return; }
+    const list = available.map((o, i) => `${i+1}. ${o.name} (${o.code})`).join('\n');
+    const choice = prompt('Выберите объект (номер):\n' + list);
+    if (!choice) return;
+    const idx = parseInt(choice) - 1;
+    if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
+    const obj = available[idx];
+    purchaseOrders.push({ id: Date.now(), objectId: obj.id, items: [], photos: [], date: new Date(), status: 'active' });
+    saveDataToLocal();
+    syncToSupabase();
+    renderWolfPurchases();
+    showToast('📦 Заявка создана');
+};
+
+window.wolfAddItemToOrder = function(orderId) {
+    const order = purchaseOrders.find(o => o.id === orderId);
+    if (!order) return;
+    const name = document.getElementById('wolfNewItemName-' + orderId).value.trim();
+    const qty = document.getElementById('wolfNewItemQty-' + orderId).value.trim();
+    if (!name) { showToast('Введите наименование'); return; }
+    order.items.push({ id: Date.now(), name, quantity: qty || '1', purchased: !1 });
+    saveDataToLocal();
+    syncToSupabase();
+    renderWolfPurchases();
+    showToast('➕ Товар добавлен');
+};
+
+window.wolfTogglePurchasedItem = function(orderId, idx) {
+    const order = purchaseOrders.find(o => o.id === orderId);
+    if (order) {
+        order.items[idx].purchased = !order.items[idx].purchased;
+        saveDataToLocal();
+        syncToSupabase();
+        renderWolfPurchases();
+        showToast(order.items[idx].purchased ? '✅ Отмечено куплено' : '↩ Снято');
+    }
+};
+
+window.wolfDeleteItemFromOrder = function(orderId, idx) {
+    if (confirm('Удалить товар?')) {
+        const order = purchaseOrders.find(o => o.id === orderId);
+        if (order) {
+            order.items.splice(idx, 1);
+            saveDataToLocal();
+            syncToSupabase();
+            renderWolfPurchases();
+            showToast('🗑 Товар удалён');
+        }
+    }
+};
+
+window.wolfDeleteOrder = function(orderId) {
+    if (confirm('Удалить заявку?')) {
+        purchaseOrders = purchaseOrders.filter(o => o.id !== orderId);
+        saveDataToLocal();
+        syncToSupabase();
+        renderWolfPurchases();
+        showToast('🗑 Заявка удалена');
+    }
+};
+
+window.wolfUploadOrderPhoto = async function(orderId) {
+    const order = purchaseOrders.find(o => o.id === orderId);
+    if (!order) return;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) { inp.remove(); return; }
+        try {
+            const compressed = await compressImage(file);
+            const publicUrl = await uploadPhotoToStorage(order.objectId, Date.now(), compressed);
+            if (publicUrl) {
+                if (!order.photos) order.photos = [];
+                order.photos.push(publicUrl);
+                saveDataToLocal();
+                await syncToSupabase();
+                renderWolfPurchases();
+                showToast('📸 Фото добавлено');
+            }
+        } catch (err) { console.error('Error:', err);
+            showToast('❌ Ошибка загрузки фото'); }
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+};
+
+function renderWolfChecks() {
+    const container = document.getElementById('wolfContent');
+    const available = objects.filter(o => !o.archived);
+    let selectHtml = `<select id="checkObjectFilter" onchange="updateCheckFilterWolf(this.value)"><option value="all" ${checkFilterObjectId === 'all' ? 'selected' : ''}>Все объекты</option>${available.map(o => `<option value="${o.id}" ${checkFilterObjectId == o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('')}</select>`;
+    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button>${selectHtml}<div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderWolfChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('unpaid')">Неоплаченные</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('paid')">Оплаченные</button></div></div><div id="wolfChecksList"></div>`;
+    renderChecksList('wolf', 'all');
+}
+
+window.updateCheckFilterWolf = function(val) { checkFilterObjectId = val;
+    renderWolfChecks(); };
+
+function renderWolfChecksFilter(f) { renderChecksList('wolf', f); }
+
+// ============================================================
+// КЛИЕНТ
+// ============================================================
+function renderClient() {
+    const obj = getObject(currentObjectId);
+    if (!obj) { document.getElementById('app').innerHTML = '<div class="card">Объект не найден</div>'; return; }
+    document.getElementById('app').innerHTML = `
+    <div class="card">
+      <div class="flex">
+        <h2>🏠 ${escapeHtml(obj.name)}</h2>
+        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
+      </div>
+      <div>📍 ${escapeHtml(obj.address)}</div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active" data-tab="recommend">Рекомендации</div>
+      <div class="tab" data-tab="design">Дизайн</div>
+      <div class="tab" data-tab="works">Этапы</div>
+      <div class="tab" data-tab="checks">Чеки</div>
+    </div>
+    <div id="clientContent"></div>`;
+    document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        this.classList.add('active');
+        switch (this.dataset.tab) {
+            case 'recommend':
+                renderClientRecommend();
+                break;
+            case 'design':
+                renderClientDesign();
+                break;
+            case 'works':
+                renderClientWorks();
+                break;
+            case 'checks':
+                renderClientChecks();
+                break;
+        }
+    });
+    renderClientRecommend();
+}
+
+function renderClientChecks() {
+    const container = document.getElementById('clientContent');
+    container.innerHTML = `<div class="flex"><div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderClientChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderClientChecksFilter('unpaid')">Неоплаченные</button></div></div><div id="clientChecksList"></div>`;
+    renderChecksList('client', 'all');
+}
+
+function renderClientChecksFilter(f) { renderChecksList('client', f); }
+
+function renderClientRecommend() {
+    const container = document.getElementById('clientContent');
+    const obj = getObject(currentObjectId);
+    const recs = recommendations.filter(r => r.objectId === obj.id);
+    if (!recs.length) { container.innerHTML = '<div class="card">Нет рекомендаций</div>'; return; }
+    container.innerHTML = recs.map(r => {
+        const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
+        const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
+        const phPur = (r.purchasedPhotos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
+        return `<div class="rec-block" style="background:#161616;border:1px solid #282828;padding:10px;margin:6px 0;"><div style="font-weight:500;font-size:15px;color:#e8e8e8;">📋 ${escapeHtml(r.text)}</div><div style="font-size:13px;color:#aaa;"><b>Срок:</b> ${r.deadline ? fmt(r.deadline) : 'не указан'}</div><div style="font-size:13px;color:#aaa;"><b>Статус:</b> ${status}</div><div style="margin:6px 0;"><button class="btn btn-sm" onclick="clientMarkPurchased(${r.id})">${r.purchased ? 'Отменить покупку' : 'Отметить куплено'}</button><button class="btn btn-sm" onclick="clientAddPurchasedPhoto(${r.id})">📸 Добавить фото покупки</button></div><div class="flex" style="gap:8px;flex-wrap:wrap;">${phRec ? `<div><b>Фото рекомендации:</b> ${phRec}</div>` : ''}${phPur ? `<div><b>Фото покупки:</b> ${phPur}</div>` : ''}</div></div>`;
+    }).join('');
+}
+
+window.clientMarkPurchased = function(id) {
+    const r = recommendations.find(x => x.id === id);
+    if (r) {
+        r.purchased = !r.purchased;
+        if (r.purchased) r.purchasedDate = new Date().toISOString().slice(0, 10);
+        else r.purchasedDate = null;
+        saveDataToLocal();
+        syncToSupabase();
+        renderClient();
+        showToast(r.purchased ? '✅ Отмечено куплено' : '↩ Отмена');
+    }
+};
+
+window.clientAddPurchasedPhoto = async function(id) {
+    const r = recommendations.find(x => x.id === id);
+    if (!r) return;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) { inp.remove(); return; }
+        try {
+            const compressed = await compressImage(file);
+            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+            if (publicUrl) {
+                if (!r.purchasedPhotos) r.purchasedPhotos = [];
+                r.purchasedPhotos.push(publicUrl);
+                saveDataToLocal();
+                await syncToSupabase();
+                renderClient();
+                showToast('📸 Фото покупки добавлено');
+            }
+        } catch (err) { console.error('Error:', err);
+            showToast('❌ Ошибка загрузки фото'); }
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+};
+
+function renderClientDesign() {
+    const container = document.getElementById('clientContent');
+    const obj = getObject(currentObjectId);
+    const projs = designProjects.filter(p => p.objectId === obj.id && (p.roles.includes('client') || p.roles.includes('all')));
+    if (!projs.length) { container.innerHTML = '<div class="card">Нет доступных проектов</div>'; return; }
+    container.innerHTML = projs.map(p => {
+        const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
+        const files = (p.files || []).map(f => {
+            const isImg = f.startsWith('data:image/') || f.startsWith('http');
+            return isImg ? `<img src="${f}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showModal('${f}')">` : `<a href="${f}" target="_blank" style="color:#c9a959;">📄 Файл</a>`;
+        }).join(' ') || 'нет';
+        return `<div class="design-block" style="background:#161616;border:1px solid #282828;padding:10px;margin:6px 0;"><div style="font-weight:500;font-size:15px;color:#e8e8e8;">${escapeHtml(p.title)} <span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Не утверждён'}</span></div><div><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div><button class="btn btn-sm" onclick="clientAddDesignComment(${p.id})">💬 Комментарий</button><button class="btn btn-sm" onclick="clientApproveDesign(${p.id})">${p.approvedByClient ? 'Отменить утверждение' : 'Утвердить'}</button></div>`;
+    }).join('');
+}
+
+window.clientAddDesignComment = function(id) {
+    const p = designProjects.find(x => x.id === id);
+    if (!p) return;
+    const t = prompt('Ваш комментарий:');
+    if (t) {
+        if (!p.comments) p.comments = [];
+        p.comments.push({ author: 'Клиент', text: t, date: new Date() });
+        saveDataToLocal();
+        syncToSupabase();
+        renderClient();
+        showToast('💬 Комментарий добавлен');
+    }
+};
+
+window.clientApproveDesign = function(id) {
+    const p = designProjects.find(x => x.id === id);
+    if (p) {
+        p.approvedByClient = !p.approvedByClient;
+        saveDataToLocal();
+        syncToSupabase();
+        renderClient();
+        showToast(p.approvedByClient ? '✅ Проект утверждён' : '⏳ Утверждение снято');
+    }
+};
+
+function renderClientWorks() {
+    const container = document.getElementById('clientContent');
+    const obj = getObject(currentObjectId);
+    let html = `<div class="card"><h3>Этапы работ</h3>`;
+    obj.works.forEach(w => {
+        const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id && r.approved);
+        html += `<div style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:8px 0;"><div class="flex"><b>${escapeHtml(w.name)}</b> ${w.quantity ? `<span style="color:#999;font-size:14px;">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}<span class="badge">${w.done ? '✅ выполнено' : '⏳ в работе'}</span></div>${w.deadline ? '<div><b>Срок:</b> ' + fmt(w.deadline) + '</div>' : ''}<div><b>Фото:</b> <div class="photo-grid">${photos.map(r => `<img src="${r.photos[0]}" style="width:60px;" onclick="showModal('${r.photos[0]}')">`).join('')}</div></div></div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// ============================================================
+// ЭЛЕКТРИК
+// ============================================================
+function renderElectrician() {
+    document.getElementById('app').innerHTML = `
+    <div class="card">
+      <div class="flex">
+        <h2>⚡ Электрик</h2>
+        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active" data-tab="objects">Объекты</div>
+      <div class="tab" data-tab="design">Дизайн</div>
+      <div class="tab" data-tab="tasks">📋 Задачи</div>
+    </div>
+    <div id="electricianContent"></div>`;
+    document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        this.classList.add('active');
+        switch (this.dataset.tab) {
+            case 'objects':
+                renderElectricianObjects();
+                break;
+            case 'design':
+                renderElectricianDesign();
+                break;
+            case 'tasks':
+                renderElectricianTasks();
+                break;
+        }
+    });
+    renderElectricianObjects();
+}
+
+function renderElectricianObjects() {
+    const container = document.getElementById('electricianContent');
+    const active = objects.filter(o => !o.archived && o.works.some(w => w.forElectrician));
+    if (!active.length) { container.innerHTML = '<div class="card">Нет назначенных задач</div>'; return; }
+    container.innerHTML = active.map(obj => {
+        const electricWorks = obj.works.filter(w => w.forElectrician);
+        const worksHtml = electricWorks.map(w => {
+            return `<div class="work-block" style="cursor:default;"><div class="work-header"><span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity" style="color:#999;font-size:14px;">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''} ${w.done ? '✅' : '⏳'} ${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}</span></div></div>`;
+        }).join('') || '<span style="color:#666;font-size:14px;">Нет задач</span>';
+        const ownTasks = electricianTasks.filter(t => t.objectId === obj.id);
+        let ownTasksHtml = ownTasks.length ? ownTasks.map(t => {
+            const photosHtml = (t.photos || []).map(p => `<img src="${p}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showModal('${p}')">`).join('');
+            return `<div class="electrician-task-block"><div class="task-header">📝 ${escapeHtml(t.text)}</div>${t.done ? '✅ выполнено' : '⏳ в работе'}<div class="task-photos">${photosHtml}</div></div>`;
+        }).join('') : '';
+        return `<div class="card" id="el-obj-${obj.id}"><div class="flex"><h3>${escapeHtml(obj.name)} (${escapeHtml(obj.code)})</h3><span class="badge">ID: ${obj.id}</span></div><div>📍 ${escapeHtml(obj.address)}</div><h4>Мои задачи (назначенные)</h4>${worksHtml}${ownTasksHtml ? `<h4>Мои личные задачи</h4>${ownTasksHtml}` : ''}</div>`;
+    }).join('');
+}
+
+function renderElectricianDesign() {
+    const container = document.getElementById('electricianContent');
+    const projs = designProjects.filter(p => p.roles.includes('electrician'));
+    if (!projs.length) { container.innerHTML = '<div class="card">Нет доступных дизайн-проектов</div>'; return; }
+    container.innerHTML = projs.map(p => {
+        const obj = getObject(p.objectId);
+        const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
+        const files = (p.files || []).map(f => {
+            const isImg = f.startsWith('data:image/') || f.startsWith('http');
+            return isImg ? `<img src="${f}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showModal('${f}')">` : `<a href="${f}" target="_blank" style="color:#c9a959;">📄 Файл</a>`;
+        }).join(' ') || 'нет';
+        return `<div class="card"><div class="flex"><h3>${escapeHtml(p.title)}</h3><span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span></div><div><b>Объект:</b> ${obj ? escapeHtml(obj.name) : '—'}</div><div><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div></div>`;
+    }).join('');
+}
+
+function renderElectricianTasks() {
+    const container = document.getElementById('electricianContent');
+    let html = `<div class="flex"><button class="btn btn-primary" onclick="addElectricianTask()">➕ Новая задача</button></div><div id="electricianTasksList"></div>`;
+    container.innerHTML = html;
+    renderElectricianTasksList();
+}
+
+function renderElectricianTasksList() {
+    const container = document.getElementById('electricianTasksList');
+    if (!container) return;
+    const tasksSorted = electricianTasks.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (!tasksSorted.length) { container.innerHTML = '<div class="card">Нет созданных задач</div>'; return; }
+    container.innerHTML = tasksSorted.map(t => {
+        const obj = t.objectId ? getObject(t.objectId) : null;
+        const photosHtml = (t.photos || []).map(p => `<img src="${p}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showModal('${p}')">`).join('');
+        return `<div class="card"><div class="flex"><span><b>${escapeHtml(t.text)}</b> ${obj ? `(объект: ${escapeHtml(obj.name)})` : ''}</span><span class="badge">${t.done ? '✅ выполнено' : '⏳ в работе'}</span><button class="btn btn-sm" onclick="toggleElectricianTaskDone(${t.id})">${t.done ? '↩ Вернуть' : '✅ Выполнить'}</button><button class="btn btn-sm btn-danger" onclick="deleteElectricianTask(${t.id})">🗑</button></div><div style="font-size:12px;color:#888;">${fmtTime(t.date)}</div><div class="task-photos">${photosHtml}</div></div>`;
+    }).join('');
+}
+
+window.addElectricianTask = function() {
+    const text = prompt('Текст задачи:');
+    if (!text) return;
+    let objId = null;
+    const available = objects.filter(o => !o.archived);
+    if (available.length) {
+        const list = available.map((o, i) => `${i+1}. ${o.name}`).join('\n');
+        const choice = prompt('Выберите объект (номер) или 0 для без объекта:\n' + list);
+        if (choice !== null) {
+            const idx = parseInt(choice) - 1;
+            if (idx >= 0 && idx < available.length) objId = available[idx].id;
+        }
+    }
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.multiple = true;
+    inp.accept = 'image/*';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const files = e.target.files;
+        let photosData = [];
+        if (!files.length) { saveTask(text, objId, []); inp.remove(); return; }
+        showToast('⏳ Загрузка фото...');
+        for (let f of files) {
+            try {
+                const compressed = await compressImage(f);
+                const publicUrl = await uploadPhotoToStorage(objId || 'general', Date.now(), compressed);
+                if (publicUrl) photosData.push(publicUrl);
+            } catch (err) { console.error('Error:', err); }
+        }
+        saveTask(text, objId, photosData);
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+};
+
+function saveTask(text, objId, photos) {
+    electricianTasks.push({ id: Date.now(), text, objectId: objId, photos, date: new Date(), done: false });
+    saveDataToLocal();
+    syncToSupabase();
+    renderElectricianTasks();
+    showToast('📝 Задача добавлена');
+}
+
+window.toggleElectricianTaskDone = function(id) {
+    const task = electricianTasks.find(t => t.id === id);
+    if (task) { task.done = !task.done;
+        saveDataToLocal();
+        syncToSupabase();
+        renderElectricianTasks();
+        showToast(task.done ? '✅ Задача выполнена' : '↩ Задача возвращена'); }
+};
+
+window.deleteElectricianTask = function(id) {
+    if (confirm('Удалить задачу?')) { electricianTasks = electricianTasks.filter(t => t.id !== id);
+        saveDataToLocal();
+        syncToSupabase();
+        renderElectricianTasks();
+        showToast('🗑 Задача удалена'); }
+};
+
+// ============================================================
+// ОБЩИЙ ПРОСМОТР
+// ============================================================
+function renderGenericViewer(title) {
+    document.getElementById('app').innerHTML = `
+    <div class="card">
+      <div class="flex">
+        <h2>${title}</h2>
+        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
+      </div>
+    </div>
+    <div id="genericContent"></div>`;
+    const container = document.getElementById('genericContent');
+    const active = objects.filter(o => !o.archived);
+    if (!active.length) { container.innerHTML = '<div class="card">Нет объектов</div>'; return; }
+    container.innerHTML = active.map(obj => {
+        const projs = designProjects.filter(p => p.objectId === obj.id);
+        const recs = recommendations.filter(r => r.objectId === obj.id);
+        const worksHtml = obj.works.map(w => {
+            const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id && r.approved);
+            const phHtml = photos.map(r => `<img src="${r.photos[0]}" style="width:50px;" onclick="showModal('${r.photos[0]}')">`).join('');
+            return `<div class="work-block" style="cursor:default;"><div class="work-header"><span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity" style="color:#999;font-size:14px;">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''} ${w.done ? '✅' : '⏳'} ${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}</span></div><div class="work-detail open"><div><b>Фото:</b> ${phHtml || 'нет'}</div></div></div>`;
+        }).join('');
+        const designHtml = projs.map(p => {
+            const files = (p.files || []).map(f => {
+                const isImg = f.startsWith('data:image/') || f.startsWith('http');
+                return isImg ? `<img src="${f}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showModal('${f}')">` : `<a href="${f}" target="_blank" style="color:#c9a959;">📄 Файл</a>`;
+            }).join(' ') || 'нет';
+            return `<div class="design-block"><div class="design-header"><span class="design-title">${escapeHtml(p.title)}</span> <span class="badge">${p.approvedByClient ? '✅' : '⏳'}</span></div><div class="design-detail open"><b>Файлы:</b> ${files}</div></div>`;
+        }).join('');
+        const recHtml = recs.map(r => {
+            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
+            const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('');
+            const phPur = (r.purchasedPhotos || []).map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('');
+            return `<div class="rec-block"><div class="rec-header"><span class="rec-title">📋 ${escapeHtml(r.text)}</span> <span class="badge">${status}</span></div><div class="rec-detail open">${phRec}${phPur}</div></div>`;
+        }).join('');
+        return `<div class="card"><div class="flex"><h3>${escapeHtml(obj.name)} (${escapeHtml(obj.code)})</h3><span class="badge">${obj.completed ? 'Сдан' : 'В работе'}</span></div><div>📍 ${escapeHtml(obj.address)}</div><h4>Дизайн-проекты</h4>${designHtml || '<span style="color:#666;">Нет проектов</span>'}<h4>Рекомендации</h4>${recHtml || '<span style="color:#666;">Нет рекомендаций</span>'}<h4>Этапы работ</h4>${worksHtml || '<span style="color:#666;">Нет этапов</span>'}</div>`;
+    }).join('');
+}
 
 // ============================================================
 // ЗАПУСК
