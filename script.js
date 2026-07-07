@@ -1,448 +1,9 @@
 // ============================================================
-// СТРОЙУЧЁТ — ОФЛАЙН-СИНХРОНИЗАЦИЯ (БЕЗ СПРАВОЧНИКА ID)
-// ИСПРАВЛЕННАЯ ВЕРСИЯ — ДОБАВЛЕНА loadFromSupabase()
+// СТРОЙУЧЁТ — ОБЛАЧНАЯ СИНХРОНИЗАЦИЯ (ВСЕ ДАННЫЕ)
 // ============================================================
 
 const SUPABASE_URL = 'https://tcdanvvfxcdravgpdyat.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zStkcf7dAftG50tho5ifOw_F7Ygv_Xz';
-
-// ============================================================
-// ОЧЕРЕДЬ ОТЛОЖЕННЫХ ДЕЙСТВИЙ
-// ============================================================
-let pendingActions = [];
-
-function loadPendingActions() {
-    try {
-        const data = localStorage.getItem('pendingActions');
-        if (data) pendingActions = JSON.parse(data);
-    } catch (e) { pendingActions = []; }
-}
-
-function savePendingActions() {
-    try {
-        localStorage.setItem('pendingActions', JSON.stringify(pendingActions));
-        updatePendingStatus();
-    } catch (e) {}
-}
-
-function addPendingAction(action) {
-    pendingActions.push({
-        id: Date.now() + Math.random() * 1000,
-        ...action,
-        timestamp: new Date().toISOString()
-    });
-    savePendingActions();
-}
-
-function updatePendingStatus() {
-    const statusEl = document.getElementById('pendingStatus');
-    if (!statusEl) return;
-    const count = pendingActions.length;
-    if (count === 0) {
-        statusEl.innerHTML = '✅ Все данные синхронизированы';
-        statusEl.style.color = '#4caf50';
-    } else {
-        statusEl.innerHTML = `⏳ Ожидают синхронизации: ${count} действий`;
-        statusEl.style.color = '#c9a959';
-    }
-}
-
-// ============================================================
-// ПРОВЕРКА ИНТЕРНЕТА И СИНХРОНИЗАЦИЯ
-// ============================================================
-function isOnline() {
-    return navigator.onLine;
-}
-
-async function syncPendingActions() {
-    if (!isOnline()) {
-        console.log('⚠️ Нет интернета, синхронизация отложена');
-        return;
-    }
-    if (pendingActions.length === 0) {
-        console.log('✅ Нет отложенных действий');
-        return;
-    }
-
-    console.log(`🔄 Синхронизация ${pendingActions.length} действий...`);
-    showToast(`⏳ Синхронизация ${pendingActions.length} действий...`);
-
-    let synced = 0;
-    let failed = [];
-
-    for (const action of pendingActions) {
-        try {
-            switch (action.type) {
-                case 'addObject':
-                    await syncAddObject(action.data);
-                    break;
-                case 'updateObject':
-                    await syncUpdateObject(action.data);
-                    break;
-                case 'deleteObject':
-                    await syncDeleteObject(action.data);
-                    break;
-                case 'addWork':
-                    await syncAddWork(action.data);
-                    break;
-                case 'updateWork':
-                    await syncUpdateWork(action.data);
-                    break;
-                case 'deleteWork':
-                    await syncDeleteWork(action.data);
-                    break;
-                case 'uploadPhoto':
-                    await syncUploadPhoto(action.data);
-                    break;
-                case 'deletePhoto':
-                    await syncDeletePhoto(action.data);
-                    break;
-                case 'addCheck':
-                    await syncAddCheck(action.data);
-                    break;
-                case 'updateCheck':
-                    await syncUpdateCheck(action.data);
-                    break;
-                case 'deleteCheck':
-                    await syncDeleteCheck(action.data);
-                    break;
-                case 'addRecommendation':
-                    await syncAddRecommendation(action.data);
-                    break;
-                case 'updateRecommendation':
-                    await syncUpdateRecommendation(action.data);
-                    break;
-                case 'deleteRecommendation':
-                    await syncDeleteRecommendation(action.data);
-                    break;
-                case 'addNote':
-                    await syncAddNote(action.data);
-                    break;
-                case 'deleteNote':
-                    await syncDeleteNote(action.data);
-                    break;
-                default:
-                    console.warn('Неизвестное действие:', action.type);
-                    failed.push(action);
-                    continue;
-            }
-            synced++;
-        } catch (e) {
-            console.error('❌ Ошибка синхронизации действия:', action, e);
-            failed.push(action);
-        }
-    }
-
-    pendingActions = pendingActions.filter(a => failed.includes(a));
-    savePendingActions();
-
-    if (failed.length === 0) {
-        showToast(`✅ Синхронизировано ${synced} действий`);
-    } else {
-        showToast(`⚠️ Синхронизировано ${synced}, ошибок: ${failed.length}`);
-    }
-
-    render();
-}
-
-// ============================================================
-// ФУНКЦИИ СИНХРОНИЗАЦИИ
-// ============================================================
-async function syncAddObject(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/objects`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to sync object');
-}
-
-async function syncUpdateObject(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/objects?id=eq.${data.id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to update object');
-}
-
-async function syncDeleteObject(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/objects?id=eq.${data.id}`, {
-        method: 'DELETE',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-        }
-    });
-    if (!response.ok) throw new Error('Failed to delete object');
-}
-
-async function syncAddWork(data) {
-    const obj = objects.find(o => o.id === data.objectId);
-    if (!obj) throw new Error('Object not found');
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/objects?id=eq.${data.objectId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(obj)
-    });
-    if (!response.ok) throw new Error('Failed to add work');
-}
-
-async function syncUpdateWork(data) {
-    const obj = objects.find(o => o.id === data.objectId);
-    if (!obj) throw new Error('Object not found');
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/objects?id=eq.${data.objectId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(obj)
-    });
-    if (!response.ok) throw new Error('Failed to update work');
-}
-
-async function syncDeleteWork(data) {
-    const obj = objects.find(o => o.id === data.objectId);
-    if (!obj) throw new Error('Object not found');
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/objects?id=eq.${data.objectId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(obj)
-    });
-    if (!response.ok) throw new Error('Failed to delete work');
-}
-
-async function syncUploadPhoto(data) {
-    const compressed = await compressImageFromBase64(data.base64);
-    const publicUrl = await uploadPhotoToStorage(data.objectId, data.workId, compressed);
-    if (!publicUrl) throw new Error('Failed to upload photo');
-    await fetch(`${SUPABASE_URL}/rest/v1/reports`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-            id: data.reportId,
-            object_id: data.objectId,
-            work_id: data.workId,
-            photos: [publicUrl],
-            text: '',
-            date: new Date().toISOString(),
-            approved: true
-        })
-    });
-}
-
-async function compressImageFromBase64(base64) {
-    return base64;
-}
-
-async function syncDeletePhoto(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${data.reportId}`, {
-        method: 'DELETE',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-        }
-    });
-    if (!response.ok) throw new Error('Failed to delete photo');
-}
-
-async function syncAddCheck(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/checks`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to add check');
-}
-
-async function syncUpdateCheck(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/checks?id=eq.${data.id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to update check');
-}
-
-async function syncDeleteCheck(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/checks?id=eq.${data.id}`, {
-        method: 'DELETE',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-        }
-    });
-    if (!response.ok) throw new Error('Failed to delete check');
-}
-
-async function syncAddRecommendation(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/recommendations`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to add recommendation');
-}
-
-async function syncUpdateRecommendation(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/recommendations?id=eq.${data.id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to update recommendation');
-}
-
-async function syncDeleteRecommendation(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/recommendations?id=eq.${data.id}`, {
-        method: 'DELETE',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-        }
-    });
-    if (!response.ok) throw new Error('Failed to delete recommendation');
-}
-
-async function syncAddNote(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/notes`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error('Failed to add note');
-}
-
-async function syncDeleteNote(data) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/notes?id=eq.${data.id}`, {
-        method: 'DELETE',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-        }
-    });
-    if (!response.ok) throw new Error('Failed to delete note');
-}
-
-// ============================================================
-// ФУНКЦИЯ КОМПРЕССИИ ФОТО
-// ============================================================
-function compressImage(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                let w = img.width,
-                    h = img.height;
-                const maxSize = 800;
-                if (w > maxSize || h > maxSize) {
-                    if (w > h) { h = h * maxSize / w;
-                        w = maxSize; } else { w = w * maxSize / h;
-                        h = maxSize; }
-                }
-                canvas.width = w;
-                canvas.height = h;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, w, h);
-                resolve(canvas.toDataURL('image/webp', 0.7));
-            };
-            img.onerror = reject;
-            img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// ============================================================
-// ЗАГРУЗКА ФОТО В STORAGE
-// ============================================================
-async function uploadPhotoToStorage(objectId, workId, base64Data) {
-    try {
-        const res = await fetch(base64Data);
-        const blob = await res.blob();
-        const fileName = `${objectId}/${workId}/${Date.now()}.webp`;
-        const formData = new FormData();
-        formData.append('file', blob, fileName);
-
-        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/photos/${fileName}`, {
-            method: 'POST',
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`
-            },
-            body: formData
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Ошибка загрузки в Storage:', errorText);
-            return null;
-        }
-
-        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/photos/${fileName}`;
-        console.log('✅ Фото загружено:', publicUrl);
-        return publicUrl;
-    } catch (e) {
-        console.error('❌ Ошибка uploadPhotoToStorage:', e);
-        return null;
-    }
-}
 
 // ============================================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -504,9 +65,102 @@ let currentUser = null;
 let currentObjectId = null;
 let uiState = {};
 let calendarOffset = 0;
+let isLoading = false;
 
 // ============================================================
-// СОХРАНЕНИЕ В LOCALSTORAGE
+// РАБОТА С SUPABASE (ОБЩАЯ ФУНКЦИЯ)
+// ============================================================
+async function supabaseRequest(endpoint, method = 'GET', body = null) {
+    const options = {
+        method: method,
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+        }
+    };
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, options);
+    if (!response.ok) {
+        const error = await response.text();
+        console.error('❌ Ошибка Supabase:', error);
+        throw new Error(error);
+    }
+    return response.json();
+}
+
+// ============================================================
+// ЗАГРУЗКА ВСЕХ ДАННЫХ ИЗ SUPABASE
+// ============================================================
+async function loadAllDataFromSupabase() {
+    try {
+        isLoading = true;
+        console.log('🔄 Загрузка данных из Supabase...');
+
+        // Загружаем все таблицы параллельно
+        const [objectsData, reportsData, designProjectsData, recommendationsData,
+            checksData, purchaseOrdersData, notesData, electricianTasksData, passwordsData
+        ] = await Promise.all([
+            supabaseRequest('objects?select=*'),
+            supabaseRequest('reports?select=*'),
+            supabaseRequest('design_projects?select=*'),
+            supabaseRequest('recommendations?select=*'),
+            supabaseRequest('checks?select=*'),
+            supabaseRequest('purchase_orders?select=*'),
+            supabaseRequest('notes?select=*'),
+            supabaseRequest('electrician_tasks?select=*'),
+            supabaseRequest('passwords?select=*')
+        ]);
+
+        if (objectsData && objectsData.length > 0) objects = objectsData;
+        if (reportsData && reportsData.length > 0) reports = reportsData;
+        if (designProjectsData && designProjectsData.length > 0) designProjects = designProjectsData;
+        if (recommendationsData && recommendationsData.length > 0) recommendations = recommendationsData;
+        if (checksData && checksData.length > 0) checks = checksData;
+        if (purchaseOrdersData && purchaseOrdersData.length > 0) purchaseOrders = purchaseOrdersData;
+        if (notesData && notesData.length > 0) notes = notesData;
+        if (electricianTasksData && electricianTasksData.length > 0) electricianTasks = electricianTasksData;
+
+        // Пароли — преобразуем в объект
+        if (passwordsData && passwordsData.length > 0) {
+            passwordsData.forEach(p => {
+                passwords[p.role] = p.password;
+            });
+        }
+
+        // Если нет объектов — создаём демо
+        if (!objects.length) {
+            const n = Date.now();
+            objects.push({
+                id: n,
+                code: 'DEMO',
+                name: 'Демо-объект',
+                address: 'ул. Примерная, 1',
+                works: [{ id: n + 1, name: 'Демонтаж', done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !1 }],
+                completed: !1,
+                archived: !1
+            });
+            await saveObjectToSupabase(objects[0]);
+        }
+
+        // Сохраняем в localStorage для кэша
+        saveDataToLocal();
+        console.log('✅ Данные загружены из Supabase');
+        showToast('✅ Данные загружены из облака');
+    } catch (e) {
+        console.error('❌ Ошибка загрузки данных:', e);
+        showToast('⚠️ Ошибка загрузки, данные из кэша');
+        // Если ошибка — загружаем из localStorage
+        loadDataFromLocal();
+    } finally {
+        isLoading = false;
+    }
+}
+
+// ============================================================
+// СОХРАНЕНИЕ В LOCALSTORAGE (КЭШ)
 // ============================================================
 function saveDataToLocal() {
     try {
@@ -562,60 +216,310 @@ function loadDataFromLocal() {
 }
 
 // ============================================================
-// ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE (ДОБАВЛЕНА!)
+// СОХРАНЕНИЕ ОТДЕЛЬНЫХ ДАННЫХ В SUPABASE
 // ============================================================
-async function loadFromSupabase() {
+async function saveObjectToSupabase(obj) {
     try {
-        console.log('🔄 Загрузка данных из Supabase...');
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/objects?select=*`, {
+        const existing = await supabaseRequest(`objects?id=eq.${obj.id}`);
+        if (existing.length > 0) {
+            await supabaseRequest(`objects?id=eq.${obj.id}`, 'PUT', obj);
+        } else {
+            await supabaseRequest('objects', 'POST', obj);
+        }
+        console.log('✅ Объект сохранён в облако:', obj.id);
+    } catch (e) {
+        console.error('❌ Ошибка сохранения объекта:', e);
+    }
+}
+
+async function saveReportToSupabase(report) {
+    try { await supabaseRequest('reports', 'POST', report); } catch (e) { console.error('Ошибка сохранения отчёта:', e); }
+}
+
+async function saveDesignProjectToSupabase(project) {
+    try { await supabaseRequest('design_projects', 'POST', project); } catch (e) { console.error('Ошибка сохранения дизайн-проекта:', e); }
+}
+
+async function saveRecommendationToSupabase(rec) {
+    try { await supabaseRequest('recommendations', 'POST', rec); } catch (e) { console.error('Ошибка сохранения рекомендации:', e); }
+}
+
+async function saveCheckToSupabase(check) {
+    try { await supabaseRequest('checks', 'POST', check); } catch (e) { console.error('Ошибка сохранения чека:', e); }
+}
+
+async function savePurchaseOrderToSupabase(order) {
+    try { await supabaseRequest('purchase_orders', 'POST', order); } catch (e) { console.error('Ошибка сохранения закупки:', e); }
+}
+
+async function saveNoteToSupabase(note) {
+    try { await supabaseRequest('notes', 'POST', note); } catch (e) { console.error('Ошибка сохранения заметки:', e); }
+}
+
+async function saveElectricianTaskToSupabase(task) {
+    try { await supabaseRequest('electrician_tasks', 'POST', task); } catch (e) { console.error('Ошибка сохранения задачи электрика:', e); }
+}
+
+async function savePasswordToSupabase(role, password) {
+    try {
+        const existing = await supabaseRequest(`passwords?role=eq.${role}`);
+        if (existing.length > 0) {
+            await supabaseRequest(`passwords?role=eq.${role}`, 'PUT', { role, password });
+        } else {
+            await supabaseRequest('passwords', 'POST', { role, password });
+        }
+        console.log('✅ Пароль сохранён в облако:', role);
+    } catch (e) {
+        console.error('❌ Ошибка сохранения пароля:', e);
+    }
+}
+
+// ============================================================
+// ЗАГРУЗКА ФОТО В STORAGE
+// ============================================================
+async function uploadPhotoToStorage(objectId, workId, base64Data) {
+    try {
+        const res = await fetch(base64Data);
+        const blob = await res.blob();
+        const fileName = `${objectId}/${workId}/${Date.now()}.webp`;
+        const formData = new FormData();
+        formData.append('file', blob, fileName);
+
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/photos/${fileName}`, {
+            method: 'POST',
             headers: {
                 'apikey': SUPABASE_KEY,
                 'Authorization': `Bearer ${SUPABASE_KEY}`
-            }
+            },
+            body: formData
         });
-        if (response.ok) {
-            const data = await response.json();
-            if (data && data.length > 0) {
-                objects = data;
-                saveDataToLocal();
-                showToast('✅ Данные загружены из облака');
-                render();
-                console.log('✅ Данные из Supabase загружены, объектов:', objects.length);
-            } else {
-                console.log('ℹ️ В Supabase нет данных, используем локальные');
-            }
-        } else {
-            console.warn('⚠️ Не удалось загрузить данные из Supabase:', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Ошибка загрузки в Storage:', errorText);
+            return null;
         }
+
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/photos/${fileName}`;
+        console.log('✅ Фото загружено:', publicUrl);
+        return publicUrl;
     } catch (e) {
-        console.error('❌ Ошибка загрузки из Supabase:', e);
+        console.error('❌ Ошибка uploadPhotoToStorage:', e);
+        return null;
     }
 }
 
 // ============================================================
-// ИНДИКАТОР СТАТУСА СИНХРОНИЗАЦИИ
+// СЖАТИЕ ФОТО
 // ============================================================
-function renderPendingStatus() {
-    const container = document.getElementById('bossContent');
-    if (!container) return;
-    const statusDiv = document.createElement('div');
-    statusDiv.id = 'pendingStatus';
-    statusDiv.style.cssText = 'padding:8px 12px;margin-bottom:12px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;text-align:center;';
-    const count = pendingActions.length;
-    if (count === 0) {
-        statusDiv.innerHTML = '✅ Все данные синхронизированы';
-        statusDiv.style.color = '#4caf50';
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let w = img.width,
+                    h = img.height;
+                const maxSize = 800;
+                if (w > maxSize || h > maxSize) {
+                    if (w > h) { h = h * maxSize / w;
+                        w = maxSize; } else { w = w * maxSize / h;
+                        h = maxSize; }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/webp', 0.7));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// ============================================================
+// РЕНДЕР И ВХОД
+// ============================================================
+function render() {
+    const app = document.getElementById('app');
+    if (!currentUser) renderLogin();
+    else if (currentUser === 'boss') renderBoss();
+    else if (currentUser === 'wolf') renderWolf();
+    else if (currentUser === 'client') renderClient();
+    else if (currentUser === 'electrician') renderElectrician();
+    else if (currentUser === 'master' || currentUser === 'designer' || currentUser === 'purchaser') {
+        renderGenericViewer(getUserLabel(currentUser));
+    } else renderPlaceholder();
+}
+
+function renderLogin() {
+    document.getElementById('app').innerHTML = `
+    <div class="card" style="text-align:center;padding:30px;">
+      <div class="login-header">
+        <div class="slogan">Умная система учёта работ<small>управляй строительством с уровнем</small></div>
+      </div>
+      <hr>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:400px;margin:0 auto;">
+        <button class="btn btn-primary" onclick="login('boss')">👔 Руководитель</button>
+        <button class="btn" onclick="login('wolf')">🐺 Волк</button>
+        <button class="btn" onclick="login('client')">🏠 Клиент</button>
+        <button class="btn" onclick="login('master')">🔧 Мастер</button>
+        <button class="btn" onclick="login('designer')">🎨 Дизайнер</button>
+        <button class="btn" onclick="login('purchaser')">📦 Закупщик</button>
+        <button class="btn" onclick="login('electrician')">⚡ Электрик</button>
+      </div>
+    </div>`;
+}
+
+window.login = function(r) {
+    // Проверяем пароль из облака (или из локального кэша)
+    const storedPassword = passwords[r] || '';
+    if (storedPassword.length > 0) {
+        const p = prompt(`Введите пароль для роли "${getUserLabel(r)}":`);
+        if (p !== storedPassword) { alert('Неверный пароль'); return; }
+    }
+    if (r === 'client') {
+        const pwd = prompt('Введите ПАРОЛЬ объекта:');
+        if (pwd === null || pwd.trim() === '') { alert('Пароль не введён'); return; }
+        let found = null;
+        for (let o of objects) {
+            if (passwords.objects[o.id] === pwd) { found = o; break; }
+        }
+        if (!found) { alert('Неверный пароль. Объект не найден.'); return; }
+        currentUser = r;
+        currentObjectId = found.id;
+        render();
     } else {
-        statusDiv.innerHTML = `⏳ Ожидают синхронизации: ${count} действий <button class="btn btn-sm" onclick="syncPendingActions()" style="margin-left:12px;">Синхронизировать сейчас</button>`;
-        statusDiv.style.color = '#c9a959';
+        currentUser = r;
+        render();
     }
-    container.prepend(statusDiv);
+};
+
+function renderPlaceholder() {
+    document.getElementById('app').innerHTML = `
+    <div class="card">
+      <div class="flex">
+        <h2>${getUserLabel(currentUser)}</h2>
+        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
+      </div>
+      <div style="padding:30px;text-align:center;color:#888;">Страница в разработке</div>
+    </div>`;
 }
 
 // ============================================================
-// ОБНОВЛЁННЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ОБЪЕКТАМИ И ЭТАПАМИ
+// БОСС
 // ============================================================
-window.addObject = function() {
+function renderBoss() {
+    document.getElementById('app').innerHTML = `
+    <div class="card">
+      <div class="flex">
+        <h2>👔 Руководитель</h2>
+        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active" data-tab="objects">Объекты</div>
+      <div class="tab" data-tab="notes">Ежедневник</div>
+      <div class="tab" data-tab="purchases">Закупки (отчёт)</div>
+      <div class="tab" data-tab="checks">Чеки</div>
+      <div class="tab" data-tab="passwords">🔐 Пароли</div>
+    </div>
+    <div id="bossContent"></div>`;
+    document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        this.classList.add('active');
+        switch (this.dataset.tab) {
+            case 'objects':
+                renderBossObjects();
+                break;
+            case 'notes':
+                renderBossNotes();
+                break;
+            case 'purchases':
+                renderBossPurchases();
+                break;
+            case 'checks':
+                renderBossChecks();
+                break;
+            case 'passwords':
+                renderPasswords();
+                break;
+        }
+    });
+    renderBossObjects();
+}
+
+function renderBossObjects() {
+    const container = document.getElementById('bossContent');
+    if (!uiState['bossObjectFilter']) uiState['bossObjectFilter'] = 'active';
+    const filter = uiState['bossObjectFilter'];
+    let objectsToShow = [];
+    if (filter === 'active') objectsToShow = objects.filter(o => !o.archived && !o.completed);
+    else if (filter === 'completed') objectsToShow = objects.filter(o => !o.archived && o.completed);
+    else if (filter === 'archived') objectsToShow = objects.filter(o => o.archived);
+    const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span><span class="tab ${filter === 'archived' ? 'active' : ''}" onclick="setBossObjectFilter('archived')">Архив</span></div>`;
+    let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><button class="btn" onclick="uploadCSV()">📊 Загрузить CSV</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
+    let list = objectsToShow.map(obj => {
+        const objKey = 'obj-' + obj.id,
+            objOpen = uiState[objKey] !== undefined ? uiState[objKey] : !1;
+        const projs = designProjects.filter(p => p.objectId === obj.id);
+        const designKey = 'design-' + obj.id,
+            designOpen = uiState[designKey] !== undefined ? uiState[designKey] : !1;
+        let designBlocks = projs.length ? projs.map(p => {
+            const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
+            const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
+            const files = (p.files || []).map((f, fi) => {
+                const isImg = f.startsWith('data:image/') || f.startsWith('http');
+                const isPdf = f.startsWith('data:application/pdf');
+                return `<span class="file-wrap">${isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:100px;max-height:100px;">` : isPdf ? `<span class="pdf" onclick="window.open('${f}','_blank')">📄</span>` : `<span class="pdf" onclick="window.open('${f}','_blank')">📎</span>`}<button class="del" onclick="deleteDesignFile(${p.id},${fi})" style="background:#a04040;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;">×</button></span>`;
+            }).join(' ') || 'нет';
+            return `<div class="design-block"><div class="design-header" onclick="toggleDesignBlock(this,'${designKey}')"><span><span class="design-title">${escapeHtml(p.title)}</span><span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span></span><div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDesign(${p.id})">🗑</button></div></div><div class="design-detail ${designOpen ? 'open' : ''}"><div class="design-meta"><b>Доступ:</b> ${escapeHtml(roles)}</div><div class="design-files"><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="addDesignComment(${p.id})">💬 Комментарий</button><button class="btn btn-sm" onclick="toggleDesignApprove(${p.id})">${p.approvedByClient ? 'Снять утверждение' : 'Утвердить'}</button></div></div></div>`;
+        }).join('') : '<span style="color:#666;font-size:14px;">Нет проектов</span>';
+        const recs = recommendations.filter(r => r.objectId === obj.id);
+        const recKey = 'rec-' + obj.id,
+            recOpen = uiState[recKey] !== undefined ? uiState[recKey] : !1;
+        let recBlocks = recs.length ? recs.map(r => {
+            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
+            const phRec = (r.photos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'photos')">×</button></span>`).join('');
+            const phPur = (r.purchasedPhotos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'purchasedPhotos')">×</button></span>`).join('');
+            return `<div class="rec-block"><div class="rec-header" onclick="toggleRecBlock(this,'${recKey}')"><span><span class="rec-title">📋 ${escapeHtml(r.text)}</span><span class="badge">${status}</span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span></span><div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteRecommend(${r.id})">🗑</button></div></div><div class="rec-detail ${recOpen ? 'open' : ''}"><div class="rec-body"><div class="rec-text"><div class="rec-meta"><b>Срок:</b> ${r.deadline ? fmt(r.deadline) : 'не указан'}</div><div class="rec-actions"><button class="btn btn-sm" onclick="markPurchased(${r.id})">✅ Отметить куплено</button><button class="btn btn-sm" onclick="addRecommendationPhoto(${r.id})">📎 Фото к рекомендации</button><button class="btn btn-sm" onclick="addPurchasedPhoto(${r.id})">📸 Фото покупки</button></div></div><div class="rec-photos">${phRec}${phPur}</div></div></div></div>`;
+        }).join('') : '<span style="color:#666;font-size:14px;">Нет рекомендаций</span>';
+        const statusTabs = `<div class="flex" style="margin:8px 0;"><button class="btn btn-sm btn-primary" onclick="setWorkFilter('${obj.id}','all')">Все</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','done')">✅ Выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','undone')">⏳ Не выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','unpaid')">💰 Неоплаченные (ручные)</button></div>`;
+        if (!uiState['filter-' + obj.id]) uiState['filter-' + obj.id] = 'all';
+        const currentFilter = uiState['filter-' + obj.id] || 'all';
+        let filteredWorks = obj.works;
+        if (currentFilter === 'done') filteredWorks = obj.works.filter(w => w.done === true);
+        else if (currentFilter === 'undone') filteredWorks = obj.works.filter(w => w.done === false);
+        else if (currentFilter === 'unpaid') filteredWorks = obj.works.filter(w => w.manual === true && w.done === false);
+        const worksHtml = filteredWorks.map((w, wi) => {
+            const originalIndex = obj.works.indexOf(w);
+            const wKey = 'work-' + obj.id + '-' + wi;
+            const wOpen = uiState[wKey] !== undefined ? uiState[wKey] : !1;
+            const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
+            const hasPhoto = photos.length > 0;
+            const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button><span class="status-badge">${r.approved ? '✅ одобр.' : '⏳ модер.'}</span></span>`).join('');
+            const electricianLabel = w.forElectrician ? '⚡' : '';
+            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}"><div class="work-header" onclick="toggleWork(this,'${wKey}')"><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;"><span class="drag-handle" title="Перетащить">⠿</span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}<span class="work-status-check" onclick="event.stopPropagation();toggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span><span class="work-electrician-toggle" onclick="event.stopPropagation();toggleElectrician(${obj.id},${originalIndex})" title="Назначить электрику">${electricianLabel || '⚡'}</span>${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}<span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}" title="${hasPhoto ? 'Есть фото' : 'Нет фото'}"></span><span class="work-arrow ${wOpen ? 'open' : ''}">▶</span></span><span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;"><button class="icon-btn" onclick="event.stopPropagation();uploadWorkPhoto(${obj.id},${originalIndex})" title="Загрузить фото">📸</button><button class="icon-btn" onclick="event.stopPropagation();setWorkDeadline(${obj.id},${originalIndex})" title="Срок">📅</button><button class="icon-btn" onclick="event.stopPropagation();moveWorkUp(${obj.id},${originalIndex})" title="Вверх">⬆</button><button class="icon-btn" onclick="event.stopPropagation();moveWorkDown(${obj.id},${originalIndex})" title="Вниз">⬇</button><button class="icon-btn danger" onclick="event.stopPropagation();deleteWorkWithConfirm(${obj.id},${originalIndex})" title="Удалить этап">🗑</button></span></div><div class="work-detail ${wOpen ? 'open' : ''}"><div style="margin:6px 0;"><b>📸 Фото:</b></div><div class="photo-grid">${phHtml || 'Нет фото'}</div></div></div>`;
+        }).join('');
+        setTimeout(() => initDragDrop(), 50);
+        const addButtons = `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-primary" onclick="addDesignProjectForObject(${obj.id})">➕ Дизайн-проект</button><button class="btn btn-sm btn-primary" onclick="addRecommendationForObject(${obj.id})">➕ Рекомендация</button></div>`;
+        let archiveButtons = '';
+        if (obj.archived) {
+            archiveButtons = `<button class="btn btn-sm" onclick="event.stopPropagation();unarchiveObject(${obj.id})">↩ Вернуть из архива</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteObjectPermanently(${obj.id})">🗑 Удалить</button>`;
+        }
+        return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}${!obj.archived ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();archiveObject(${obj.id})">📦</button>` : ''}${archiveButtons}<button class="btn btn-sm" onclick="event.stopPropagation();addWork(${obj.id})">➕ Этап</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}">${addButtons}<hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
+    }).join('');
+    container.innerHTML = filterTabs + sel + list;
+}
+
+// ============================================================
+// ОБНОВЛЁННЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ДАННЫМИ (С СОХРАНЕНИЕМ В ОБЛАКО)
+// ============================================================
+window.addObject = async function() {
     const n = prompt('Название объекта:');
     if (!n) return;
     const a = prompt('Адрес:');
@@ -630,22 +534,13 @@ window.addObject = function() {
     objects.push(newObj);
     passwords.objects[id] = pwd;
     saveDataToLocal();
-    
-    if (!isOnline()) {
-        addPendingAction({ type: 'addObject', data: newObj });
-        showToast('📦 Объект сохранён локально (ожидает интернет)');
-    } else {
-        syncAddObject(newObj).then(() => {
-            showToast('✅ Объект создан и синхронизирован');
-        }).catch(() => {
-            addPendingAction({ type: 'addObject', data: newObj });
-            showToast('⚠️ Объект сохранён локально, будет синхронизирован позже');
-        });
-    }
+    await saveObjectToSupabase(newObj);
+    await savePasswordToSupabase('objects_' + id, pwd);
     renderBossObjects();
+    showToast('✅ Объект создан и сохранён в облако');
 };
 
-window.addWork = function(id) {
+window.addWork = async function(id) {
     const n = prompt('Название этапа');
     if (n) {
         const o = getObject(id);
@@ -653,41 +548,24 @@ window.addWork = function(id) {
             const newWork = { id: Date.now(), name: n, done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !0 };
             o.works.push(newWork);
             saveDataToLocal();
-            
-            if (!isOnline()) {
-                addPendingAction({ type: 'addWork', data: { objectId: id, work: newWork } });
-                showToast('📦 Этап сохранён локально (ожидает интернет)');
-            } else {
-                syncAddWork({ objectId: id, work: newWork }).then(() => {
-                    showToast('➕ Этап добавлен и синхронизирован');
-                }).catch(() => {
-                    addPendingAction({ type: 'addWork', data: { objectId: id, work: newWork } });
-                    showToast('⚠️ Этап сохранён локально');
-                });
-            }
+            await saveObjectToSupabase(o);
             renderBossObjects();
+            showToast('➕ Этап добавлен и сохранён в облако');
         }
     }
 };
 
-window.toggleWorkStatus = function(id, wi) {
+window.toggleWorkStatus = async function(id, wi) {
     const o = getObject(id);
     if (o) {
         o.works[wi].done = !o.works[wi].done;
         saveDataToLocal();
-        
-        if (!isOnline()) {
-            addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
-        } else {
-            syncUpdateWork({ objectId: id, work: o.works[wi] }).catch(() => {
-                addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
-            });
-        }
+        await saveObjectToSupabase(o);
         renderBossObjects();
     }
 };
 
-window.setWorkDeadline = function(id, wi) {
+window.setWorkDeadline = async function(id, wi) {
     const d = prompt('Дата (ГГГГ-ММ-ДД)');
     if (d) {
         if (!isValidDate(d)) { showToast('Неверный формат даты'); return; }
@@ -695,41 +573,27 @@ window.setWorkDeadline = function(id, wi) {
         if (o) {
             o.works[wi].deadline = d;
             saveDataToLocal();
-            
-            if (!isOnline()) {
-                addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
-            } else {
-                syncUpdateWork({ objectId: id, work: o.works[wi] }).catch(() => {
-                    addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
-                });
-            }
+            await saveObjectToSupabase(o);
             renderBossObjects();
             showToast('📅 Срок установлен');
         }
     }
 };
 
-window.deleteWorkPhoto = function(id) {
+window.deleteWorkPhoto = async function(id) {
     if (confirm('Удалить фото?')) {
         const report = reports.find(r => r.id === id);
         if (report) {
             reports = reports.filter(r => r.id !== id);
             saveDataToLocal();
-            
-            if (!isOnline()) {
-                addPendingAction({ type: 'deletePhoto', data: { reportId: id } });
-            } else {
-                syncDeletePhoto({ reportId: id }).catch(() => {
-                    addPendingAction({ type: 'deletePhoto', data: { reportId: id } });
-                });
-            }
+            await supabaseRequest(`reports?id=eq.${id}`, 'DELETE');
             renderBossObjects();
-            showToast('🗑 Фото удалено');
+            showToast('🗑 Фото удалено из облака');
         }
     }
 };
 
-window.deleteObjectPermanently = function(id) {
+window.deleteObjectPermanently = async function(id) {
     if (confirm('Удалить объект без возможности восстановления?')) {
         const obj = objects.find(o => o.id === id);
         if (obj) {
@@ -741,123 +605,85 @@ window.deleteObjectPermanently = function(id) {
             checks = checks.filter(c => c.objectId !== id);
             electricianTasks = electricianTasks.filter(t => t.objectId !== id);
             saveDataToLocal();
-            
-            if (!isOnline()) {
-                addPendingAction({ type: 'deleteObject', data: { id: id } });
-            } else {
-                syncDeleteObject({ id: id }).catch(() => {
-                    addPendingAction({ type: 'deleteObject', data: { id: id } });
-                });
-            }
+            await supabaseRequest(`objects?id=eq.${id}`, 'DELETE');
+            await supabaseRequest(`reports?object_id=eq.${id}`, 'DELETE');
+            await supabaseRequest(`design_projects?object_id=eq.${id}`, 'DELETE');
+            await supabaseRequest(`recommendations?object_id=eq.${id}`, 'DELETE');
+            await supabaseRequest(`purchase_orders?object_id=eq.${id}`, 'DELETE');
+            await supabaseRequest(`checks?object_id=eq.${id}`, 'DELETE');
+            await supabaseRequest(`electrician_tasks?object_id=eq.${id}`, 'DELETE');
             renderBossObjects();
             showToast('🗑 Объект удалён');
         }
     }
 };
 
-window.toggleElectrician = function(objId, idx) {
+window.toggleElectrician = async function(objId, idx) {
     const obj = getObject(objId);
     if (obj) {
         const work = obj.works[idx];
         if (work) {
             work.forElectrician = !work.forElectrician;
             saveDataToLocal();
-            
-            if (!isOnline()) {
-                addPendingAction({ type: 'updateWork', data: { objectId: objId, work: work } });
-            } else {
-                syncUpdateWork({ objectId: objId, work: work }).catch(() => {
-                    addPendingAction({ type: 'updateWork', data: { objectId: objId, work: work } });
-                });
-            }
+            await saveObjectToSupabase(obj);
             renderBossObjects();
             showToast(work.forElectrician ? '✅ Этап назначен электрику' : '❌ Назначение электрику снято');
         }
     }
 };
 
-window.moveWorkUp = function(objId, idx) {
+window.moveWorkUp = async function(objId, idx) {
     const obj = getObject(objId);
     if (!obj) return;
     const works = obj.works;
     if (idx <= 0) return;
     [works[idx - 1], works[idx]] = [works[idx], works[idx - 1]];
     saveDataToLocal();
-    if (!isOnline()) {
-        addPendingAction({ type: 'updateObject', data: obj });
-    } else {
-        syncUpdateObject(obj).catch(() => {
-            addPendingAction({ type: 'updateObject', data: obj });
-        });
-    }
+    await saveObjectToSupabase(obj);
     renderBossObjects();
 };
 
-window.moveWorkDown = function(objId, idx) {
+window.moveWorkDown = async function(objId, idx) {
     const obj = getObject(objId);
     if (!obj) return;
     const works = obj.works;
     if (idx >= works.length - 1) return;
     [works[idx], works[idx + 1]] = [works[idx + 1], works[idx]];
     saveDataToLocal();
-    if (!isOnline()) {
-        addPendingAction({ type: 'updateObject', data: obj });
-    } else {
-        syncUpdateObject(obj).catch(() => {
-            addPendingAction({ type: 'updateObject', data: obj });
-        });
-    }
+    await saveObjectToSupabase(obj);
     renderBossObjects();
 };
 
-window.completeObject = function(id) {
+window.completeObject = async function(id) {
     const o = getObject(id);
     if (o) {
         o.completed = !o.completed;
         saveDataToLocal();
-        if (!isOnline()) {
-            addPendingAction({ type: 'updateObject', data: o });
-        } else {
-            syncUpdateObject(o).catch(() => {
-                addPendingAction({ type: 'updateObject', data: o });
-            });
-        }
+        await saveObjectToSupabase(o);
         renderBossObjects();
         showToast(o.completed ? '✅ Объект сдан' : '↩ Объект возвращён в работу');
     }
 };
 
-window.archiveObject = function(id) {
+window.archiveObject = async function(id) {
     if (confirm('Отправить объект в архив?')) {
         const o = getObject(id);
         if (o) {
             o.archived = !0;
             saveDataToLocal();
-            if (!isOnline()) {
-                addPendingAction({ type: 'updateObject', data: o });
-            } else {
-                syncUpdateObject(o).catch(() => {
-                    addPendingAction({ type: 'updateObject', data: o });
-                });
-            }
+            await saveObjectToSupabase(o);
             renderBossObjects();
             showToast('📦 Объект в архиве');
         }
     }
 };
 
-window.unarchiveObject = function(id) {
+window.unarchiveObject = async function(id) {
     const o = getObject(id);
     if (o) {
         o.archived = false;
         saveDataToLocal();
-        if (!isOnline()) {
-            addPendingAction({ type: 'updateObject', data: o });
-        } else {
-            syncUpdateObject(o).catch(() => {
-                addPendingAction({ type: 'updateObject', data: o });
-            });
-        }
+        await saveObjectToSupabase(o);
         renderBossObjects();
         showToast('Объект возвращён из архива');
     }
@@ -869,7 +695,7 @@ window.setBossObjectFilter = function(filter) {
     renderBossObjects();
 };
 
-window.deleteWorkWithConfirm = function(objId, idx) {
+window.deleteWorkWithConfirm = async function(objId, idx) {
     const obj = getObject(objId);
     if (!obj) return;
     const work = obj.works[idx];
@@ -877,20 +703,25 @@ window.deleteWorkWithConfirm = function(objId, idx) {
     if (confirm('Удалить этап "' + work.name + '" ?')) {
         obj.works.splice(idx, 1);
         saveDataToLocal();
-        if (!isOnline()) {
-            addPendingAction({ type: 'deleteWork', data: { objectId: objId, workId: work.id } });
-        } else {
-            syncDeleteWork({ objectId: objId, workId: work.id }).catch(() => {
-                addPendingAction({ type: 'deleteWork', data: { objectId: objId, workId: work.id } });
-            });
-        }
+        await saveObjectToSupabase(obj);
         renderBossObjects();
         showToast('🗑 Этап удалён');
     }
 };
 
+window.scrollToObject = function(v) {
+    if (!v) return;
+    const el = document.getElementById(v);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        uiState[v] = !0;
+        saveUiState();
+        renderBossObjects();
+    }
+};
+
 // ============================================================
-// ЗАГРУЗКА ФОТО (ОБНОВЛЁННАЯ С ОФЛАЙН-СИНХРОНИЗАЦИЕЙ)
+// ЗАГРУЗКА ФОТО (С СОХРАНЕНИЕМ В STORAGE + REPORTS)
 // ============================================================
 window.uploadWorkPhoto = async function(id, wi) {
     const o = getObject(id);
@@ -908,75 +739,40 @@ window.uploadWorkPhoto = async function(id, wi) {
     inp.onchange = async function(e) {
         const files = e.target.files;
         if (!files.length) { inp.remove(); return; }
-        showToast('⏳ Обработка фото...');
+        showToast('⏳ Загрузка фото...');
 
-        let uploadedCount = 0;
-
-        for (let f of files) {
+        for (const f of files) {
             try {
-                console.log('📸 Обработка файла:', f.name);
                 const compressed = await compressImage(f);
-                
-                if (!isOnline()) {
-                    const reportId = Date.now() + Math.random() * 1000;
-                    reports.push({
-                        id: reportId,
+                const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
+                if (publicUrl) {
+                    const newReport = {
+                        id: Date.now() + Math.random() * 1000,
                         objectId: id,
                         workId: work.id,
-                        photos: [compressed],
+                        photos: [publicUrl],
                         text: '',
-                        date: new Date(),
+                        date: new Date().toISOString(),
                         approved: true
-                    });
+                    };
+                    reports.push(newReport);
                     saveDataToLocal();
-                    addPendingAction({
-                        type: 'uploadPhoto',
-                        data: {
-                            objectId: id,
-                            workId: work.id,
-                            reportId: reportId,
-                            base64: compressed
-                        }
-                    });
-                    showToast('📸 Фото сохранено локально (ожидает интернет)');
-                    uploadedCount++;
-                } else {
-                    const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
-                    if (publicUrl) {
-                        reports.push({
-                            id: Date.now() + Math.random() * 1000,
-                            objectId: id,
-                            workId: work.id,
-                            photos: [publicUrl],
-                            text: '',
-                            date: new Date(),
-                            approved: true
-                        });
-                        saveDataToLocal();
-                        uploadedCount++;
-                        showToast('📸 Фото загружено в облако');
-                    }
+                    await saveReportToSupabase(newReport);
+                    showToast('📸 Фото загружено в облако');
                 }
             } catch (err) {
-                console.error('❌ Ошибка при загрузке файла:', err);
-                showToast('❌ Ошибка загрузки: ' + f.name);
+                console.error('Ошибка:', err);
+                showToast('❌ Ошибка загрузки');
             }
         }
-
-        if (uploadedCount > 0) {
-            saveDataToLocal();
-            renderBossObjects();
-            showToast('📸 Загружено ' + uploadedCount + ' фото' + (!isOnline() ? ' (ожидают интернет)' : ''));
-        } else {
-            showToast('❌ Не удалось загрузить фото');
-        }
+        renderBossObjects();
         inp.remove();
     };
     setTimeout(() => inp.click(), 50);
 };
 
 // ============================================================
-// ДИЗАЙН-ПРОЕКТЫ
+// ДИЗАЙН-ПРОЕКТЫ (С СОХРАНЕНИЕМ)
 // ============================================================
 window.addDesignProjectForObject = function(objId) {
     const obj = getObject(objId);
@@ -1008,89 +804,117 @@ window.addDesignProjectForObject = function(objId) {
     setTimeout(() => inp.click(), 50);
 };
 
-function createDesignProject(objId, title, files) {
-    designProjects.push({ id: Date.now(), objectId: objId, title, files, roles: ['boss', 'wolf', 'client', 'electrician'], comments: [], approvedByClient: !1 });
+async function createDesignProject(objId, title, files) {
+    const project = {
+        id: Date.now(),
+        objectId: objId,
+        title: title,
+        files: files,
+        roles: ['boss', 'wolf', 'client', 'electrician'],
+        comments: [],
+        approvedByClient: !1,
+        created_at: new Date().toISOString()
+    };
+    designProjects.push(project);
     saveDataToLocal();
+    await saveDesignProjectToSupabase(project);
     renderBossObjects();
     showToast('📐 Дизайн-проект создан');
 }
 
-window.deleteDesign = function(id) {
+window.deleteDesign = async function(id) {
     if (confirm('Удалить проект?')) {
         designProjects = designProjects.filter(p => p.id !== id);
         saveDataToLocal();
+        await supabaseRequest(`design_projects?id=eq.${id}`, 'DELETE');
         renderBossObjects();
         showToast('🗑 Проект удалён');
     }
 };
 
-window.deleteDesignFile = function(pid, fi) {
+window.deleteDesignFile = async function(pid, fi) {
     if (confirm('Удалить файл?')) {
         const p = designProjects.find(x => x.id === pid);
         if (p) {
             p.files.splice(fi, 1);
             saveDataToLocal();
+            await supabaseRequest(`design_projects?id=eq.${pid}`, 'PUT', p);
             renderBossObjects();
             showToast('🗑 Файл удалён');
         }
     }
 };
 
-window.addDesignComment = function(id) {
+window.addDesignComment = async function(id) {
     const p = designProjects.find(x => x.id === id);
     if (!p) return;
     const t = prompt('Комментарий:');
     if (t) {
         if (!p.comments) p.comments = [];
-        p.comments.push({ author: 'Руководитель', text: t, date: new Date() });
+        p.comments.push({ author: 'Руководитель', text: t, date: new Date().toISOString() });
         saveDataToLocal();
+        await supabaseRequest(`design_projects?id=eq.${id}`, 'PUT', p);
         renderBossObjects();
         showToast('💬 Комментарий добавлен');
     }
 };
 
-window.toggleDesignApprove = function(id) {
+window.toggleDesignApprove = async function(id) {
     const p = designProjects.find(x => x.id === id);
     if (p) {
         p.approvedByClient = !p.approvedByClient;
         saveDataToLocal();
+        await supabaseRequest(`design_projects?id=eq.${id}`, 'PUT', p);
         renderBossObjects();
         showToast(p.approvedByClient ? '✅ Проект утверждён' : '⏳ Утверждение снято');
     }
 };
 
 // ============================================================
-// РЕКОМЕНДАЦИИ
+// РЕКОМЕНДАЦИИ (С СОХРАНЕНИЕМ)
 // ============================================================
-window.addRecommendationForObject = function(objId) {
+window.addRecommendationForObject = async function(objId) {
     const obj = getObject(objId);
     if (!obj) return;
     const text = prompt('Текст рекомендации:');
     if (text === null || text.trim() === '') return;
     const deadline = prompt('Срок (ГГГГ-ММ-ДД) или оставьте пустым:');
     if (deadline !== null && deadline.trim() !== '' && !isValidDate(deadline.trim())) { showToast('Неверный формат даты'); return; }
-    recommendations.push({ id: Date.now(), objectId: objId, text: text.trim(), deadline: deadline ? deadline.trim() : null, photos: [], purchased: !1, purchasedDate: null, purchasedPhotos: [] });
+    const rec = {
+        id: Date.now(),
+        objectId: objId,
+        text: text.trim(),
+        deadline: deadline ? deadline.trim() : null,
+        photos: [],
+        purchased: !1,
+        purchasedDate: null,
+        purchasedPhotos: []
+    };
+    recommendations.push(rec);
     saveDataToLocal();
+    await saveRecommendationToSupabase(rec);
     renderBossObjects();
     showToast('📋 Рекомендация добавлена');
 };
 
-window.deleteRecommend = function(id) {
+window.deleteRecommend = async function(id) {
     if (confirm('Удалить рекомендацию?')) {
         recommendations = recommendations.filter(r => r.id !== id);
         saveDataToLocal();
+        await supabaseRequest(`recommendations?id=eq.${id}`, 'DELETE');
         renderBossObjects();
         showToast('🗑 Рекомендация удалена');
     }
 };
 
-window.markPurchased = function(id) {
+window.markPurchased = async function(id) {
     const r = recommendations.find(x => x.id === id);
     if (r) {
         r.purchased = !r.purchased;
         if (r.purchased) r.purchasedDate = new Date().toISOString().slice(0, 10);
         else r.purchasedDate = null;
         saveDataToLocal();
+        await supabaseRequest(`recommendations?id=eq.${id}`, 'PUT', r);
         renderBossObjects();
         showToast(r.purchased ? '✅ Отмечено куплено' : '↩ Отмена покупки');
     }
@@ -1109,28 +933,15 @@ window.addRecommendationPhoto = async function(id) {
         if (!file) { inp.remove(); return; }
         try {
             const compressed = await compressImage(file);
-            if (!isOnline()) {
+            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+            if (publicUrl) {
                 if (!r.photos) r.photos = [];
-                r.photos.push(compressed);
-                addPendingAction({
-                    type: 'uploadPhoto',
-                    data: {
-                        objectId: r.objectId,
-                        workId: Date.now(),
-                        reportId: Date.now(),
-                        base64: compressed
-                    }
-                });
-                showToast('📸 Фото сохранено локально (ожидает интернет)');
-            } else {
-                const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
-                if (publicUrl) {
-                    if (!r.photos) r.photos = [];
-                    r.photos.push(publicUrl);
-                }
+                r.photos.push(publicUrl);
+                saveDataToLocal();
+                await supabaseRequest(`recommendations?id=eq.${id}`, 'PUT', r);
+                renderBossObjects();
+                showToast('📸 Фото добавлено');
             }
-            saveDataToLocal();
-            renderBossObjects();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
@@ -1151,28 +962,15 @@ window.addPurchasedPhoto = async function(id) {
         if (!file) { inp.remove(); return; }
         try {
             const compressed = await compressImage(file);
-            if (!isOnline()) {
+            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+            if (publicUrl) {
                 if (!r.purchasedPhotos) r.purchasedPhotos = [];
-                r.purchasedPhotos.push(compressed);
-                addPendingAction({
-                    type: 'uploadPhoto',
-                    data: {
-                        objectId: r.objectId,
-                        workId: Date.now(),
-                        reportId: Date.now(),
-                        base64: compressed
-                    }
-                });
-                showToast('📸 Фото сохранено локально (ожидает интернет)');
-            } else {
-                const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
-                if (publicUrl) {
-                    if (!r.purchasedPhotos) r.purchasedPhotos = [];
-                    r.purchasedPhotos.push(publicUrl);
-                }
+                r.purchasedPhotos.push(publicUrl);
+                saveDataToLocal();
+                await supabaseRequest(`recommendations?id=eq.${id}`, 'PUT', r);
+                renderBossObjects();
+                showToast('📸 Фото покупки добавлено');
             }
-            saveDataToLocal();
-            renderBossObjects();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
@@ -1180,13 +978,14 @@ window.addPurchasedPhoto = async function(id) {
     setTimeout(() => inp.click(), 50);
 };
 
-window.deleteRecommendPhoto = function(id, idx, type) {
+window.deleteRecommendPhoto = async function(id, idx, type) {
     if (confirm('Удалить фото?')) {
         const r = recommendations.find(x => x.id === id);
         if (r) {
             if (type === 'photos') r.photos.splice(idx, 1);
             else if (type === 'purchasedPhotos') r.purchasedPhotos.splice(idx, 1);
             saveDataToLocal();
+            await supabaseRequest(`recommendations?id=eq.${id}`, 'PUT', r);
             renderBossObjects();
             showToast('🗑 Фото удалено');
         }
@@ -1194,7 +993,7 @@ window.deleteRecommendPhoto = function(id, idx, type) {
 };
 
 // ============================================================
-// ЗАМЕТКИ
+// ЗАМЕТКИ (ЕЖЕДНЕВНИК) С СОХРАНЕНИЕМ
 // ============================================================
 function renderBossNotes() {
     const container = document.getElementById('bossContent');
@@ -1253,7 +1052,7 @@ function showNotesForDay(key, role) {
     container.innerHTML = `<div class="card"><h4>Записи на ${new Date(key).toLocaleDateString()}</h4>${dayNotes.map(n => `<div class="flex"><span>${escapeHtml(n.text)}</span><span><span class="badge">${n.author === 'boss' ? 'Руководитель' : 'Волк'}</span><button class="btn btn-sm btn-danger" onclick="deleteNote(${n.id})">🗑</button></span></div>`).join('')}<button class="btn btn-sm btn-primary" onclick="addNoteForDate('${key}')">➕ Добавить запись на этот день</button></div>`;
 }
 
-window.addNoteForDate = function(dateKey) {
+window.addNoteForDate = async function(dateKey) {
     let dateStr = dateKey;
     if (!dateStr) {
         const now = new Date();
@@ -1263,17 +1062,20 @@ window.addNoteForDate = function(dateKey) {
     if (!text) return;
     const parts = dateStr.split('-');
     const noteDate = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-    notes.push({ id: Date.now(), author: currentUser, text, date: noteDate });
+    const note = { id: Date.now(), author: currentUser, text, date: noteDate.toISOString() };
+    notes.push(note);
     saveDataToLocal();
+    await saveNoteToSupabase(note);
     if (currentUser === 'boss') renderBossNotes();
     else if (currentUser === 'wolf') renderWolfNotes();
     showToast('📝 Заметка добавлена');
 };
 
-window.deleteNote = function(id) {
+window.deleteNote = async function(id) {
     if (confirm('Удалить заметку?')) {
         notes = notes.filter(n => n.id !== id);
         saveDataToLocal();
+        await supabaseRequest(`notes?id=eq.${id}`, 'DELETE');
         if (currentUser === 'boss') renderBossNotes();
         else renderWolfNotes();
         showToast('🗑 Заметка удалена');
@@ -1281,7 +1083,7 @@ window.deleteNote = function(id) {
 };
 
 // ============================================================
-// ЧЕКИ
+// ЧЕКИ (С СОХРАНЕНИЕМ)
 // ============================================================
 let checkFilterObjectId = 'all';
 
@@ -1297,6 +1099,19 @@ window.updateCheckFilter = function(val) { checkFilterObjectId = val;
     renderBossChecks(); };
 
 function renderBossChecksFilter(f) { renderChecksList('boss', f); }
+
+function renderWolfChecks() {
+    const container = document.getElementById('wolfContent');
+    const available = objects.filter(o => !o.archived);
+    let selectHtml = `<select id="checkObjectFilter" onchange="updateCheckFilterWolf(this.value)"><option value="all" ${checkFilterObjectId === 'all' ? 'selected' : ''}>Все объекты</option>${available.map(o => `<option value="${o.id}" ${checkFilterObjectId == o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('')}</select>`;
+    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button>${selectHtml}<div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderWolfChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('unpaid')">Неоплаченные</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('paid')">Оплаченные</button></div></div><div id="wolfChecksList"></div>`;
+    renderChecksList('wolf', 'all');
+}
+
+window.updateCheckFilterWolf = function(val) { checkFilterObjectId = val;
+    renderWolfChecks(); };
+
+function renderWolfChecksFilter(f) { renderChecksList('wolf', f); }
 
 function renderChecksList(role, filter) {
     const container = document.getElementById(role === 'boss' ? 'bossChecksList' : (role === 'wolf' ? 'wolfChecksList' : 'clientChecksList'));
@@ -1332,7 +1147,7 @@ function renderChecksList(role, filter) {
     }).join('');
 }
 
-window.addCheck = function() {
+window.addCheck = async function() {
     if (currentUser === 'client') { showToast('Клиент не может добавлять чеки'); return; }
     const available = objects.filter(o => !o.archived);
     if (!available.length) { showToast('Нет объектов'); return; }
@@ -1348,7 +1163,7 @@ window.addCheck = function() {
     };
 };
 
-function proceedWithCheck(objId) {
+async function proceedWithCheck(objId) {
     const amount = parseFloat(prompt('Введите сумму (руб):') || '0');
     if (isNaN(amount) || amount <= 0) { showToast('Введите корректную сумму'); return; }
     const inp = document.createElement('input');
@@ -1363,38 +1178,21 @@ function proceedWithCheck(objId) {
             let fileData;
             if (file.type.startsWith('image/')) {
                 const compressed = await compressImage(file);
-                if (!isOnline()) {
-                    fileData = compressed;
-                    addPendingAction({
-                        type: 'addCheck',
-                        data: {
-                            id: Date.now(),
-                            objectId: objId,
-                            amount: amount,
-                            fileData: compressed,
-                            date: new Date(),
-                            paid: false,
-                            paidDate: null,
-                            paidBy: null
-                        }
-                    });
-                    showToast('🧾 Чек сохранён локально (ожидает интернет)');
-                } else {
-                    const publicUrl = await uploadPhotoToStorage(objId, Date.now(), compressed);
-                    fileData = publicUrl;
-                }
+                const publicUrl = await uploadPhotoToStorage(objId, Date.now(), compressed);
+                fileData = publicUrl;
             } else {
                 const reader = new FileReader();
-                fileData = await new Promise(res => { reader.onload = function(ev) { res(ev.target.result); }; reader.readAsDataURL(file); });
+                fileData = await new Promise(res => { reader.onload = function(ev) { res(ev.target.result); };
+                    reader.readAsDataURL(file); });
             }
-            if (fileData) {
-                checks.push({ id: Date.now(), objectId: objId, amount, fileData, date: new Date(), paid: !1, paidDate: null, paidBy: null });
-                saveDataToLocal();
-                showToast('🧾 Чек загружен' + (!isOnline() ? ' (ожидает интернет)' : ''));
-                if (currentUser === 'boss') renderBossChecks();
-                else if (currentUser === 'wolf') renderWolfChecks();
-                else if (currentUser === 'client') renderClientChecks();
-            }
+            const check = { id: Date.now(), objectId: objId, amount, fileData, date: new Date().toISOString(), paid: !1, paidDate: null, paidBy: null };
+            checks.push(check);
+            saveDataToLocal();
+            await saveCheckToSupabase(check);
+            showToast('🧾 Чек загружен');
+            if (currentUser === 'boss') renderBossChecks();
+            else if (currentUser === 'wolf') renderWolfChecks();
+            else if (currentUser === 'client') renderClientChecks();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки чека'); }
         inp.remove();
@@ -1402,23 +1200,25 @@ function proceedWithCheck(objId) {
     setTimeout(() => inp.click(), 50);
 }
 
-window.markCheckPaid = function(checkId) {
+window.markCheckPaid = async function(checkId) {
     const c = checks.find(ch => ch.id === checkId);
     if (!c || c.paid) return;
     c.paid = !0;
-    c.paidDate = new Date();
+    c.paidDate = new Date().toISOString();
     c.paidBy = currentUser;
     saveDataToLocal();
+    await supabaseRequest(`checks?id=eq.${checkId}`, 'PUT', c);
     if (currentUser === 'boss') renderBossChecks();
     else if (currentUser === 'wolf') renderWolfChecks();
     else if (currentUser === 'client') renderClientChecks();
     showToast('✅ Чек оплачен');
 };
 
-window.deleteCheck = function(checkId) {
+window.deleteCheck = async function(checkId) {
     if (confirm('Удалить чек?')) {
         checks = checks.filter(c => c.id !== checkId);
         saveDataToLocal();
+        await supabaseRequest(`checks?id=eq.${checkId}`, 'DELETE');
         if (currentUser === 'boss') renderBossChecks();
         else if (currentUser === 'wolf') renderWolfChecks();
         showToast('🗑 Чек удалён');
@@ -1426,32 +1226,38 @@ window.deleteCheck = function(checkId) {
 };
 
 // ============================================================
-// ПАРОЛИ
+// ПАРОЛИ (С СОХРАНЕНИЕМ В ОБЛАКО)
 // ============================================================
 function renderPasswords() {
     const container = document.getElementById('bossContent');
     container.innerHTML = `<div class="card"><h3>Пароли для ролей</h3><p style="color:#888;font-size:13px;">Если пароль пустой — вход без пароля.</p>${['boss', 'wolf', 'client', 'master', 'designer', 'purchaser', 'electrician'].map(r => `<div class="flex"><span>${getUserLabel(r)}</span><span><input type="text" id="pass-${r}" placeholder="Новый пароль" value="${passwords[r] || ''}" style="width:200px;"><button class="btn btn-sm btn-primary" onclick="setRolePassword('${r}')">Установить</button></span></div>`).join('')}</div><div class="card"><h3>Пароли объектов</h3><p style="color:#888;font-size:13px;">Клиенты и мастера входят по паролю объекта.</p>${objects.map(o => `<div class="flex"><span>${escapeHtml(o.name)} (код: ${escapeHtml(o.code)})</span><span><input type="text" id="pass-obj-${o.id}" placeholder="Пароль для входа" value="${passwords.objects[o.id] || ''}" style="width:200px;"><button class="btn btn-sm btn-primary" onclick="setObjectPassword(${o.id})">Установить</button></span></div>`).join('')}</div><div class="card"><button class="btn btn-sm" onclick="savePasswords()">Сохранить пароли</button></div>`;
 }
 
-window.setRolePassword = function(r) {
+window.setRolePassword = async function(r) {
     const val = document.getElementById('pass-' + r).value.trim();
-    if (val) passwords[r] = val;
-    else delete passwords[r];
+    if (val) {
+        passwords[r] = val;
+        await savePasswordToSupabase(r, val);
+    } else {
+        delete passwords[r];
+        await supabaseRequest(`passwords?role=eq.${r}`, 'DELETE');
+    }
     saveDataToLocal();
     renderPasswords();
     showToast('🔑 Пароль для ' + getUserLabel(r) + ' установлен' + (val ? '' : ' (сброшен)'));
 };
 
-window.setObjectPassword = function(objId) {
+window.setObjectPassword = async function(objId) {
     const val = document.getElementById('pass-obj-' + objId).value.trim();
     const obj = objects.find(o => o.id === objId);
     if (!obj) return;
     if (val) {
         passwords.objects[objId] = val;
-        showToast('🔑 Пароль для "' + obj.name + '" установлен на "' + val + '"');
+        await savePasswordToSupabase('objects_' + objId, val);
     } else {
         const newPwd = Math.random().toString(36).substring(2, 8).toUpperCase();
         passwords.objects[objId] = newPwd;
+        await savePasswordToSupabase('objects_' + objId, newPwd);
         showToast('🔑 Пароль сброшен на: ' + newPwd);
         document.getElementById('pass-obj-' + objId).value = newPwd;
     }
@@ -1465,212 +1271,7 @@ window.savePasswords = function() {
 };
 
 // ============================================================
-// БОСС
-// ============================================================
-function renderBoss() {
-    document.getElementById('app').innerHTML = `
-    <div class="card">
-      <div class="flex">
-        <h2>👔 Руководитель</h2>
-        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
-      </div>
-    </div>
-    <div class="tab-bar">
-      <div class="tab active" data-tab="objects">Объекты</div>
-      <div class="tab" data-tab="notes">Ежедневник</div>
-      <div class="tab" data-tab="purchases">Закупки (отчёт)</div>
-      <div class="tab" data-tab="checks">Чеки</div>
-      <div class="tab" data-tab="passwords">🔐 Пароли</div>
-    </div>
-    <div id="bossContent"></div>`;
-    document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
-        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-        this.classList.add('active');
-        switch (this.dataset.tab) {
-            case 'objects':
-                renderBossObjects();
-                break;
-            case 'notes':
-                renderBossNotes();
-                break;
-            case 'purchases':
-                renderBossPurchases();
-                break;
-            case 'checks':
-                renderBossChecks();
-                break;
-            case 'passwords':
-                renderPasswords();
-                break;
-        }
-    });
-    renderBossObjects();
-}
-
-function renderBossObjects() {
-    const container = document.getElementById('bossContent');
-    if (!uiState['bossObjectFilter']) uiState['bossObjectFilter'] = 'active';
-    const filter = uiState['bossObjectFilter'];
-    let objectsToShow = [];
-    if (filter === 'active') objectsToShow = objects.filter(o => !o.archived && !o.completed);
-    else if (filter === 'completed') objectsToShow = objects.filter(o => !o.archived && o.completed);
-    else if (filter === 'archived') objectsToShow = objects.filter(o => o.archived);
-
-    // Индикатор статуса синхронизации
-    const statusHtml = `<div id="pendingStatus" style="padding:8px 12px;margin-bottom:12px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;text-align:center;color:${pendingActions.length === 0 ? '#4caf50' : '#c9a959'};">${pendingActions.length === 0 ? '✅ Все данные синхронизированы' : '⏳ Ожидают синхронизации: ' + pendingActions.length + ' действий'}</div>`;
-
-    // Кнопки экспорта/импорта (без справочника ID)
-    const toolsHtml = `
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;padding:12px;background:#121212;border-radius:12px;border:1px solid #282828;">
-      <button class="btn btn-primary" onclick="exportAllData()">📤 Экспорт всех данных</button>
-      <button class="btn btn-primary" onclick="importAllData()">📥 Импорт данных</button>
-      ${pendingActions.length > 0 ? `<button class="btn btn-primary" onclick="syncPendingActions()">🔄 Синхронизировать сейчас</button>` : ''}
-    </div>
-    <hr>
-    `;
-
-    const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span><span class="tab ${filter === 'archived' ? 'active' : ''}" onclick="setBossObjectFilter('archived')">Архив</span></div>`;
-    let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><button class="btn" onclick="uploadCSV()">📊 Загрузить CSV</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
-    let list = objectsToShow.map(obj => {
-        const objKey = 'obj-' + obj.id,
-            objOpen = uiState[objKey] !== undefined ? uiState[objKey] : false;
-        const projs = designProjects.filter(p => p.objectId === obj.id);
-        const designKey = 'design-' + obj.id,
-            designOpen = uiState[designKey] !== undefined ? uiState[designKey] : false;
-        let designBlocks = projs.length ? projs.map(p => {
-            const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
-            const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
-            const files = (p.files || []).map((f, fi) => {
-                const isImg = f.startsWith('data:image/') || f.startsWith('http');
-                const isPdf = f.startsWith('data:application/pdf');
-                return `<span class="file-wrap">${isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:100px;max-height:100px;">` : isPdf ? `<span class="pdf" onclick="window.open('${f}','_blank')">📄</span>` : `<span class="pdf" onclick="window.open('${f}','_blank')">📎</span>`}<button class="del" onclick="deleteDesignFile(${p.id},${fi})" style="background:#a04040;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;">×</button></span>`;
-            }).join(' ') || 'нет';
-            return `<div class="design-block"><div class="design-header" onclick="toggleDesignBlock(this,'${designKey}')"><span><span class="design-title">${escapeHtml(p.title)}</span><span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span></span><div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDesign(${p.id})">🗑</button></div></div><div class="design-detail ${designOpen ? 'open' : ''}"><div class="design-meta"><b>Доступ:</b> ${escapeHtml(roles)}</div><div class="design-files"><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="addDesignComment(${p.id})">💬 Комментарий</button><button class="btn btn-sm" onclick="toggleDesignApprove(${p.id})">${p.approvedByClient ? 'Снять утверждение' : 'Утвердить'}</button></div></div></div>`;
-        }).join('') : '<span style="color:#666;font-size:14px;">Нет проектов</span>';
-        const recs = recommendations.filter(r => r.objectId === obj.id);
-        const recKey = 'rec-' + obj.id,
-            recOpen = uiState[recKey] !== undefined ? uiState[recKey] : false;
-        let recBlocks = recs.length ? recs.map(r => {
-            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
-            const phRec = (r.photos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'photos')">×</button></span>`).join('');
-            const phPur = (r.purchasedPhotos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'purchasedPhotos')">×</button></span>`).join('');
-            return `<div class="rec-block"><div class="rec-header" onclick="toggleRecBlock(this,'${recKey}')"><span><span class="rec-title">📋 ${escapeHtml(r.text)}</span><span class="badge">${status}</span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span></span><div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteRecommend(${r.id})">🗑</button></div></div><div class="rec-detail ${recOpen ? 'open' : ''}"><div class="rec-body"><div class="rec-text"><div class="rec-meta"><b>Срок:</b> ${r.deadline ? fmt(r.deadline) : 'не указан'}</div><div class="rec-actions"><button class="btn btn-sm" onclick="markPurchased(${r.id})">✅ Отметить куплено</button><button class="btn btn-sm" onclick="addRecommendationPhoto(${r.id})">📎 Фото к рекомендации</button><button class="btn btn-sm" onclick="addPurchasedPhoto(${r.id})">📸 Фото покупки</button></div></div><div class="rec-photos">${phRec}${phPur}</div></div></div></div>`;
-        }).join('') : '<span style="color:#666;font-size:14px;">Нет рекомендаций</span>';
-        const statusTabs = `<div class="flex" style="margin:8px 0;"><button class="btn btn-sm btn-primary" onclick="setWorkFilter('${obj.id}','all')">Все</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','done')">✅ Выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','undone')">⏳ Не выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','unpaid')">💰 Неоплаченные (ручные)</button></div>`;
-        if (!uiState['filter-' + obj.id]) uiState['filter-' + obj.id] = 'all';
-        const currentFilter = uiState['filter-' + obj.id] || 'all';
-        let filteredWorks = obj.works;
-        if (currentFilter === 'done') filteredWorks = obj.works.filter(w => w.done === true);
-        else if (currentFilter === 'undone') filteredWorks = obj.works.filter(w => w.done === false);
-        else if (currentFilter === 'unpaid') filteredWorks = obj.works.filter(w => w.manual === true && w.done === false);
-        const worksHtml = filteredWorks.map((w, wi) => {
-            const originalIndex = obj.works.indexOf(w);
-            const wKey = 'work-' + obj.id + '-' + wi;
-            const wOpen = uiState[wKey] !== undefined ? uiState[wKey] : false;
-            const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
-            const hasPhoto = photos.length > 0;
-            const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button><span class="status-badge">${r.approved ? '✅ одобр.' : '⏳ модер.'}</span></span>`).join('');
-            const electricianLabel = w.forElectrician ? '⚡' : '';
-            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}">
-                <div class="work-header" onclick="toggleWork(event, this, '${wKey}')">
-                    <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">
-                        <span class="drag-handle" title="Перетащить">⠿</span>
-                        <span class="work-title">${escapeHtml(w.name)}</span>
-                        ${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}
-                        <span class="work-status-check" onclick="event.stopPropagation();toggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>
-                        <span class="work-electrician-toggle" onclick="event.stopPropagation();toggleElectrician(${obj.id},${originalIndex})" title="Назначить электрику">${electricianLabel || '⚡'}</span>
-                        ${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}
-                        <span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}" title="${hasPhoto ? 'Есть фото' : 'Нет фото'}"></span>
-                        <span class="work-arrow ${wOpen ? 'open' : ''}">▶</span>
-                    </span>
-                    <span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;">
-                        <button class="icon-btn" onclick="event.stopPropagation();uploadWorkPhoto(${obj.id},${originalIndex})" title="Загрузить фото">📸</button>
-                        <button class="icon-btn" onclick="event.stopPropagation();setWorkDeadline(${obj.id},${originalIndex})" title="Срок">📅</button>
-                        <button class="icon-btn" onclick="event.stopPropagation();moveWorkUp(${obj.id},${originalIndex})" title="Вверх">⬆</button>
-                        <button class="icon-btn" onclick="event.stopPropagation();moveWorkDown(${obj.id},${originalIndex})" title="Вниз">⬇</button>
-                        <button class="icon-btn danger" onclick="event.stopPropagation();deleteWorkWithConfirm(${obj.id},${originalIndex})" title="Удалить этап">🗑</button>
-                    </span>
-                </div>
-                <div class="work-detail ${wOpen ? 'open' : ''}">
-                    <div style="margin:6px 0;"><b>📸 Фото:</b></div>
-                    <div class="photo-grid">${phHtml || 'Нет фото'}</div>
-                </div>
-            </div>`;
-        }).join('');
-        setTimeout(() => initDragDrop(), 50);
-        const addButtons = `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-primary" onclick="addDesignProjectForObject(${obj.id})">➕ Дизайн-проект</button><button class="btn btn-sm btn-primary" onclick="addRecommendationForObject(${obj.id})">➕ Рекомендация</button></div>`;
-        let archiveButtons = '';
-        if (obj.archived) {
-            archiveButtons = `<button class="btn btn-sm" onclick="event.stopPropagation();unarchiveObject(${obj.id})">↩ Вернуть из архива</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteObjectPermanently(${obj.id})">🗑 Удалить</button>`;
-        }
-        return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}${!obj.archived ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();archiveObject(${obj.id})">📦</button>` : ''}${archiveButtons}<button class="btn btn-sm" onclick="event.stopPropagation();addWork(${obj.id})">➕ Этап</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}">${addButtons}<hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
-    }).join('');
-
-    container.innerHTML = statusHtml + toolsHtml + filterTabs + sel + list;
-}
-
-// ============================================================
-// ЭКСПОРТ / ИМПОРТ
-// ============================================================
-window.exportAllData = function() {
-    const data = {
-        objects,
-        reports,
-        designProjects,
-        recommendations,
-        checks,
-        purchaseOrders,
-        notes,
-        electricianTasks,
-        passwords
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stroychet_backup_${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('📤 Данные экспортированы');
-};
-
-window.importAllData = function() {
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = '.json';
-    inp.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            try {
-                const data = JSON.parse(ev.target.result);
-                if (data.objects) objects = data.objects;
-                if (data.reports) reports = data.reports;
-                if (data.designProjects) designProjects = data.designProjects;
-                if (data.recommendations) recommendations = data.recommendations;
-                if (data.checks) checks = data.checks;
-                if (data.purchaseOrders) purchaseOrders = data.purchaseOrders;
-                if (data.notes) notes = data.notes;
-                if (data.electricianTasks) electricianTasks = data.electricianTasks;
-                if (data.passwords) passwords = data.passwords;
-                saveDataToLocal();
-                render();
-                showToast('✅ Данные успешно импортированы!');
-            } catch (err) {
-                showToast('❌ Ошибка: неверный формат файла');
-                console.error(err);
-            }
-        };
-        reader.readAsText(file);
-    };
-    inp.click();
-};
-
-// ============================================================
-// ЗАКУПКИ (ДЛЯ ВОЛКА)
+// ЗАКУПКИ (ДЛЯ ВОЛКА) С СОХРАНЕНИЕМ
 // ============================================================
 function renderWolfPurchases() {
     const container = document.getElementById('wolfContent');
@@ -1685,7 +1286,7 @@ function renderWolfPurchases() {
     }).join('');
 }
 
-window.addPurchaseOrder = function() {
+window.addPurchaseOrder = async function() {
     const available = objects.filter(o => !o.archived);
     if (!available.length) { showToast('Нет объектов'); return; }
     const list = available.map((o, i) => `${i+1}. ${o.name} (${o.code})`).join('\n');
@@ -1694,13 +1295,15 @@ window.addPurchaseOrder = function() {
     const idx = parseInt(choice) - 1;
     if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
     const obj = available[idx];
-    purchaseOrders.push({ id: Date.now(), objectId: obj.id, items: [], photos: [], date: new Date(), status: 'active' });
+    const order = { id: Date.now(), objectId: obj.id, items: [], photos: [], date: new Date().toISOString(), status: 'active' };
+    purchaseOrders.push(order);
     saveDataToLocal();
+    await savePurchaseOrderToSupabase(order);
     renderWolfPurchases();
     showToast('📦 Заявка создана');
 };
 
-window.wolfAddItemToOrder = function(orderId) {
+window.wolfAddItemToOrder = async function(orderId) {
     const order = purchaseOrders.find(o => o.id === orderId);
     if (!order) return;
     const name = document.getElementById('wolfNewItemName-' + orderId).value.trim();
@@ -1708,36 +1311,40 @@ window.wolfAddItemToOrder = function(orderId) {
     if (!name) { showToast('Введите наименование'); return; }
     order.items.push({ id: Date.now(), name, quantity: qty || '1', purchased: !1 });
     saveDataToLocal();
+    await supabaseRequest(`purchase_orders?id=eq.${orderId}`, 'PUT', order);
     renderWolfPurchases();
     showToast('➕ Товар добавлен');
 };
 
-window.wolfTogglePurchasedItem = function(orderId, idx) {
+window.wolfTogglePurchasedItem = async function(orderId, idx) {
     const order = purchaseOrders.find(o => o.id === orderId);
     if (order) {
         order.items[idx].purchased = !order.items[idx].purchased;
         saveDataToLocal();
+        await supabaseRequest(`purchase_orders?id=eq.${orderId}`, 'PUT', order);
         renderWolfPurchases();
         showToast(order.items[idx].purchased ? '✅ Отмечено куплено' : '↩ Снято');
     }
 };
 
-window.wolfDeleteItemFromOrder = function(orderId, idx) {
+window.wolfDeleteItemFromOrder = async function(orderId, idx) {
     if (confirm('Удалить товар?')) {
         const order = purchaseOrders.find(o => o.id === orderId);
         if (order) {
             order.items.splice(idx, 1);
             saveDataToLocal();
+            await supabaseRequest(`purchase_orders?id=eq.${orderId}`, 'PUT', order);
             renderWolfPurchases();
             showToast('🗑 Товар удалён');
         }
     }
 };
 
-window.wolfDeleteOrder = function(orderId) {
+window.wolfDeleteOrder = async function(orderId) {
     if (confirm('Удалить заявку?')) {
         purchaseOrders = purchaseOrders.filter(o => o.id !== orderId);
         saveDataToLocal();
+        await supabaseRequest(`purchase_orders?id=eq.${orderId}`, 'DELETE');
         renderWolfPurchases();
         showToast('🗑 Заявка удалена');
     }
@@ -1756,28 +1363,15 @@ window.wolfUploadOrderPhoto = async function(orderId) {
         if (!file) { inp.remove(); return; }
         try {
             const compressed = await compressImage(file);
-            if (!isOnline()) {
+            const publicUrl = await uploadPhotoToStorage(order.objectId, Date.now(), compressed);
+            if (publicUrl) {
                 if (!order.photos) order.photos = [];
-                order.photos.push(compressed);
-                addPendingAction({
-                    type: 'uploadPhoto',
-                    data: {
-                        objectId: order.objectId,
-                        workId: Date.now(),
-                        reportId: Date.now(),
-                        base64: compressed
-                    }
-                });
-                showToast('📸 Фото сохранено локально (ожидает интернет)');
-            } else {
-                const publicUrl = await uploadPhotoToStorage(order.objectId, Date.now(), compressed);
-                if (publicUrl) {
-                    if (!order.photos) order.photos = [];
-                    order.photos.push(publicUrl);
-                }
+                order.photos.push(publicUrl);
+                saveDataToLocal();
+                await supabaseRequest(`purchase_orders?id=eq.${orderId}`, 'PUT', order);
+                renderWolfPurchases();
+                showToast('📸 Фото добавлено');
             }
-            saveDataToLocal();
-            renderWolfPurchases();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
@@ -1786,7 +1380,7 @@ window.wolfUploadOrderPhoto = async function(orderId) {
 };
 
 // ============================================================
-// ВОЛК
+// ВОЛК (ОБНОВЛЁННЫЙ)
 // ============================================================
 function renderWolf() {
     document.getElementById('app').innerHTML = `
@@ -1830,10 +1424,10 @@ function renderWolfObjects() {
     let sel = `<div class="flex" style="margin-bottom:16px;"><select class="object-selector" id="wolfObjectSelector" onchange="wolfScrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${active.map(o => `<option value="wolf-obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
     let list = active.map(obj => {
         const objKey = 'wolf-obj-' + obj.id,
-            objOpen = uiState[objKey] !== undefined ? uiState[objKey] : false;
+            objOpen = uiState[objKey] !== undefined ? uiState[objKey] : !1;
         const projs = designProjects.filter(p => p.objectId === obj.id);
         const designKey = 'wolf-design-' + obj.id,
-            designOpen = uiState[designKey] !== undefined ? uiState[designKey] : false;
+            designOpen = uiState[designKey] !== undefined ? uiState[designKey] : !1;
         let designBlocks = projs.length ? projs.map(p => {
             const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
             const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
@@ -1845,7 +1439,7 @@ function renderWolfObjects() {
         }).join('') : '<span style="color:#666;font-size:14px;">Нет проектов</span>';
         const recs = recommendations.filter(r => r.objectId === obj.id);
         const recKey = 'wolf-rec-' + obj.id,
-            recOpen = uiState[recKey] !== undefined ? uiState[recKey] : false;
+            recOpen = uiState[recKey] !== undefined ? uiState[recKey] : !1;
         let recBlocks = recs.length ? recs.map(r => {
             const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
             const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
@@ -1861,11 +1455,11 @@ function renderWolfObjects() {
         const worksHtml = filteredWorks.map((w, wi) => {
             const originalIndex = obj.works.indexOf(w);
             const wKey = 'wolf-work-' + obj.id + '-' + wi;
-            const wOpen = uiState[wKey] !== undefined ? uiState[wKey] : false;
+            const wOpen = uiState[wKey] !== undefined ? uiState[wKey] : !1;
             const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
             const hasPhoto = photos.length > 0;
             const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button><span class="status-badge">${r.approved ? '✅ одобр.' : '⏳ модер.'}</span></span>`).join('');
-            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}"><div class="work-header" onclick="toggleWork(event, this, '${wKey}')"><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;"><span class="drag-handle">⠿</span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}<span class="work-status-check" onclick="event.stopPropagation();wolfToggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}<span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}"></span><span class="work-arrow ${wOpen ? 'open' : ''}">▶</span></span><span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;"><button class="icon-btn" onclick="event.stopPropagation();wolfUploadWorkPhoto(${obj.id},${originalIndex})">📸</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkUp(${obj.id},${originalIndex})">⬆</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkDown(${obj.id},${originalIndex})">⬇</button></span></div><div class="work-detail ${wOpen ? 'open' : ''}"><div style="margin:6px 0;"><b>📸 Фото:</b></div><div class="photo-grid">${phHtml || 'Нет фото'}</div></div></div>`;
+            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}"><div class="work-header" onclick="toggleWork(this,'${wKey}')"><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;"><span class="drag-handle">⠿</span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}<span class="work-status-check" onclick="event.stopPropagation();wolfToggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}<span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}"></span><span class="work-arrow ${wOpen ? 'open' : ''}">▶</span></span><span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;"><button class="icon-btn" onclick="event.stopPropagation();wolfUploadWorkPhoto(${obj.id},${originalIndex})">📸</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkUp(${obj.id},${originalIndex})">⬆</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkDown(${obj.id},${originalIndex})">⬇</button></span></div><div class="work-detail ${wOpen ? 'open' : ''}"><div style="margin:6px 0;"><b>📸 Фото:</b></div><div class="photo-grid">${phHtml || 'Нет фото'}</div></div></div>`;
         }).join('');
         const addWorkButton = `<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="wolfAddWork(${obj.id})">➕ Добавить этап</button></div>`;
         return `<div class="card" id="wolf-obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="wolf-work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div>${addWorkButton}</div></div>`;
@@ -1878,37 +1472,51 @@ window.setWolfWorkFilter = function(objId, filter) { uiState['wolf-filter-' + ob
     saveUiState();
     renderWolfObjects(); };
 
-window.wolfAddWork = function(id) {
+window.wolfAddWork = async function(id) {
     const n = prompt('Название этапа');
     if (n) {
         const o = getObject(id);
         if (o) {
             o.works.push({ id: Date.now(), name: n, done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !0 });
             saveDataToLocal();
+            await saveObjectToSupabase(o);
             renderWolfObjects();
             showToast('➕ Этап добавлен (ручной)');
         }
     }
 };
 
-window.wolfToggleWorkStatus = function(id, wi) {
+window.wolfToggleWorkStatus = async function(id, wi) {
     const o = getObject(id);
     if (o) {
         o.works[wi].done = !o.works[wi].done;
         saveDataToLocal();
+        await saveObjectToSupabase(o);
         renderWolfObjects();
     }
 };
 
-window.wolfMoveWorkUp = function(objId, idx) { const obj = getObject(objId); if (!obj) return; const works = obj.works; if (idx <= 0) return;
+window.wolfMoveWorkUp = async function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const works = obj.works;
+    if (idx <= 0) return;
     [works[idx - 1], works[idx]] = [works[idx], works[idx - 1]];
     saveDataToLocal();
-    renderWolfObjects(); };
+    await saveObjectToSupabase(obj);
+    renderWolfObjects();
+};
 
-window.wolfMoveWorkDown = function(objId, idx) { const obj = getObject(objId); if (!obj) return; const works = obj.works; if (idx >= works.length - 1) return;
+window.wolfMoveWorkDown = async function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const works = obj.works;
+    if (idx >= works.length - 1) return;
     [works[idx], works[idx + 1]] = [works[idx + 1], works[idx]];
     saveDataToLocal();
-    renderWolfObjects(); };
+    await saveObjectToSupabase(obj);
+    renderWolfObjects();
+};
 
 window.wolfUploadWorkPhoto = async function(id, wi) {
     const o = getObject(id);
@@ -1925,58 +1533,31 @@ window.wolfUploadWorkPhoto = async function(id, wi) {
         const files = e.target.files;
         if (!files.length) { inp.remove(); return; }
         showToast('⏳ Загрузка фото...');
-        let uploadedCount = 0;
-        for (let f of files) {
+        for (const f of files) {
             try {
                 const compressed = await compressImage(f);
-                if (!isOnline()) {
-                    const reportId = Date.now() + Math.random() * 1000;
-                    reports.push({
-                        id: reportId,
+                const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
+                if (publicUrl) {
+                    const newReport = {
+                        id: Date.now() + Math.random() * 1000,
                         objectId: id,
                         workId: work.id,
-                        photos: [compressed],
+                        photos: [publicUrl],
                         text: '',
-                        date: new Date(),
+                        date: new Date().toISOString(),
                         approved: true
-                    });
+                    };
+                    reports.push(newReport);
                     saveDataToLocal();
-                    addPendingAction({
-                        type: 'uploadPhoto',
-                        data: {
-                            objectId: id,
-                            workId: work.id,
-                            reportId: reportId,
-                            base64: compressed
-                        }
-                    });
-                    showToast('📸 Фото сохранено локально (ожидает интернет)');
-                    uploadedCount++;
-                } else {
-                    const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
-                    if (publicUrl) {
-                        reports.push({
-                            id: Date.now() + Math.random() * 1000,
-                            objectId: id,
-                            workId: work.id,
-                            photos: [publicUrl],
-                            text: '',
-                            date: new Date(),
-                            approved: true
-                        });
-                        uploadedCount++;
-                    }
+                    await saveReportToSupabase(newReport);
+                    showToast('📸 Фото загружено в облако');
                 }
-            } catch (err) { console.error('Error:', err);
-                showToast('❌ Ошибка загрузки фото'); }
+            } catch (err) {
+                console.error('Ошибка:', err);
+                showToast('❌ Ошибка загрузки');
+            }
         }
-        if (uploadedCount > 0) {
-            saveDataToLocal();
-            renderWolfObjects();
-            showToast('📸 Загружено ' + uploadedCount + ' фото' + (!isOnline() ? ' (ожидают интернет)' : ''));
-        } else {
-            showToast('❌ Не удалось загрузить фото');
-        }
+        renderWolfObjects();
         inp.remove();
     };
     setTimeout(() => inp.click(), 50);
@@ -2000,21 +1581,8 @@ function renderWolfNotes() {
     renderNotesCalendar('wolf');
 }
 
-function renderWolfChecks() {
-    const container = document.getElementById('wolfContent');
-    const available = objects.filter(o => !o.archived);
-    let selectHtml = `<select id="checkObjectFilter" onchange="updateCheckFilterWolf(this.value)"><option value="all" ${checkFilterObjectId === 'all' ? 'selected' : ''}>Все объекты</option>${available.map(o => `<option value="${o.id}" ${checkFilterObjectId == o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('')}</select>`;
-    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button>${selectHtml}<div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderWolfChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('unpaid')">Неоплаченные</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('paid')">Оплаченные</button></div></div><div id="wolfChecksList"></div>`;
-    renderChecksList('wolf', 'all');
-}
-
-window.updateCheckFilterWolf = function(val) { checkFilterObjectId = val;
-    renderWolfChecks(); };
-
-function renderWolfChecksFilter(f) { renderChecksList('wolf', f); }
-
 // ============================================================
-// КЛИЕНТ
+// КЛИЕНТ (СОХРАНЕНИЕ)
 // ============================================================
 function renderClient() {
     const obj = getObject(currentObjectId);
@@ -2076,13 +1644,14 @@ function renderClientRecommend() {
     }).join('');
 }
 
-window.clientMarkPurchased = function(id) {
+window.clientMarkPurchased = async function(id) {
     const r = recommendations.find(x => x.id === id);
     if (r) {
         r.purchased = !r.purchased;
         if (r.purchased) r.purchasedDate = new Date().toISOString().slice(0, 10);
         else r.purchasedDate = null;
         saveDataToLocal();
+        await supabaseRequest(`recommendations?id=eq.${id}`, 'PUT', r);
         renderClient();
         showToast(r.purchased ? '✅ Отмечено куплено' : '↩ Отмена');
     }
@@ -2101,28 +1670,15 @@ window.clientAddPurchasedPhoto = async function(id) {
         if (!file) { inp.remove(); return; }
         try {
             const compressed = await compressImage(file);
-            if (!isOnline()) {
+            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+            if (publicUrl) {
                 if (!r.purchasedPhotos) r.purchasedPhotos = [];
-                r.purchasedPhotos.push(compressed);
-                addPendingAction({
-                    type: 'uploadPhoto',
-                    data: {
-                        objectId: r.objectId,
-                        workId: Date.now(),
-                        reportId: Date.now(),
-                        base64: compressed
-                    }
-                });
-                showToast('📸 Фото сохранено локально (ожидает интернет)');
-            } else {
-                const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
-                if (publicUrl) {
-                    if (!r.purchasedPhotos) r.purchasedPhotos = [];
-                    r.purchasedPhotos.push(publicUrl);
-                }
+                r.purchasedPhotos.push(publicUrl);
+                saveDataToLocal();
+                await supabaseRequest(`recommendations?id=eq.${id}`, 'PUT', r);
+                renderClient();
+                showToast('📸 Фото покупки добавлено');
             }
-            saveDataToLocal();
-            renderClient();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
@@ -2145,24 +1701,26 @@ function renderClientDesign() {
     }).join('');
 }
 
-window.clientAddDesignComment = function(id) {
+window.clientAddDesignComment = async function(id) {
     const p = designProjects.find(x => x.id === id);
     if (!p) return;
     const t = prompt('Ваш комментарий:');
     if (t) {
         if (!p.comments) p.comments = [];
-        p.comments.push({ author: 'Клиент', text: t, date: new Date() });
+        p.comments.push({ author: 'Клиент', text: t, date: new Date().toISOString() });
         saveDataToLocal();
+        await supabaseRequest(`design_projects?id=eq.${id}`, 'PUT', p);
         renderClient();
         showToast('💬 Комментарий добавлен');
     }
 };
 
-window.clientApproveDesign = function(id) {
+window.clientApproveDesign = async function(id) {
     const p = designProjects.find(x => x.id === id);
     if (p) {
         p.approvedByClient = !p.approvedByClient;
         saveDataToLocal();
+        await supabaseRequest(`design_projects?id=eq.${id}`, 'PUT', p);
         renderClient();
         showToast(p.approvedByClient ? '✅ Проект утверждён' : '⏳ Утверждение снято');
     }
@@ -2181,7 +1739,7 @@ function renderClientWorks() {
 }
 
 // ============================================================
-// ЭЛЕКТРИК
+// ЭЛЕКТРИК (СОХРАНЕНИЕ)
 // ============================================================
 function renderElectrician() {
     document.getElementById('app').innerHTML = `
@@ -2291,24 +1849,11 @@ window.addElectricianTask = function() {
         let photosData = [];
         if (!files.length) { saveTask(text, objId, []); inp.remove(); return; }
         showToast('⏳ Загрузка фото...');
-        for (let f of files) {
+        for (const f of files) {
             try {
                 const compressed = await compressImage(f);
-                if (!isOnline()) {
-                    photosData.push(compressed);
-                    addPendingAction({
-                        type: 'uploadPhoto',
-                        data: {
-                            objectId: objId || 'general',
-                            workId: Date.now(),
-                            reportId: Date.now(),
-                            base64: compressed
-                        }
-                    });
-                } else {
-                    const publicUrl = await uploadPhotoToStorage(objId || 'general', Date.now(), compressed);
-                    if (publicUrl) photosData.push(publicUrl);
-                }
+                const publicUrl = await uploadPhotoToStorage(objId || 'general', Date.now(), compressed);
+                if (publicUrl) photosData.push(publicUrl);
             } catch (err) { console.error('Error:', err); }
         }
         saveTask(text, objId, photosData);
@@ -2317,26 +1862,34 @@ window.addElectricianTask = function() {
     setTimeout(() => inp.click(), 50);
 };
 
-function saveTask(text, objId, photos) {
-    electricianTasks.push({ id: Date.now(), text, objectId: objId, photos, date: new Date(), done: false });
+async function saveTask(text, objId, photos) {
+    const task = { id: Date.now(), text, objectId: objId, photos, date: new Date().toISOString(), done: false };
+    electricianTasks.push(task);
     saveDataToLocal();
+    await saveElectricianTaskToSupabase(task);
     renderElectricianTasks();
     showToast('📝 Задача добавлена');
 }
 
-window.toggleElectricianTaskDone = function(id) {
+window.toggleElectricianTaskDone = async function(id) {
     const task = electricianTasks.find(t => t.id === id);
-    if (task) { task.done = !task.done;
+    if (task) {
+        task.done = !task.done;
         saveDataToLocal();
+        await supabaseRequest(`electrician_tasks?id=eq.${id}`, 'PUT', task);
         renderElectricianTasks();
-        showToast(task.done ? '✅ Задача выполнена' : '↩ Задача возвращена'); }
+        showToast(task.done ? '✅ Задача выполнена' : '↩ Задача возвращена');
+    }
 };
 
-window.deleteElectricianTask = function(id) {
-    if (confirm('Удалить задачу?')) { electricianTasks = electricianTasks.filter(t => t.id !== id);
+window.deleteElectricianTask = async function(id) {
+    if (confirm('Удалить задачу?')) {
+        electricianTasks = electricianTasks.filter(t => t.id !== id);
         saveDataToLocal();
+        await supabaseRequest(`electrician_tasks?id=eq.${id}`, 'DELETE');
         renderElectricianTasks();
-        showToast('🗑 Задача удалена'); }
+        showToast('🗑 Задача удалена');
+    }
 };
 
 // ============================================================
@@ -2380,8 +1933,21 @@ function renderGenericViewer(title) {
 }
 
 // ============================================================
-// ФУНКЦИИ ДЛЯ ПЕРЕТАСКИВАНИЯ
+// ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ (ПЕРЕТАСКИВАНИЕ, МОДАЛКИ)
 // ============================================================
+function showModal(src) {
+    let m = document.getElementById('modal');
+    if (!m) {
+        m = document.createElement('div');
+        m.id = 'modal';
+        m.className = 'modal';
+        m.onclick = e => { if (e.target === m) m.remove(); };
+        document.body.appendChild(m);
+    }
+    m.innerHTML = `<img src="${src}">`;
+    m.style.display = 'flex';
+}
+
 function initDragDrop() {
     document.querySelectorAll('.work-block').forEach(b => {
         b.removeEventListener('dragstart', handleDragStart);
@@ -2444,41 +2010,37 @@ function handleDrop(e) {
     const [removed] = works.splice(fromIndex, 1);
     works.splice(toIndex, 0, removed);
     saveDataToLocal();
-    renderBossObjects();
-}
-
-// ============================================================
-// ФУНКЦИЯ toggleWork (ИСПРАВЛЕННАЯ)
-// ============================================================
-function toggleWork(e, h, k) {
-    if (e) e.stopPropagation();
-    const block = h.closest('.work-block');
-    if (!block) {
-        console.warn('Work block not found');
-        return;
-    }
-    const detail = block.querySelector('.work-detail');
-    const arrow = block.querySelector('.work-arrow');
-    if (detail) {
-        const isOpen = detail.classList.contains('open');
-        if (isOpen) {
-            detail.classList.remove('open');
-            if (arrow) arrow.classList.remove('open');
-            uiState[k] = false;
-        } else {
-            detail.classList.add('open');
-            if (arrow) arrow.classList.add('open');
-            uiState[k] = true;
+    saveObjectToSupabase(obj);
+    const allOpen = {};
+    document.querySelectorAll('.work-block .work-detail.open').forEach(el => {
+        const parent = el.closest('.work-block');
+        if (parent) {
+            const key = 'work-' + parent.dataset.objectId + '-' + parent.dataset.workIndex;
+            allOpen[key] = !0;
         }
-        saveUiState();
-    } else {
-        console.warn('Work detail not found');
-    }
+    });
+    Object.assign(uiState, allOpen);
+    saveUiState();
+    renderBossObjects();
 }
 
 function toggleObject(h, k) {
     const d = h.parentElement.querySelector('.object-detail'),
         a = h.querySelector('.arrow');
+    if (d) {
+        const isOpen = d.classList.contains('open');
+        if (isOpen) { d.classList.remove('open'); if (a) a.classList.remove('open');
+            uiState[k] = !1; } else { d.classList.add('open'); if (a) a.classList.add('open');
+            uiState[k] = !0; }
+        saveUiState();
+    }
+}
+
+function toggleWork(h, k) {
+    const block = h.closest('.work-block');
+    if (!block) return;
+    const d = block.querySelector('.work-detail');
+    const a = block.querySelector('.work-arrow');
     if (d) {
         const isOpen = d.classList.contains('open');
         if (isOpen) { d.classList.remove('open'); if (a) a.classList.remove('open');
@@ -2540,104 +2102,64 @@ function toggleRecBlockHeader(h, k) {
     }
 }
 
-function showModal(src) {
-    let m = document.getElementById('modal');
-    if (!m) {
-        m = document.createElement('div');
-        m.id = 'modal';
-        m.className = 'modal';
-        m.onclick = e => { if (e.target === m) m.remove(); };
-        document.body.appendChild(m);
-    }
-    m.innerHTML = `<img src="${src}">`;
-    m.style.display = 'flex';
-}
-
-// ============================================================
-// РЕНДЕР И ВХОД
-// ============================================================
-function render() {
-    const app = document.getElementById('app');
-    if (!currentUser) renderLogin();
-    else if (currentUser === 'boss') renderBoss();
-    else if (currentUser === 'wolf') renderWolf();
-    else if (currentUser === 'client') renderClient();
-    else if (currentUser === 'electrician') renderElectrician();
-    else if (currentUser === 'master' || currentUser === 'designer' || currentUser === 'purchaser') {
-        renderGenericViewer(getUserLabel(currentUser));
-    } else renderPlaceholder();
-}
-
-function renderLogin() {
-    document.getElementById('app').innerHTML = `
-    <div class="card" style="text-align:center;padding:30px;">
-      <div class="login-header">
-        <div class="slogan">Умная система учёта работ<small>управляй строительством с уровнем</small></div>
-      </div>
-      <hr>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:400px;margin:0 auto;">
-        <button class="btn btn-primary" onclick="login('boss')">👔 Руководитель</button>
-        <button class="btn" onclick="login('wolf')">🐺 Волк</button>
-        <button class="btn" onclick="login('client')">🏠 Клиент</button>
-        <button class="btn" onclick="login('master')">🔧 Мастер</button>
-        <button class="btn" onclick="login('designer')">🎨 Дизайнер</button>
-        <button class="btn" onclick="login('purchaser')">📦 Закупщик</button>
-        <button class="btn" onclick="login('electrician')">⚡ Электрик</button>
-      </div>
-    </div>`;
-}
-
-window.login = function(r) {
-    if (passwords[r] && passwords[r].length > 0) {
-        const p = prompt(`Введите пароль для роли "${getUserLabel(r)}":`);
-        if (p !== passwords[r]) { alert('Неверный пароль'); return; }
-    }
-    if (r === 'client') {
-        const pwd = prompt('Введите ПАРОЛЬ объекта:');
-        if (pwd === null || pwd.trim() === '') { alert('Пароль не введён'); return; }
-        let found = null;
-        for (let o of objects) {
-            if (passwords.objects[o.id] === pwd) { found = o; break; }
-        }
-        if (!found) { alert('Неверный пароль. Объект не найден.'); return; }
-        currentUser = r;
-        currentObjectId = found.id;
-        render();
-    } else {
-        currentUser = r;
-        render();
-    }
+window.uploadCSV = function() {
+    const q = prompt('Введите название, код или ID объекта, куда загрузить этапы:');
+    if (!q) return;
+    const found = objects.find(o => o.id == q || (o.code && o.code.toUpperCase() === q.toUpperCase()) || (o.name && o.name.toLowerCase().includes(q.toLowerCase())));
+    if (!found) { showToast('❌ Объект не найден'); return; }
+    const obj = found;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.csv,.txt';
+    inp.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            let buffer = ev.target.result,
+                text = '';
+            try { let dec = new TextDecoder('utf-8');
+                text = dec.decode(buffer); if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); } catch (e) { try { let dec = new TextDecoder('windows-1251');
+                    text = dec.decode(buffer); } catch (e2) { showToast('Не удалось распознать кодировку файла.'); return; } }
+            if (!text.match(/[а-яА-Я]/) && text.match(/[^\x00-\x7F]/)) { try { let dec = new TextDecoder('windows-1251'); let t2 = dec.decode(buffer); if (t2.match(/[а-яА-Я]/)) text = t2; } catch (e) {} }
+            const lines = text.split('\n').filter(l => l.trim() !== '');
+            if (!lines.length) { showToast('Файл пуст'); return; }
+            const first = lines[0];
+            const delimiter = first.includes(';') ? ';' : ',';
+            const header = first.toLowerCase().includes('этап') || first.toLowerCase().includes('название') || first.toLowerCase().includes('name') || first.toLowerCase().includes('работа');
+            const start = header ? 1 : 0;
+            let count = 0;
+            for (let i = start; i < lines.length; i++) {
+                const parts = lines[i].split(delimiter).map(s => s.trim());
+                if (parts.length < 1) continue;
+                const name = parts[0];
+                let quantity = '',
+                    unit = '';
+                if (parts.length > 1) quantity = parts[1];
+                if (parts.length > 2) unit = parts[2];
+                if (name) {
+                    obj.works.push({ id: Date.now() + count++, name, done: !1, deadline: null, quantity, unit, forElectrician: !1, manual: !1 });
+                }
+            }
+            saveDataToLocal();
+            saveObjectToSupabase(obj);
+            showToast('📊 Загружено ' + count + ' этапов (не выполнены)');
+            renderBossObjects();
+        };
+        reader.readAsArrayBuffer(file);
+    };
+    inp.click();
 };
-
-function renderPlaceholder() {
-    document.getElementById('app').innerHTML = `
-    <div class="card">
-      <div class="flex">
-        <h2>${getUserLabel(currentUser)}</h2>
-        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
-      </div>
-      <div style="padding:30px;text-align:center;color:#888;">Страница в разработке</div>
-    </div>`;
-}
 
 // ============================================================
 // ЗАПУСК
 // ============================================================
-loadPendingActions();
-loadDataFromLocal();
-loadFromSupabase(); // ✅ ТЕПЕРЬ ФУНКЦИЯ ЕСТЬ!
-render();
+async function init() {
+    // Сначала загружаем данные из облака
+    await loadAllDataFromSupabase();
+    // Потом рендерим
+    render();
+}
 
-// Проверка интернета каждые 30 секунд
-setInterval(() => {
-    if (isOnline() && pendingActions.length > 0) {
-        syncPendingActions();
-    }
-}, 30000);
-
-// При восстановлении интернета
-window.addEventListener('online', () => {
-    if (pendingActions.length > 0) {
-        syncPendingActions();
-    }
-});
+// Запускаем
+init();
