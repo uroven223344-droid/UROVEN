@@ -1,5 +1,5 @@
 // ============================================================
-// СТРОЙУЧЁТ — ФИНАЛЬНАЯ ВЕРСИЯ
+// СТРОЙУЧЁТ — ФИНАЛЬНАЯ ВЕРСИЯ (ТОЛЬКО ПРАВКИ ВЕРХНЕГО УГЛА)
 // ============================================================
 
 console.log('🚀 СтройУчёт загружается...');
@@ -311,7 +311,7 @@ async function loadAllFromSupabase() {
 function renderLogin() {
     document.getElementById('app').innerHTML = `
     <div class="card" style="text-align:center;padding:30px;">
-      <div class="login-header"><div class="slogan">СтройУчёт<small>Умная система учёта работ</small></div></div>
+      <div class="login-header"><div class="slogan">Умная система учёта работ<small>Управляй учётом вместе с УРОВНЕМ</small></div></div>
       <hr>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:400px;margin:0 auto;">
         <button class="btn btn-primary" onclick="login('boss')">👔 Руководитель</button>
@@ -409,17 +409,21 @@ function renderBossObjects() {
         }
     }
 
-    var statusHtml = '<div style="display:flex;align-items:center;gap:8px;padding:4px 12px;margin-bottom:8px;background:transparent;border-radius:4px;font-size:13px;color:#666;justify-content:flex-end;">' +
-        '<span style="display:flex;align-items:center;gap:4px;">' +
+    // ============================================================
+    // ИНДИКАТОР СИНХРОНИЗАЦИИ — ПРАВЫЙ ВЕРХНИЙ УГОЛ
+    // ============================================================
+    var statusHtml = '<div style="position:fixed;top:10px;right:10px;z-index:9999;display:flex;align-items:center;gap:6px;padding:4px 10px;background:#0d0d0d;border-radius:12px;border:1px solid #1a1a1a;font-size:12px;color:#888;">' +
         '<span id="syncDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (pendingActions.length === 0 ? '#4caf50' : '#c9a959') + ';"></span>' +
         '<span id="syncText">' + (pendingActions.length === 0 ? 'Синхронизация OK' : pendingActions.length + ' действий ожидают') + '</span>' +
-        '</span></div>';
+        '</div>';
 
-    var toolsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;padding:6px 12px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a;align-items:center;justify-content:flex-end;font-size:13px;">' +
-        '<span style="color:#555;margin-right:auto;font-size:12px;">⚙️ Управление данными</span>' +
-        '<button class="btn btn-sm" onclick="exportAllData()" style="padding:4px 10px;font-size:12px;background:transparent;border:1px solid #2a2a2a;color:#888;">📤 Экспорт</button>' +
-        '<button class="btn btn-sm" onclick="importAllData()" style="padding:4px 10px;font-size:12px;background:transparent;border:1px solid #2a2a2a;color:#888;">📥 Импорт</button>' +
-        (pendingActions.length > 0 ? '<button class="btn btn-sm" onclick="syncPendingActions()" style="padding:4px 10px;font-size:12px;background:#1a1a1a;border:1px solid #c9a959;color:#c9a959;">🔄 Синхр.</button>' : '') +
+    // ============================================================
+    // КНОПКИ ЭКСПОРТ/ИМПОРТ — ПРАВЫЙ ВЕРХНИЙ УГОЛ
+    // ============================================================
+    var toolsHtml = '<div style="position:fixed;top:10px;right:60px;z-index:9999;display:flex;align-items:center;gap:4px;background:#0d0d0d;border-radius:12px;border:1px solid #1a1a1a;padding:4px 8px;">' +
+        '<span onclick="exportAllData()" style="cursor:pointer;font-size:16px;color:#666;padding:4px 6px;border-radius:4px;transition:all 0.2s;" onmouseover="this.style.color=\'#c9a959\';this.style.background=\'#1a1a1a\'" onmouseout="this.style.color=\'#666\';this.style.background=\'transparent\'" title="Экспорт данных">📤</span>' +
+        '<span onclick="importAllData()" style="cursor:pointer;font-size:16px;color:#666;padding:4px 6px;border-radius:4px;transition:all 0.2s;" onmouseover="this.style.color=\'#c9a959\';this.style.background=\'#1a1a1a\'" onmouseout="this.style.color=\'#666\';this.style.background=\'transparent\'" title="Импорт данных">📥</span>' +
+        (pendingActions.length > 0 ? '<span onclick="syncPendingActions()" style="cursor:pointer;font-size:14px;color:#c9a959;padding:4px 6px;border-radius:4px;transition:all 0.2s;" onmouseover="this.style.background=\'#1a1a1a\'" onmouseout="this.style.background=\'transparent\'" title="Синхронизировать">🔄</span>' : '') +
         '</div>';
 
     var filterTabs = '<div class="obj-filter-tabs"><span class="tab ' + (filter === 'active' ? 'active' : '') + '" onclick="setBossObjectFilter(\'active\')">Активные</span><span class="tab ' + (filter === 'completed' ? 'active' : '') + '" onclick="setBossObjectFilter(\'completed\')">Сданные</span></div>';
@@ -614,27 +618,32 @@ function renderBossObjects() {
             '<div class="object-header" onclick="toggleObject(this,\'' + objKey + '\')">' +
             '<div class="flex"><h3>' + escapeHtml(obj.name) + ' <span style="font-weight:300;color:#888;">(' + escapeHtml(obj.code) + ')</span><span class="arrow ' + (objOpen ? 'open' : '') + '">▶</span></h3>' +
             '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">' +
-            '<span class="badge" style="font-size:13px;">' + summaryHtml + '</span>' +
-            (!obj.archived ? '<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(' + obj.id + ')">' + (obj.completed ? 'Вернуть' : 'Сдать') + '</button>' : '') +
+            '<span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:#888;">' +
+            '<span onclick="setObjectStartDate(' + obj.id + ')" style="cursor:pointer;color:' + (obj.startDate ? '#e0e0e0' : '#555') + ';">' + (obj.startDate ? fmt(obj.startDate) : 'Начало') + '</span>' +
+            '<span style="color:#555;">→</span>' +
+            '<span onclick="setObjectEndDate(' + obj.id + ')" style="cursor:pointer;color:' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + ';">' + (obj.plannedEndDate ? fmt(obj.plannedEndDate) : 'Завершение') + '</span>' +
+            (obj.plannedEndDate ? '<span style="color:' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '#a04040' : '#4caf50') + ';font-size:11px;">' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '⚠️ ' + Math.abs(getDaysRemaining(obj.plannedEndDate)) + 'дн' : 'осталось ' + getDaysRemaining(obj.plannedEndDate) + 'дн') + '</span>' : '') +
+            '</span>' +
+            '<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(' + obj.id + ')">' + (obj.completed ? 'Вернуть' : 'Сдать') + '</button>' +
             '<button class="btn btn-sm" onclick="event.stopPropagation();addWork(' + obj.id + ')">➕ Этап</button>' +
             '<button class="btn btn-sm" onclick="event.stopPropagation();addClientStatus(' + obj.id + ')">📢 Статус</button>' +
             '</div></div>' +
             '<div style="color:#999;font-size:14px;">📍 ' + escapeHtml(obj.address) + '</div>' +
-            notesHtml +
-            '</div>' +
-            '<div class="object-detail ' + (objOpen ? 'open' : '') + '">' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;padding:4px 0;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">' +
+            '<div style="display:flex;flex-wrap:wrap;gap:12px;margin:6px 0;padding:6px 0;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">' +
             '<div style="display:flex;align-items:center;gap:6px;">' +
             '<span style="color:#888;font-size:13px;">🎨 Дизайн (' + projs.length + ')</span>' +
             '<span onclick="toggleDesignBlockHeader(this,\'' + designKey + '\')" style="cursor:pointer;color:#555;font-size:12px;transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'#555\'">' + (designOpen ? '🔽' : '▶') + '</span>' +
             '<button class="btn btn-sm" onclick="addDesignProjectForObject(' + obj.id + ')" style="padding:2px 8px;font-size:11px;">➕</button>' +
             '</div>' +
-            '<div style="display:flex;align-items:center;gap:6px;border-left:1px solid #1a1a1a;padding-left:8px;">' +
+            '<div style="display:flex;align-items:center;gap:6px;border-left:1px solid #1a1a1a;padding-left:12px;">' +
             '<span style="color:#888;font-size:13px;">📋 Рекомендации (' + recs.length + ')</span>' +
             '<span onclick="toggleRecBlockHeader(this,\'' + recKey + '\')" style="cursor:pointer;color:#555;font-size:12px;transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'#555\'">' + (recOpen ? '🔽' : '▶') + '</span>' +
             '<button class="btn btn-sm" onclick="addRecommendationForObject(' + obj.id + ')" style="padding:2px 8px;font-size:11px;">➕</button>' +
             '</div>' +
             '</div>' +
+            notesHtml +
+            '</div>' +
+            '<div class="object-detail ' + (objOpen ? 'open' : '') + '">' +
             '<div class="design-detail-container ' + (designOpen ? 'open' : '') + '" style="display:' + (designOpen ? 'block' : 'none') + ';padding:4px 8px;background:#0d0d0d;border-radius:4px;margin-bottom:4px;">' +
             designBlocks +
             '</div>' +
@@ -1053,47 +1062,43 @@ function renderClientWorks() {
     }
     var html = '';
     if (obj.clientStatus) {
-        html += '<div style="background:linear-gradient(135deg, #1a1a1a, #0d0d0d);border:1px solid #c9a959;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">' +
-            '<span style="font-size:20px;">📌</span>' +
-            '<span style="color:#c9a959;font-size:15px;font-weight:500;">' + escapeHtml(obj.clientStatus) + '</span>' +
+        html += '<div style="background:#1a1a1a;border-left:3px solid #c9a959;padding:10px 14px;margin-bottom:16px;border-radius:4px;">' +
+            '<span style="color:#c9a959;font-size:14px;">📌 ' + escapeHtml(obj.clientStatus) + '</span>' +
             '</div>';
     }
     var upcomingWorks = obj.works.filter(function(w) { return !w.done && w.deadline; }).sort(function(a, b) {
         var pa = a.deadline.split('.'), pb = b.deadline.split('.');
         return new Date(+pa[2], +pa[1] - 1, +pa[0]) - new Date(+pb[2], +pb[1] - 1, +pb[0]);
     }).slice(0, 5);
-    html += '<div style="background:#161616;border:1px solid #282828;border-radius:12px;padding:16px;margin-bottom:16px;">' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
-        '<span style="font-size:20px;">📌</span>' +
-        '<span style="font-size:16px;font-weight:600;color:#e8e8e8;">Ближайшие работы</span>' +
+    html += '<div style="margin-bottom:16px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+        '<span style="font-size:18px;">📌</span>' +
+        '<span style="font-size:15px;font-weight:500;color:#e0e0e0;">Ближайшие работы</span>' +
         '</div>';
     if (upcomingWorks.length === 0) {
-        html += '<div style="text-align:center;padding:16px 0;color:#555;font-size:14px;"><span style="font-size:28px;display:block;margin-bottom:6px;">✅</span>Все работы выполнены!</div>';
+        html += '<div style="color:#555;font-size:14px;padding:8px 0;">✅ Все работы выполнены</div>';
     } else {
         for (var i = 0; i < upcomingWorks.length; i++) {
             var w = upcomingWorks[i];
             var isFirst = (i === 0);
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin:4px 0;background:' + (isFirst ? '#1a1a1a' : 'transparent') + ';border-radius:8px;border:' + (isFirst ? '1px solid #c9a959' : '1px solid transparent') + ';transition:all 0.2s;">' +
-                '<div style="display:flex;align-items:center;gap:10px;">' +
-                '<span style="color:' + (isFirst ? '#c9a959' : '#666') + ';font-size:18px;">' + (isFirst ? '▶' : '•') + '</span>' +
-                '<span style="color:#e0e0e0;font-size:14px;">' + escapeHtml(w.name) + '</span>' +
-                '</div>' +
-                '<span style="background:' + (isFirst ? '#c9a959' : '#282828') + ';color:' + (isFirst ? '#0d0d0d' : '#888') + ';padding:4px 12px;border-radius:20px;font-size:13px;font-weight:' + (isFirst ? '600' : '400') + ';">' + fmt(w.deadline) + '</span>' +
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a1a1a;">' +
+                '<span style="color:' + (isFirst ? '#c9a959' : '#e0e0e0') + ';font-size:14px;">' + (isFirst ? '▶' : '•') + ' ' + escapeHtml(w.name) + '</span>' +
+                '<span style="color:' + (isFirst ? '#c9a959' : '#888') + ';font-size:13px;">' + fmt(w.deadline) + '</span>' +
                 '</div>';
         }
     }
     html += '</div>';
-    html += '<div style="background:#161616;border:1px solid #282828;border-radius:12px;padding:16px;">' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
-        '<span style="font-size:20px;">📋</span>' +
-        '<span style="font-size:16px;font-weight:600;color:#e8e8e8;">Этапы работ</span>' +
+    html += '<div>' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+        '<span style="font-size:18px;">📋</span>' +
+        '<span style="font-size:15px;font-weight:500;color:#e0e0e0;">Этапы работ</span>' +
         '</div>';
     if (obj.works.length === 0) {
-        html += '<div style="text-align:center;padding:16px 0;color:#555;font-size:14px;">Нет этапов</div>';
+        html += '<div style="color:#555;font-size:14px;padding:8px 0;">Нет этапов</div>';
     } else {
         var sortedWorks = obj.works.slice().sort(function(a, b) {
-            if (a.done && !b.done) return 1;
             if (!a.done && b.done) return -1;
+            if (a.done && !b.done) return 1;
             return 0;
         });
         for (var i = 0; i < sortedWorks.length; i++) {
@@ -1106,20 +1111,19 @@ function renderClientWorks() {
             }
             var photoHtml = '';
             if (photos.length > 0) {
-                photoHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">';
+                photoHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">';
                 for (var j = 0; j < photos.length; j++) {
                     var photoUrl = photos[j].photos[0];
-                    photoHtml += '<img src="' + photoUrl + '" onclick="showModal(\'' + photoUrl + '\')" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #282828;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">';
+                    photoHtml += '<img src="' + photoUrl + '" onclick="showModal(\'' + photoUrl + '\')" style="width:50px;height:50px;object-fit:cover;border-radius:4px;border:1px solid #282828;cursor:pointer;">';
                 }
                 photoHtml += '</div>';
             }
             var statusColor = w.done ? '#4caf50' : '#c9a959';
-            var statusText = w.done ? '✅ Выполнено' : '⏳ В работе';
-            var borderColor = w.done ? '#4caf50' : '#c9a959';
-            html += '<div style="background:#121212;border:1px solid ' + borderColor + ';border-radius:8px;padding:12px;margin:8px 0;transition:all 0.2s;">' +
-                '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
-                '<span style="font-weight:500;color:#e8e8e8;font-size:15px;">' + escapeHtml(w.name) + '</span>' +
-                '<span style="background:' + statusColor + ';color:#0d0d0d;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;">' + statusText + '</span>' +
+            var statusText = w.done ? 'Выполнено' : 'В работе';
+            html += '<div style="padding:8px 0;border-bottom:1px solid #1a1a1a;">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+                '<span style="font-size:14px;color:#e0e0e0;">' + escapeHtml(w.name) + '</span>' +
+                '<span style="color:' + statusColor + ';font-size:12px;">' + statusText + '</span>' +
                 '</div>' +
                 photoHtml +
                 '</div>';
@@ -1195,7 +1199,7 @@ function renderClientChecks() {
 }
 
 // ============================================================
-// ОСТАЛЬНЫЕ ФУНКЦИИ (ВСЁ, ЧТО МЫ ОБСУЖДАЛИ)
+// ОСТАЛЬНЫЕ ФУНКЦИИ
 // ============================================================
 window.clientMarkCheckPaid = function(checkId) {
     for (var i = 0; i < checks.length; i++) {
@@ -1336,7 +1340,7 @@ window.addWork = function(id) {
     if (!n) return;
     var o = getObject(id);
     if (!o) return;
-    var newWork = { id: Date.now(), name: n, done: false, deadline: null, quantity: '', unit: '', forElectrician: false, manual: true, status: '', paid: false, contractor: null, contractorStatus: 'unassigned' };
+    var newWork = { id: Date.now() + Math.random() * 1000, name: n, done: false, deadline: null, quantity: '', unit: '', forElectrician: false, manual: true, status: '', paid: false, contractor: null, contractorStatus: 'unassigned' };
     o.works.push(newWork);
     saveDataToLocal();
     if (!isOnline()) {
@@ -1362,15 +1366,22 @@ window.toggleWorkStatus = function(id, wi) {
 };
 
 window.wolfToggleWorkStatus = function(id, wi) {
+    console.log('🔄 wolfToggleWorkStatus вызван: объект ' + id + ', этап ' + wi);
     var o = getObject(id);
-    if (!o) return;
-    o.works[wi].done = !o.works[wi].done;
-    saveDataToLocal();
-    if (!isOnline()) {
-        addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
-    } else {
-        saveToSupabase('objects', o);
+    if (!o) {
+        console.log('❌ Объект не найден');
+        showToast('❌ Ошибка: объект не найден');
+        return;
     }
+    if (!o.works[wi]) {
+        console.log('❌ Этап не найден');
+        showToast('❌ Ошибка: этап не найден');
+        return;
+    }
+    o.works[wi].done = !o.works[wi].done;
+    console.log('✅ Этап "' + o.works[wi].name + '" теперь ' + (o.works[wi].done ? 'выполнен' : 'не выполнен'));
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', o);
     renderWolfObjects();
 };
 
@@ -1458,32 +1469,42 @@ window.completeObject = function(id) {
 
 window.setObjectStartDate = function(objId) {
     var obj = getObject(objId);
-    if (!obj) return;
-    var date = prompt('Введите дату начала (ДД.ММ.ГГГГ):');
-    if (date && isValidDate(date)) {
-        obj.startDate = date;
-        saveDataToLocal();
-        if (isOnline()) saveToSupabase('objects', obj);
-        renderBossObjects();
-        showToast('📅 Дата начала установлена');
-    } else if (date) {
-        showToast('❌ Неверный формат даты');
+    if (!obj) {
+        showToast('❌ Объект не найден');
+        return;
     }
+    var date = prompt('Введите дату начала (ДД.ММ.ГГГГ):');
+    if (date === null) return;
+    if (!isValidDate(date)) {
+        showToast('❌ Неверный формат даты. Используйте ДД.ММ.ГГГГ');
+        return;
+    }
+    obj.startDate = date;
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    if (currentUser === 'boss') renderBossObjects();
+    else if (currentUser === 'wolf') renderWolfObjects();
+    showToast('📅 Дата начала установлена: ' + date);
 };
 
 window.setObjectEndDate = function(objId) {
     var obj = getObject(objId);
-    if (!obj) return;
-    var date = prompt('Введите дату планового завершения (ДД.ММ.ГГГГ):');
-    if (date && isValidDate(date)) {
-        obj.plannedEndDate = date;
-        saveDataToLocal();
-        if (isOnline()) saveToSupabase('objects', obj);
-        renderBossObjects();
-        showToast('📅 Дата завершения установлена');
-    } else if (date) {
-        showToast('❌ Неверный формат даты');
+    if (!obj) {
+        showToast('❌ Объект не найден');
+        return;
     }
+    var date = prompt('Введите дату завершения (ДД.ММ.ГГГГ):');
+    if (date === null) return;
+    if (!isValidDate(date)) {
+        showToast('❌ Неверный формат даты. Используйте ДД.ММ.ГГГГ');
+        return;
+    }
+    obj.plannedEndDate = date;
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    if (currentUser === 'boss') renderBossObjects();
+    else if (currentUser === 'wolf') renderWolfObjects();
+    showToast('📅 Дата завершения установлена: ' + date);
 };
 
 window.uploadWorkPhoto = function(id, wi) {
@@ -1628,11 +1649,21 @@ window.deleteWorkPhoto = function(id) {
 };
 
 window.toggleWorkPaid = function(objId, wi) {
+    console.log('🔄 toggleWorkPaid вызван: объект ' + objId + ', этап ' + wi);
     var obj = getObject(objId);
-    if (!obj) return;
+    if (!obj) {
+        console.log('❌ Объект не найден');
+        showToast('❌ Ошибка: объект не найден');
+        return;
+    }
     var work = obj.works[wi];
-    if (!work) return;
+    if (!work) {
+        console.log('❌ Этап не найден');
+        showToast('❌ Ошибка: этап не найден');
+        return;
+    }
     work.paid = !work.paid;
+    console.log('✅ Оплата этапа "' + work.name + '" теперь ' + (work.paid ? 'оплачен' : 'не оплачен'));
     saveDataToLocal();
     if (isOnline()) saveToSupabase('objects', obj);
     renderBossObjects();
@@ -1687,7 +1718,7 @@ window.assignContractor = function(objId, workIdx) {
         var name = prompt('Имя исполнителя:');
         if (!name) return;
         var phone = prompt('Телефон (необязательно):');
-        var contractor = { id: Date.now(), name: name.trim(), phone: phone || '' };
+        var contractor = { id: Date.now() + Math.random() * 1000, name: name.trim(), phone: phone || '' };
         obj.contractors.push(contractor);
         work.contractor = contractor;
         work.contractorStatus = 'assigned';
@@ -1714,7 +1745,10 @@ window.assignContractor = function(objId, workIdx) {
 
 window.editObjectNotes = function(objId) {
     var obj = getObject(objId);
-    if (!obj) return;
+    if (!obj) {
+        showToast('❌ Объект не найден');
+        return;
+    }
     var notes = prompt('✏️ Заметки по объекту:', obj.notes || '');
     if (notes !== null) {
         obj.notes = notes.trim();
@@ -2023,27 +2057,53 @@ window.toggleDesignApprove = function(id) {
 function renderSchedule() {
     var container = document.getElementById('bossContent') || document.getElementById('wolfContent');
     if (!container) return;
-    if (currentUser === 'wolf') {
+    
+    if (objects.length === 0) {
+        container.innerHTML = '<div class="card">Нет объектов</div>';
+        return;
+    }
+    
+    if (currentUser === 'boss' || currentUser === 'wolf') {
         var objectsList = [];
         for (var i = 0; i < objects.length; i++) {
             if (!objects[i].archived) objectsList.push(objects[i]);
         }
         if (objectsList.length === 0) {
-            container.innerHTML = '<div class="card">Нет объектов</div>';
+            container.innerHTML = '<div class="card">Нет активных объектов</div>';
             return;
         }
+        
+        if (!currentObjectId || !getObject(currentObjectId)) {
+            currentObjectId = objectsList[0].id;
+        }
+        
         var selectHtml = '<div style="margin-bottom:12px;"><select id="scheduleObjectSelect" onchange="switchScheduleObject(this.value)" style="background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:6px;padding:8px;width:100%;font-size:14px;">';
         for (var i = 0; i < objectsList.length; i++) {
-            selectHtml += '<option value="' + objectsList[i].id + '" ' + (objectsList[i].id === currentObjectId ? 'selected' : '') + '>' + escapeHtml(objectsList[i].name) + '</option>';
+            var o = objectsList[i];
+            selectHtml += '<option value="' + o.id + '" ' + (o.id === currentObjectId ? 'selected' : '') + '>' + escapeHtml(o.name) + '</option>';
         }
         selectHtml += '</select></div>';
         container.innerHTML = selectHtml;
     }
+    
     var obj = getObject(currentObjectId);
-    if (!obj) { container.innerHTML += '<div class="card">Объект не найден</div>'; return; }
+    if (!obj) {
+        if (objects.length > 0) {
+            currentObjectId = objects[0].id;
+            obj = objects[0];
+        } else {
+            container.innerHTML += '<div class="card">Нет объектов</div>';
+            return;
+        }
+    }
+    
     var html = '<div class="card"><h3>📋 График работ — ' + escapeHtml(obj.name) + '</h3>';
+    html += '<div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">';
+    html += '<button class="btn btn-sm btn-primary" onclick="addScheduleItem(' + obj.id + ')">➕ Добавить задачу</button>';
+    html += '</div>';
     html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    html += '<thead><tr><th style="text-align:left;padding:6px 8px;">Этап</th><th style="text-align:left;padding:6px 8px;">Дата</th></tr></thead><tbody>';
+    html += '<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #282828;">Этап</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #282828;">Дата</th></tr></thead><tbody>';
+    
     var hasWorks = false;
     for (var i = 0; i < obj.works.length; i++) {
         var w = obj.works[i];
@@ -2058,8 +2118,46 @@ function renderSchedule() {
     }
     html += '</tbody></table></div>';
     html += '</div>';
+    
     container.innerHTML += html;
 }
+
+window.addScheduleItem = function(objId) {
+    var obj = getObject(objId);
+    if (!obj) {
+        showToast('❌ Объект не найден');
+        return;
+    }
+    
+    var name = prompt('Название задачи:');
+    if (!name) return;
+    var deadline = prompt('Дата завершения (ДД.ММ.ГГГГ):');
+    if (deadline === null) return;
+    if (deadline.trim() !== '' && !isValidDate(deadline)) {
+        showToast('❌ Неверный формат даты');
+        return;
+    }
+    
+    var newWork = {
+        id: Date.now() + Math.random() * 1000,
+        name: name.trim(),
+        done: false,
+        deadline: deadline.trim() || null,
+        quantity: '',
+        unit: '',
+        forElectrician: false,
+        manual: true,
+        status: '',
+        paid: false,
+        contractor: null,
+        contractorStatus: 'unassigned'
+    };
+    obj.works.push(newWork);
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    renderSchedule();
+    showToast('✅ Задача добавлена');
+};
 
 window.switchScheduleObject = function(objId) {
     currentObjectId = parseInt(objId);
@@ -2069,33 +2167,181 @@ window.switchScheduleObject = function(objId) {
 function renderBossNotes() {
     var container = document.getElementById('bossContent');
     if (!container) return;
-    container.innerHTML = '<div class="card">Ежедневник в разработке</div>';
+    container.innerHTML = '<div class="flex" style="margin-bottom:12px;"><button class="btn btn-primary" onclick="addNoteForDate()">➕ Запись</button></div><div id="bossNotesCalendar"></div>';
+    renderNotesCalendar('boss');
 }
 
 function renderWolfNotes() {
     var container = document.getElementById('wolfContent');
     if (!container) return;
-    container.innerHTML = '<div class="card">Ежедневник в разработке</div>';
+    container.innerHTML = '<div class="flex" style="margin-bottom:12px;"><button class="btn btn-primary" onclick="addNoteForDate()">➕ Запись</button></div><div id="wolfNotesCalendar"></div>';
+    renderNotesCalendar('wolf');
 }
+
+function renderNotesCalendar(role) {
+    var container = document.getElementById(role === 'boss' ? 'bossNotesCalendar' : 'wolfNotesCalendar');
+    if (!container) return;
+    
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = now.getMonth() + calendarOffset;
+    var firstDayOfMonth = new Date(year, month, 1);
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var startDay = firstDayOfMonth.getDay();
+    var today = new Date();
+    
+    var notesByDate = {};
+    for (var i = 0; i < notes.length; i++) {
+        var n = notes[i];
+        if (n.date && n.author === role) {
+            var d = new Date(n.date);
+            var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            if (!notesByDate[key]) notesByDate[key] = [];
+            notesByDate[key].push(n);
+        }
+    }
+    
+    var monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    var html = '<div class="card">' +
+        '<div class="month-nav">' +
+        '<button class="nav-btn" onclick="changeMonth(-1)">‹</button>' +
+        '<span>' + monthNames[month] + ' ' + year + '</span>' +
+        '<button class="nav-btn" onclick="changeMonth(1)">›</button>' +
+        '</div>' +
+        '<div class="calendar">';
+    
+    var weekDays = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+    for (var i = 0; i < weekDays.length; i++) {
+        html += '<div style="text-align:center;color:#555;font-size:11px;padding:4px 0;">' + weekDays[i] + '</div>';
+    }
+    
+    var startOffset = (startDay === 0) ? 6 : startDay - 1;
+    for (var i = 0; i < startOffset; i++) {
+        html += '<div class="day other-month"></div>';
+    }
+    
+    for (var d = 1; d <= daysInMonth; d++) {
+        var dt = new Date(year, month, d);
+        var key = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+        var hasNotes = notesByDate[key] && notesByDate[key].length > 0;
+        var isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
+        var dayClass = (isToday ? 'today' : '') + (hasNotes ? ' has-tasks' : '');
+        html += '<div class="day ' + dayClass + '" onclick="showNotesForDay(\'' + key + '\',\'' + role + '\')">' +
+            '<span class="day-number">' + d + '</span>' +
+            (hasNotes ? '<span class="indicator">●</span>' : '') +
+            '</div>';
+    }
+    
+    html += '</div></div><div id="' + role + 'NotesDayDetail"></div>';
+    container.innerHTML = html;
+}
+
+function changeMonth(delta) {
+    calendarOffset += delta;
+    saveUiState();
+    if (currentUser === 'boss') renderBossNotes();
+    else if (currentUser === 'wolf') renderWolfNotes();
+}
+
+function showNotesForDay(key, role) {
+    var container = document.getElementById(role + 'NotesDayDetail');
+    if (!container) return;
+    
+    var dayNotes = [];
+    for (var i = 0; i < notes.length; i++) {
+        var n = notes[i];
+        if (!n.date || n.author !== role) continue;
+        var d = new Date(n.date);
+        var noteKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        if (noteKey === key) dayNotes.push(n);
+    }
+    
+    var dateObj = new Date(key.split('-')[0], key.split('-')[1] - 1, key.split('-')[2]);
+    var html = '<div class="card"><h4>Записи на ' + dateObj.toLocaleDateString('ru-RU') + '</h4>';
+    
+    if (dayNotes.length === 0) {
+        html += '<div style="color:#666;padding:8px 0;">Нет записей</div>';
+    } else {
+        for (var i = 0; i < dayNotes.length; i++) {
+            var n = dayNotes[i];
+            html += '<div class="flex" style="padding:6px 0;border-bottom:1px solid #1a1a1a;">' +
+                '<span>' + escapeHtml(n.text) + '</span>' +
+                '<span><span class="badge">' + (n.author === 'boss' ? 'Руководитель' : 'Волк') + '</span>' +
+                '<button class="btn btn-sm btn-danger" onclick="deleteNote(' + n.id + ')">🗑</button></span>' +
+                '</div>';
+        }
+    }
+    
+    html += '<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="addNoteForDate(\'' + key + '\')">➕ Добавить запись на этот день</button></div>';
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+window.addNoteForDate = function(dateKey) {
+    var dateStr = dateKey;
+    if (!dateStr) {
+        var now = new Date();
+        dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    }
+    var text = prompt('Текст заметки:');
+    if (!text) return;
+    var parts = dateStr.split('-');
+    var noteDate = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    var note = { id: Date.now() + Math.random() * 1000, author: currentUser, text: text.trim(), date: noteDate };
+    notes.push(note);
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('notes', note);
+    if (currentUser === 'boss') renderBossNotes();
+    else if (currentUser === 'wolf') renderWolfNotes();
+    showToast('📝 Заметка добавлена');
+};
+
+window.deleteNote = function(id) {
+    if (!confirm('Удалить заметку?')) return;
+    for (var i = 0; i < notes.length; i++) {
+        if (notes[i].id === id) {
+            notes.splice(i, 1);
+            break;
+        }
+    }
+    saveDataToLocal();
+    if (isOnline()) {
+        fetch(SUPABASE_URL + '/rest/v1/notes?id=eq.' + id, {
+            method: 'DELETE',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+    }
+    if (currentUser === 'boss') renderBossNotes();
+    else if (currentUser === 'wolf') renderWolfNotes();
+    showToast('🗑 Заметка удалена');
+};
 
 function renderBossChecks() {
     var container = document.getElementById('bossContent');
     if (!container) return;
+    
     var list = [];
     for (var i = 0; i < checks.length; i++) {
         list.push(checks[i]);
     }
     list.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+    
     var totalUnpaid = 0, totalPaid = 0;
     for (var i = 0; i < list.length; i++) {
         if (!list[i].paid) totalUnpaid += (list[i].amount || 0);
         else totalPaid += (list[i].amount || 0);
     }
+    
+    var html = '<div style="margin:12px 0;"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button></div>';
+    
     if (list.length === 0) {
-        container.innerHTML = '<div class="card">Нет чеков</div>';
+        html += '<div class="card">Нет чеков</div>';
+        container.innerHTML = html;
         return;
     }
-    var html = '<div class="checks-total"><span>💰 Неоплаченные: ' + totalUnpaid.toFixed(2) + ' ₽</span><span>✅ Оплаченные: ' + totalPaid.toFixed(2) + ' ₽</span></div>';
+    
+    html += '<div class="checks-total"><span>💰 Неоплаченные: ' + totalUnpaid.toFixed(2) + ' ₽</span><span>✅ Оплаченные: ' + totalPaid.toFixed(2) + ' ₽</span></div>';
+    
     for (var i = 0; i < list.length; i++) {
         var c = list[i];
         var obj = getObject(c.objectId);
@@ -2111,12 +2357,52 @@ function renderBossChecks() {
     container.innerHTML = html;
 }
 
+function renderWolfChecks() {
+    var container = document.getElementById('wolfContent');
+    if (!container) return;
+    
+    var list = [];
+    for (var i = 0; i < checks.length; i++) {
+        list.push(checks[i]);
+    }
+    list.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+    
+    var totalUnpaid = 0;
+    for (var i = 0; i < list.length; i++) {
+        if (!list[i].paid) totalUnpaid += (list[i].amount || 0);
+    }
+    
+    var html = '<div style="margin:12px 0;"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button></div>';
+    
+    if (list.length === 0) {
+        html += '<div class="card">Нет чеков</div>';
+        container.innerHTML = html;
+        return;
+    }
+    
+    html += '<div class="checks-total"><span>💰 Неоплаченные: ' + totalUnpaid.toFixed(2) + ' ₽</span></div>';
+    
+    for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        var obj = getObject(c.objectId);
+        html += '<div class="check-item ' + (c.paid ? 'paid' : '') + '" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">' +
+            '<div class="flex"><span><b>' + (obj ? escapeHtml(obj.name) : 'Объект удалён') + '</b> — ' + (c.amount ? c.amount.toFixed(2) + ' ₽' : 'сумма не указана') + '</span><span class="badge">' + (c.paid ? '✅ Оплачен' : '⏳ Не оплачен') + '</span></div>' +
+            '<div style="margin:4px 0;">Дата: ' + fmtTime(c.date) + '</div>' +
+            (c.fileData ? '<div><img src="' + c.fileData + '" class="check-file" onclick="showModal(\'' + c.fileData + '\')" style="max-width:100%;max-height:200px;border-radius:6px;cursor:pointer;"></div>' : '') +
+            '<div style="margin-top:6px;">' +
+            (!c.paid ? '<button class="btn btn-sm btn-primary" onclick="markCheckPaid(' + c.id + ')">✅ Оплатить</button>' : '') +
+            '</div></div>';
+    }
+    container.innerHTML = html;
+}
+
 window.addCheck = function() {
     var available = [];
     for (var i = 0; i < objects.length; i++) {
         if (!objects[i].archived) available.push(objects[i]);
     }
-    if (!available.length) { showToast('Нет объектов'); return; }
+    if (available.length === 0) { showToast('Нет объектов'); return; }
+    
     var list = '';
     for (var i = 0; i < available.length; i++) {
         list += (i+1) + '. ' + available[i].name + ' (' + available[i].code + ')\n';
@@ -2126,8 +2412,10 @@ window.addCheck = function() {
     var idx = parseInt(choice) - 1;
     if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
     var objId = available[idx].id;
+    
     var amount = parseFloat(prompt('Сумма (руб):') || '0');
-    if (isNaN(amount) || amount <= 0) { showToast('Введите сумму'); return; }
+    if (isNaN(amount) || amount <= 0) { showToast('Введите корректную сумму'); return; }
+    
     var inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = 'image/*,application/pdf';
@@ -2138,11 +2426,21 @@ window.addCheck = function() {
         if (!file) { inp.remove(); return; }
         var reader = new FileReader();
         reader.onload = function(ev) {
-            var check = { id: Date.now() + Math.random() * 1000, objectId: objId, amount: amount, fileData: ev.target.result, date: new Date(), paid: false, paidDate: null, paidBy: null };
+            var check = {
+                id: Date.now() + Math.random() * 1000,
+                objectId: objId,
+                amount: amount,
+                fileData: ev.target.result,
+                date: new Date(),
+                paid: false,
+                paidDate: null,
+                paidBy: null
+            };
             checks.push(check);
             saveDataToLocal();
             if (isOnline()) saveToSupabase('checks', check);
-            renderBossChecks();
+            if (currentUser === 'boss') renderBossChecks();
+            else if (currentUser === 'wolf') renderWolfChecks();
             showToast('🧾 Чек загружен');
             inp.remove();
         };
@@ -2187,79 +2485,106 @@ window.deleteCheck = function(checkId) {
     showToast('🗑 Чек удалён');
 };
 
-function renderWolfChecks() {
-    var container = document.getElementById('wolfContent');
-    if (!container) return;
-    var list = [];
-    for (var i = 0; i < checks.length; i++) {
-        list.push(checks[i]);
-    }
-    list.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
-    var totalUnpaid = 0;
-    for (var i = 0; i < list.length; i++) {
-        if (!list[i].paid) totalUnpaid += (list[i].amount || 0);
-    }
-    if (list.length === 0) {
-        container.innerHTML = '<div class="card">Нет чеков</div>';
-        return;
-    }
-    var html = '<div class="checks-total"><span>💰 Неоплаченные: ' + totalUnpaid.toFixed(2) + ' ₽</span></div>';
-    for (var i = 0; i < list.length; i++) {
-        var c = list[i];
-        var obj = getObject(c.objectId);
-        html += '<div class="check-item ' + (c.paid ? 'paid' : '') + '" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">' +
-            '<div class="flex"><span><b>' + (obj ? escapeHtml(obj.name) : 'Объект удалён') + '</b> — ' + (c.amount ? c.amount.toFixed(2) + ' ₽' : 'сумма не указана') + '</span><span class="badge">' + (c.paid ? '✅ Оплачен' : '⏳ Не оплачен') + '</span></div>' +
-            '<div style="margin:4px 0;">Дата: ' + fmtTime(c.date) + '</div>' +
-            (c.fileData ? '<div><img src="' + c.fileData + '" class="check-file" onclick="showModal(\'' + c.fileData + '\')" style="max-width:100%;max-height:200px;border-radius:6px;cursor:pointer;"></div>' : '') +
-            '<div style="margin-top:6px;">' +
-            (!c.paid ? '<button class="btn btn-sm btn-primary" onclick="markCheckPaid(' + c.id + ')">✅ Оплатить</button>' : '') +
-            '</div></div>';
-    }
-    container.innerHTML = html;
-}
-
 function renderBossPurchases() {
     var container = document.getElementById('bossContent');
     if (!container) return;
-    container.innerHTML = '<div class="card">Закупки в разработке</div>';
-}
-
-function renderWolfPurchases() {
-    var container = document.getElementById('wolfContent');
-    if (!container) return;
+    
     var orders = [];
     for (var i = 0; i < purchaseOrders.length; i++) {
         orders.push(purchaseOrders[i]);
     }
     orders.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+    
     if (orders.length === 0) {
-        container.innerHTML = '<div class="card">Нет заявок</div>';
+        container.innerHTML = '<div class="card">Нет заявок на закупку</div>';
         return;
     }
-    var html = '<button class="btn btn-primary" onclick="addPurchaseOrder()">➕ Новая заявка</button>';
+    
+    var html = '';
     for (var i = 0; i < orders.length; i++) {
         var order = orders[i];
         var obj = getObject(order.objectId);
         var itemsHtml = '';
         for (var j = 0; j < order.items.length; j++) {
             var item = order.items[j];
-            itemsHtml += '<div class="flex"><span>' + escapeHtml(item.name) + ' (' + escapeHtml(item.quantity) + ' шт.)</span><span class="badge">' + (item.purchased ? '✅ Куплено' : '⏳ Не куплено') + '</span>' +
-                '<button class="btn btn-sm" onclick="wolfTogglePurchasedItem(' + order.id + ',' + j + ')">Отметить</button>' +
-                '<button class="btn btn-sm btn-danger" onclick="wolfDeleteItemFromOrder(' + order.id + ',' + j + ')">🗑</button></div>';
+            itemsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a1a1a;">' +
+                '<span>' + escapeHtml(item.name) + ' (' + escapeHtml(item.quantity) + ' шт.)</span>' +
+                '<span class="badge">' + (item.purchased ? '✅ Куплено' : '⏳ Не куплено') + '</span>' +
+                '</div>';
         }
         html += '<div class="card">' +
-            '<div class="flex"><b>Заявка на объект: ' + (obj ? escapeHtml(obj.name) : '—') + '</b><span class="badge">' + fmt(order.date) + '</span>' +
-            '<button class="btn btn-sm btn-danger" onclick="wolfDeleteOrder(' + order.id + ')">🗑</button>' +
-            '<button class="btn btn-sm btn-primary" onclick="exportOrderToPhone(' + order.objectId + ')">📱 Выгрузить в магазин</button>' +
+            '<div class="flex"><b>Заявка на объект: ' + (obj ? escapeHtml(obj.name) : 'Объект удалён') + '</b><span class="badge">' + fmt(order.date) + '</span></div>' +
+            '<div style="margin-top:6px;"><b>Товары:</b></div>' +
+            itemsHtml +
+            (order.photos && order.photos.length > 0 ? '<div style="margin-top:6px;"><b>Фото:</b> ' + order.photos.map(function(p) { return '<img src="' + p + '" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="showModal(\'' + p + '\')">'; }).join('') + '</div>' : '') +
+            '</div>';
+    }
+    container.innerHTML = html;
+}
+
+function renderWolfPurchases() {
+    var container = document.getElementById('wolfContent');
+    if (!container) return;
+    
+    var orders = [];
+    for (var i = 0; i < purchaseOrders.length; i++) {
+        orders.push(purchaseOrders[i]);
+    }
+    orders.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+    
+    var html = '<div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;">';
+    html += '<button class="btn btn-primary" onclick="addPurchaseOrder()">➕ Новая заявка</button>';
+    html += '</div>';
+    
+    if (orders.length === 0) {
+        html += '<div class="card">Нет заявок. Создайте первую заявку на материалы.</div>';
+        container.innerHTML = html;
+        return;
+    }
+    
+    for (var i = 0; i < orders.length; i++) {
+        var order = orders[i];
+        var obj = getObject(order.objectId);
+        var itemsHtml = '';
+        var allPurchased = true;
+        
+        for (var j = 0; j < order.items.length; j++) {
+            var item = order.items[j];
+            if (!item.purchased) allPurchased = false;
+            itemsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a1a1a;">' +
+                '<span>' + escapeHtml(item.name) + ' — <b>' + escapeHtml(item.quantity) + '</b> шт.</span>' +
+                '<span style="display:flex;gap:4px;align-items:center;">' +
+                '<span class="badge" style="background:' + (item.purchased ? '#4caf50' : '#c9a959') + ';color:#0d0d0d;">' + (item.purchased ? '✅ Куплено' : '⏳ Не куплено') + '</span>' +
+                '<button class="btn btn-sm" onclick="wolfTogglePurchasedItem(' + order.id + ',' + j + ')" style="padding:2px 8px;font-size:11px;background:' + (item.purchased ? '#282828' : '#c9a959') + ';color:' + (item.purchased ? '#e0e0e0' : '#0d0d0d') + ';border-color:' + (item.purchased ? '#3a3a3a' : '#c9a959') + ';">' + (item.purchased ? '↩' : '✅') + '</button>' +
+                '<button class="btn btn-sm btn-danger" onclick="wolfDeleteItemFromOrder(' + order.id + ',' + j + ')" style="padding:2px 6px;font-size:11px;">×</button>' +
+                '</span>' +
+                '</div>';
+        }
+        
+        var statusColor = allPurchased ? '#4caf50' : '#c9a959';
+        var statusText = allPurchased ? '✅ Все куплено' : '⏳ Есть некупленные';
+        
+        html += '<div class="card" style="border-left:3px solid ' + statusColor + ';">' +
+            '<div class="flex">' +
+            '<div><b>📦 Заявка на объект: ' + (obj ? escapeHtml(obj.name) : 'Объект удалён') + '</b></div>' +
+            '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
+            '<span class="badge" style="background:' + statusColor + ';color:#0d0d0d;">' + statusText + '</span>' +
+            '<span class="badge">' + fmt(order.date) + '</span>' +
+            '<button class="btn btn-sm btn-danger" onclick="wolfDeleteOrder(' + order.id + ')" title="Удалить заявку">🗑</button>' +
             '</div>' +
-            '<div><b>Товары:</b> ' + itemsHtml + '</div>' +
-            '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">' +
-            '<input type="text" id="wolfNewItemName-' + order.id + '" placeholder="Наименование" style="width:40%;">' +
-            '<input type="text" id="wolfNewItemQty-' + order.id + '" placeholder="Кол-во" style="width:20%;">' +
+            '</div>' +
+            '<div style="margin-top:6px;"><b>Товары (' + order.items.length + '):</b></div>' +
+            itemsHtml +
+            '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+            '<input type="text" id="wolfNewItemName-' + order.id + '" placeholder="Наименование" style="flex:2;min-width:120px;padding:6px;background:#0d0d0d;color:#e0e0e0;border:1px solid #282828;border-radius:4px;">' +
+            '<input type="text" id="wolfNewItemQty-' + order.id + '" placeholder="Кол-во" style="width:80px;padding:6px;background:#0d0d0d;color:#e0e0e0;border:1px solid #282828;border-radius:4px;">' +
             '<button class="btn btn-sm" onclick="wolfAddItemToOrder(' + order.id + ')">➕ Добавить</button>' +
             '</div>' +
-            '<div><b>Фото накладных:</b> ' + (order.photos ? order.photos.map(function(p) { return '<img src="' + p + '" style="width:50px;" onclick="showModal(\'' + p + '\')">'; }).join('') : 'нет') + '</div>' +
+            (order.photos && order.photos.length > 0 ? '<div style="margin-top:6px;"><b>Фото накладных:</b> ' + order.photos.map(function(p) { return '<img src="' + p + '" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="showModal(\'' + p + '\')">'; }).join('') + '</div>' : '') +
+            '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">' +
             '<button class="btn btn-sm" onclick="wolfUploadOrderPhoto(' + order.id + ')">📸 Добавить фото</button>' +
+            '<button class="btn btn-sm btn-primary" onclick="exportOrderToWhatsApp(' + order.id + ')">📱 Отправить в WhatsApp</button>' +
+            '</div>' +
             '</div>';
     }
     container.innerHTML = html;
@@ -2270,7 +2595,8 @@ window.addPurchaseOrder = function() {
     for (var i = 0; i < objects.length; i++) {
         if (!objects[i].archived) available.push(objects[i]);
     }
-    if (!available.length) { showToast('Нет объектов'); return; }
+    if (available.length === 0) { showToast('Нет объектов'); return; }
+    
     var list = '';
     for (var i = 0; i < available.length; i++) {
         list += (i+1) + '. ' + available[i].name + ' (' + available[i].code + ')\n';
@@ -2280,7 +2606,15 @@ window.addPurchaseOrder = function() {
     var idx = parseInt(choice) - 1;
     if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
     var obj = available[idx];
-    var order = { id: Date.now() + Math.random() * 1000, objectId: obj.id, items: [], photos: [], date: new Date(), status: 'active' };
+    
+    var order = {
+        id: Date.now() + Math.random() * 1000,
+        objectId: obj.id,
+        items: [],
+        photos: [],
+        date: new Date(),
+        status: 'active'
+    };
     purchaseOrders.push(order);
     saveDataToLocal();
     if (isOnline()) saveToSupabase('purchase_orders', order);
@@ -2294,10 +2628,18 @@ window.wolfAddItemToOrder = function(orderId) {
         if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
     }
     if (!order) return;
+    
     var name = document.getElementById('wolfNewItemName-' + orderId).value.trim();
     var qty = document.getElementById('wolfNewItemQty-' + orderId).value.trim();
     if (!name) { showToast('Введите наименование'); return; }
-    order.items.push({ id: Date.now() + Math.random() * 1000, name: name, quantity: qty || '1', purchased: false });
+    if (!qty) { showToast('Введите количество'); return; }
+    
+    order.items.push({
+        id: Date.now() + Math.random() * 1000,
+        name: name,
+        quantity: qty,
+        purchased: false
+    });
     saveDataToLocal();
     if (isOnline()) saveToSupabase('purchase_orders', order);
     renderWolfPurchases();
@@ -2356,6 +2698,7 @@ window.wolfUploadOrderPhoto = function(orderId) {
         if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
     }
     if (!order) return;
+    
     var inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = 'image/*';
@@ -2366,74 +2709,95 @@ window.wolfUploadOrderPhoto = function(orderId) {
         if (!file) { inp.remove(); return; }
         var reader = new FileReader();
         reader.onload = function(ev) {
-            var img = new Image();
-            img.onload = function() {
-                var canvas = document.createElement('canvas');
-                var w = img.width, h = img.height;
-                var maxSize = 800;
-                if (w > maxSize || h > maxSize) {
-                    if (w > h) { h = h * maxSize / w; w = maxSize; }
-                    else { w = w * maxSize / h; h = maxSize; }
-                }
-                canvas.width = w;
-                canvas.height = h;
-                var ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, w, h);
-                var compressed = canvas.toDataURL('image/webp', 0.7);
-                if (!order.photos) order.photos = [];
-                order.photos.push(compressed);
-                saveDataToLocal();
-                if (isOnline()) saveToSupabase('purchase_orders', order);
-                renderWolfPurchases();
-                showToast('📸 Фото добавлено');
-            };
-            img.onerror = function() { showToast('❌ Ошибка загрузки фото'); };
-            img.src = ev.target.result;
+            if (!order.photos) order.photos = [];
+            order.photos.push(ev.target.result);
+            saveDataToLocal();
+            if (isOnline()) saveToSupabase('purchase_orders', order);
+            renderWolfPurchases();
+            showToast('📸 Фото добавлено');
+            inp.remove();
         };
         reader.readAsDataURL(file);
-        inp.remove();
     };
     setTimeout(function() { inp.click(); }, 50);
 };
 
-window.exportOrderToPhone = function(objId) {
-    var obj = getObject(objId);
-    if (!obj) { showToast('❌ Объект не найден'); return; }
-    var orders = [];
+window.exportOrderToWhatsApp = function(orderId) {
+    var order = null;
     for (var i = 0; i < purchaseOrders.length; i++) {
-        if (purchaseOrders[i].objectId === objId) {
-            orders.push(purchaseOrders[i]);
-        }
+        if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
     }
-    if (orders.length === 0) {
-        showToast('❌ Нет заявок для выгрузки');
+    if (!order) {
+        showToast('❌ Заявка не найдена');
         return;
     }
-    var text = '📦 ЗАЯВКА НА ЗАКУПКУ\n';
+    
+    var obj = getObject(order.objectId);
+    if (!obj) {
+        showToast('❌ Объект не найден');
+        return;
+    }
+    
+    if (order.items.length === 0) {
+        showToast('❌ Заявка пуста. Добавьте товары.');
+        return;
+    }
+    
+    var text = '📦 ЗАЯВКА НА МАТЕРИАЛЫ\n';
+    text += '─────────────────────\n';
     text += '🏠 Объект: ' + obj.name + '\n';
     text += '📅 Дата: ' + fmt(new Date()) + '\n';
     text += '─────────────────────\n\n';
-    for (var i = 0; i < orders.length; i++) {
-        var order = orders[i];
-        text += '📋 Заявка #' + (i + 1) + '\n';
-        for (var j = 0; j < order.items.length; j++) {
-            var item = order.items[j];
-            text += '  • ' + item.name + ' — ' + item.quantity + ' шт.\n';
-        }
-        text += '\n';
+    text += '📋 СПИСОК ТОВАРОВ:\n';
+    
+    var totalItems = 0;
+    for (var i = 0; i < order.items.length; i++) {
+        var item = order.items[i];
+        var status = item.purchased ? '✅' : '⏳';
+        text += '  ' + status + ' ' + item.name + ' — ' + item.quantity + ' шт.\n';
+        totalItems++;
     }
+    
+    text += '\n─────────────────────\n';
+    text += '📊 Итого позиций: ' + totalItems + '\n';
     text += '─────────────────────\n';
-    text += '🕒 Создано: ' + new Date().toLocaleString();
+    text += '📱 Создано в СтройУчёт\n';
+    text += '🕒 ' + new Date().toLocaleString();
+    
     if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(function() {
-            showToast('✅ Заявка скопирована в буфер, отправьте в магазин');
+            var encodedText = encodeURIComponent(text);
+            var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
+            if (phoneNumber) {
+                var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
+                window.open(whatsappUrl, '_blank');
+                showToast('✅ Заявка скопирована и открыта в WhatsApp');
+            } else {
+                showToast('✅ Заявка скопирована в буфер');
+            }
         }).catch(function() {
-            prompt('Скопируйте текст заявки:', text);
-            showToast('📋 Заявка готова');
+            var encodedText = encodeURIComponent(text);
+            var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
+            if (phoneNumber) {
+                var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
+                window.open(whatsappUrl, '_blank');
+                showToast('📋 Заявка открыта в WhatsApp');
+            } else {
+                prompt('Скопируйте текст заявки:', text);
+                showToast('📋 Заявка готова');
+            }
         });
     } else {
-        prompt('Скопируйте текст заявки:', text);
-        showToast('📋 Заявка готова');
+        var encodedText = encodeURIComponent(text);
+        var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
+        if (phoneNumber) {
+            var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
+            window.open(whatsappUrl, '_blank');
+            showToast('📋 Заявка открыта в WhatsApp');
+        } else {
+            prompt('Скопируйте текст заявки:', text);
+            showToast('📋 Заявка готова');
+        }
     }
 };
 
@@ -2851,8 +3215,237 @@ function showModal(src) {
 }
 
 function renderElectrician() {
-    document.getElementById('app').innerHTML = '<div class="card"><div class="flex"><h2>⚡ Электрик</h2><button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button></div></div><div style="padding:30px;text-align:center;color:#888;">Страница в разработке</div>';
+    document.getElementById('app').innerHTML = `
+    <div class="card"><div class="flex"><h2>⚡ Электрик</h2><button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button></div></div>
+    <div class="tab-bar">
+      <div class="tab active" data-tab="objects">Объекты</div>
+      <div class="tab" data-tab="design">Дизайн</div>
+      <div class="tab" data-tab="tasks">📋 Задачи</div>
+    </div>
+    <div id="electricianContent"></div>`;
+    
+    var tabs = document.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].onclick = function() {
+            for (var j = 0; j < tabs.length; j++) { tabs[j].classList.remove('active'); }
+            this.classList.add('active');
+            var tab = this.dataset.tab;
+            if (tab === 'objects') renderElectricianObjects();
+            else if (tab === 'design') renderElectricianDesign();
+            else if (tab === 'tasks') renderElectricianTasks();
+        };
+    }
+    renderElectricianObjects();
 }
+
+function renderElectricianObjects() {
+    var container = document.getElementById('electricianContent');
+    if (!container) return;
+    
+    var active = [];
+    for (var i = 0; i < objects.length; i++) {
+        var hasElectricianWork = false;
+        for (var j = 0; j < objects[i].works.length; j++) {
+            if (objects[i].works[j].forElectrician) { hasElectricianWork = true; break; }
+        }
+        if (!objects[i].archived && hasElectricianWork) active.push(objects[i]);
+    }
+    
+    if (active.length === 0) {
+        container.innerHTML = '<div class="card">Нет назначенных задач</div>';
+        return;
+    }
+    
+    var html = '';
+    for (var i = 0; i < active.length; i++) {
+        var obj = active[i];
+        var electricWorks = [];
+        for (var j = 0; j < obj.works.length; j++) {
+            if (obj.works[j].forElectrician) electricWorks.push(obj.works[j]);
+        }
+        
+        var worksHtml = '';
+        for (var j = 0; j < electricWorks.length; j++) {
+            var w = electricWorks[j];
+            var status = w.done ? '✅' : '⏳';
+            var deadline = w.deadline ? ' 📅 ' + fmt(w.deadline) : '';
+            worksHtml += '<div style="padding:6px 0;border-bottom:1px solid #1a1a1a;display:flex;justify-content:space-between;align-items:center;">' +
+                '<span style="font-size:14px;color:#e0e0e0;">' + escapeHtml(w.name) + '</span>' +
+                '<span style="font-size:13px;color:' + (w.done ? '#4caf50' : '#c9a959') + ';">' + status + deadline + '</span>' +
+                '</div>';
+        }
+        
+        html += '<div class="card">' +
+            '<div class="flex"><h3>' + escapeHtml(obj.name) + ' <span style="font-weight:300;color:#888;">(' + escapeHtml(obj.code) + ')</span></h3><span class="badge">ID: ' + obj.id + '</span></div>' +
+            '<div style="color:#999;font-size:14px;">📍 ' + escapeHtml(obj.address) + '</div>' +
+            '<div style="margin-top:6px;"><b>Мои задачи:</b></div>' +
+            worksHtml +
+            '</div>';
+    }
+    container.innerHTML = html;
+}
+
+function renderElectricianDesign() {
+    var container = document.getElementById('electricianContent');
+    if (!container) return;
+    
+    var projs = [];
+    for (var i = 0; i < designProjects.length; i++) {
+        var p = designProjects[i];
+        if (p.roles && p.roles.includes('electrician')) {
+            projs.push(p);
+        }
+    }
+    
+    if (projs.length === 0) {
+        container.innerHTML = '<div class="card">Нет доступных дизайн-проектов</div>';
+        return;
+    }
+    
+    var html = '';
+    for (var i = 0; i < projs.length; i++) {
+        var p = projs[i];
+        var obj = getObject(p.objectId);
+        var files = '';
+        if (p.files) {
+            for (var j = 0; j < p.files.length; j++) {
+                var f = p.files[j];
+                var isImg = f.startsWith('data:image/') || f.startsWith('http');
+                files += isImg ? '<img src="' + f + '" onclick="showModal(\'' + f + '\')" style="width:50px;height:50px;object-fit:cover;border-radius:4px;border:1px solid #282828;cursor:pointer;">' : '<a href="' + f + '" target="_blank" style="color:#c9a959;">📄</a>';
+            }
+        }
+        if (!files) files = 'нет';
+        
+        var comments = '';
+        if (p.comments) {
+            for (var j = 0; j < p.comments.length; j++) {
+                var c = p.comments[j];
+                comments += '<div style="padding:2px 0;font-size:13px;color:#888;">' + escapeHtml(c.author) + ': ' + escapeHtml(c.text) + ' <span style="color:#555;font-size:11px;">' + fmt(c.date) + '</span></div>';
+            }
+        }
+        if (!comments) comments = 'нет';
+        
+        html += '<div class="card">' +
+            '<div class="flex"><h3>' + escapeHtml(p.title) + '</h3><span class="badge">' + (p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает') + '</span></div>' +
+            '<div style="color:#999;font-size:13px;">Объект: ' + (obj ? escapeHtml(obj.name) : '—') + '</div>' +
+            '<div style="margin-top:4px;"><b>Файлы:</b> ' + files + '</div>' +
+            '<div style="margin-top:4px;"><b>Комментарии:</b> ' + comments + '</div>' +
+            '</div>';
+    }
+    container.innerHTML = html;
+}
+
+function renderElectricianTasks() {
+    var container = document.getElementById('electricianContent');
+    if (!container) return;
+    
+    var html = '<div style="margin:12px 0;"><button class="btn btn-primary" onclick="addElectricianTask()">➕ Новая задача</button></div><div id="electricianTasksList"></div>';
+    container.innerHTML = html;
+    renderElectricianTasksList();
+}
+
+function renderElectricianTasksList() {
+    var container = document.getElementById('electricianTasksList');
+    if (!container) return;
+    
+    var tasks = [];
+    for (var i = 0; i < electricianTasks.length; i++) {
+        tasks.push(electricianTasks[i]);
+    }
+    tasks.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+    
+    if (tasks.length === 0) {
+        container.innerHTML = '<div class="card">Нет созданных задач</div>';
+        return;
+    }
+    
+    var html = '';
+    for (var i = 0; i < tasks.length; i++) {
+        var t = tasks[i];
+        var obj = t.objectId ? getObject(t.objectId) : null;
+        var photosHtml = '';
+        if (t.photos) {
+            for (var j = 0; j < t.photos.length; j++) {
+                photosHtml += '<img src="' + t.photos[j] + '" onclick="showModal(\'' + t.photos[j] + '\')" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid #282828;cursor:pointer;">';
+            }
+        }
+        
+        html += '<div class="card">' +
+            '<div class="flex">' +
+            '<span><b>' + escapeHtml(t.text) + '</b> ' + (obj ? '<span style="color:#888;font-size:13px;">(объект: ' + escapeHtml(obj.name) + ')</span>' : '') + '</span>' +
+            '<span style="display:flex;gap:4px;align-items:center;">' +
+            '<span class="badge" style="background:' + (t.done ? '#4caf50' : '#c9a959') + ';color:#0d0d0d;">' + (t.done ? '✅ выполнено' : '⏳ в работе') + '</span>' +
+            '<button class="btn btn-sm" onclick="toggleElectricianTaskDone(' + t.id + ')" style="padding:2px 8px;font-size:11px;">' + (t.done ? '↩' : '✅') + '</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="deleteElectricianTask(' + t.id + ')" style="padding:2px 6px;font-size:11px;">×</button>' +
+            '</span>' +
+            '</div>' +
+            '<div style="font-size:12px;color:#888;margin-top:2px;">' + fmtTime(t.date) + '</div>' +
+            (photosHtml ? '<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">' + photosHtml + '</div>' : '') +
+            '</div>';
+    }
+    container.innerHTML = html;
+}
+
+window.addElectricianTask = function() {
+    var text = prompt('Текст задачи:');
+    if (!text) return;
+    
+    var objId = null;
+    var available = [];
+    for (var i = 0; i < objects.length; i++) {
+        if (!objects[i].archived) available.push(objects[i]);
+    }
+    if (available.length > 0) {
+        var list = '';
+        for (var i = 0; i < available.length; i++) {
+            list += (i+1) + '. ' + available[i].name + '\n';
+        }
+        var choice = prompt('Выберите объект (номер) или 0 для без объекта:\n' + list);
+        if (choice !== null) {
+            var idx = parseInt(choice) - 1;
+            if (idx >= 0 && idx < available.length) objId = available[idx].id;
+        }
+    }
+    
+    var task = { id: Date.now() + Math.random() * 1000, text: text.trim(), objectId: objId, photos: [], date: new Date(), done: false };
+    electricianTasks.push(task);
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('electrician_tasks', task);
+    renderElectricianTasks();
+    showToast('📝 Задача добавлена');
+};
+
+window.toggleElectricianTaskDone = function(id) {
+    var task = null;
+    for (var i = 0; i < electricianTasks.length; i++) {
+        if (electricianTasks[i].id === id) { task = electricianTasks[i]; break; }
+    }
+    if (!task) return;
+    task.done = !task.done;
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('electrician_tasks', task);
+    renderElectricianTasks();
+    showToast(task.done ? '✅ Задача выполнена' : '↩ Задача возвращена');
+};
+
+window.deleteElectricianTask = function(id) {
+    if (!confirm('Удалить задачу?')) return;
+    for (var i = 0; i < electricianTasks.length; i++) {
+        if (electricianTasks[i].id === id) {
+            electricianTasks.splice(i, 1);
+            break;
+        }
+    }
+    saveDataToLocal();
+    if (isOnline()) {
+        fetch(SUPABASE_URL + '/rest/v1/electrician_tasks?id=eq.' + id, {
+            method: 'DELETE',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+    }
+    renderElectricianTasks();
+    showToast('🗑 Задача удалена');
+};
 
 function renderPlaceholder() {
     document.getElementById('app').innerHTML = '<div class="card"><div class="flex"><h2>' + getUserLabel(currentUser) + '</h2><button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button></div><div style="padding:30px;text-align:center;color:#888;">Страница в разработке</div></div>';
