@@ -1673,3 +1673,51 @@ document.addEventListener('DOMContentLoaded', function() {
 
 console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН');
 console.log('🔑 Пароль по умолчанию: 30986');
+// ============================================================
+// СИНХРОНИЗАЦИЯ С SUPABASE (ДОБАВЛЯЕМ В КОНЕЦ)
+// ============================================================
+
+const SUPABASE_URL = 'https://tcdanvvfxcdravgpdyat.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zStkcf7dAftG50tho5ifOw_F7Ygv_Xz';
+
+// Сохраняем оригинальную функцию
+const originalSave = window.saveDataToLocal;
+
+// Добавляем синхронизацию
+window.saveDataToLocal = function() {
+    if (typeof originalSave === 'function') {
+        originalSave();
+    }
+    
+    if (navigator.onLine) {
+        try {
+            for (const obj of objects) {
+                fetch(SUPABASE_URL + '/rest/v1/objects?id=eq.' + obj.id, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY
+                    },
+                    body: JSON.stringify(obj)
+                }).catch(() => {});
+            }
+            
+            for (const [role, pwd] of Object.entries(passwords)) {
+                if (role !== 'objects' && pwd) {
+                    fetch(SUPABASE_URL + '/rest/v1/passwords?role=eq.' + role, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': 'Bearer ' + SUPABASE_KEY
+                        },
+                        body: JSON.stringify({ password: pwd })
+                    }).catch(() => {});
+                }
+            }
+        } catch(e) {}
+    }
+};
+
+console.log('✅ Синхронизация добавлена');
