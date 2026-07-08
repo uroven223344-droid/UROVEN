@@ -1763,21 +1763,54 @@ window.setObjectPassword = function(objId) {
     const val = document.getElementById('pass-obj-' + objId).value.trim();
     const obj = objects.find(o => o.id === objId);
     if (!obj) return;
+    
+    let newPwd;
     if (val) {
-        passwords.objects[objId] = val;
+        newPwd = val;
         showToast('🔑 Пароль для "' + obj.name + '" установлен на "' + val + '"');
     } else {
-        const newPwd = Math.random().toString(36).substring(2, 8).toUpperCase();
-        passwords.objects[objId] = newPwd;
+        newPwd = Math.random().toString(36).substring(2, 8).toUpperCase();
         showToast('🔑 Пароль сброшен на: ' + newPwd);
         document.getElementById('pass-obj-' + objId).value = newPwd;
     }
+    
+    passwords.objects[objId] = newPwd;
     saveDataToLocal();
     
+    // Сохраняем в Supabase
     if (isOnline()) {
-        syncPasswordsToSupabase();
-    } else {
-        addPendingAction({ type: 'updatePassword', data: { objectId: objId, password: passwords.objects[objId] } });
+        // Проверяем, есть ли запись
+        fetch(SUPABASE_URL + '/rest/v1/passwords?object_id=eq.' + objId, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.length > 0) {
+                // Обновляем
+                return fetch(SUPABASE_URL + '/rest/v1/passwords?object_id=eq.' + objId, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY
+                    },
+                    body: JSON.stringify({ password: newPwd })
+                });
+            } else {
+                // Создаём
+                return fetch(SUPABASE_URL + '/rest/v1/passwords', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY
+                    },
+                    body: JSON.stringify({ object_id: objId, password: newPwd })
+                });
+            }
+        })
+        .then(() => console.log('✅ Пароль синхронизирован с Supabase'))
+        .catch(e => console.log('⚠️ Ошибка синхронизации пароля:', e));
     }
     
     renderPasswords();
