@@ -60,7 +60,6 @@ async function loadAllFromSupabase() {
         console.log('🔄 Загрузка всех данных из Supabase...');
         showToast('⏳ Синхронизация всех данных...');
         
-        // Загружаем объекты
         const objectsResp = await fetch(`${SUPABASE_URL}/rest/v1/objects?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -76,7 +75,6 @@ async function loadAllFromSupabase() {
             }
         }
 
-        // Загружаем чеки
         const checksResp = await fetch(`${SUPABASE_URL}/rest/v1/checks?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -92,7 +90,6 @@ async function loadAllFromSupabase() {
             }
         }
 
-        // Загружаем рекомендации
         const recsResp = await fetch(`${SUPABASE_URL}/rest/v1/recommendations?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -108,7 +105,6 @@ async function loadAllFromSupabase() {
             }
         }
 
-        // Загружаем заметки
         const notesResp = await fetch(`${SUPABASE_URL}/rest/v1/notes?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -124,7 +120,6 @@ async function loadAllFromSupabase() {
             }
         }
 
-        // Загружаем дизайн-проекты
         const designResp = await fetch(`${SUPABASE_URL}/rest/v1/design_projects?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -140,7 +135,6 @@ async function loadAllFromSupabase() {
             }
         }
 
-        // Загружаем задачи электрика
         const tasksResp = await fetch(`${SUPABASE_URL}/rest/v1/electrician_tasks?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -156,7 +150,6 @@ async function loadAllFromSupabase() {
             }
         }
 
-        // Загружаем заказы на закупку
         const ordersResp = await fetch(`${SUPABASE_URL}/rest/v1/purchase_orders?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -172,7 +165,6 @@ async function loadAllFromSupabase() {
             }
         }
 
-        // Загружаем отчеты (фото)
         const reportsResp = await fetch(`${SUPABASE_URL}/rest/v1/reports?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -188,7 +180,6 @@ async function loadAllFromSupabase() {
             }
         }
 
-        // Загружаем пароли
         const pwdResp = await fetch(`${SUPABASE_URL}/rest/v1/passwords?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -203,7 +194,6 @@ async function loadAllFromSupabase() {
 
         saveDataToLocal();
         
-        // Обновляем интерфейс
         if (currentUser === 'boss') {
             renderBossObjects();
         } else if (currentUser === 'wolf') {
@@ -547,7 +537,7 @@ let checks = [];
 let purchaseOrders = [];
 let notes = [];
 let electricianTasks = [];
-let passwords = { boss: '', wolf: '', client: '', master: '', designer: '', purchaser: '', electrician: '', objects: {} };
+let passwords = { boss: 'boss123', wolf: '', client: '', master: '', designer: 'design123', purchaser: 'purchase123', electrician: '', objects: {} };
 let currentUser = null;
 let currentObjectId = null;
 let uiState = {};
@@ -577,7 +567,7 @@ function loadDataFromLocal() {
             purchaseOrders = d.purchaseOrders || [];
             notes = d.notes || [];
             electricianTasks = d.electricianTasks || [];
-            passwords = d.passwords || { boss: '', wolf: '', client: '', master: '', designer: '', purchaser: '', electrician: '', objects: {} };
+            passwords = d.passwords || { boss: 'boss123', wolf: '', client: '', master: '', designer: 'design123', purchaser: 'purchase123', electrician: '', objects: {} };
         }
     } catch (e) {}
     if (!objects.length) {
@@ -587,12 +577,14 @@ function loadDataFromLocal() {
             code: 'DEMO',
             name: 'Демо-объект',
             address: 'ул. Примерная, 1',
-            works: [{ id: n + 1, name: 'Демонтаж', done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !1 }],
+            works: [{ id: n + 1, name: 'Демонтаж', done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !1, status: '' }],
             completed: !1,
-            archived: !1
+            archived: !1,
+            startDate: null,
+            plannedEndDate: null,
+            schedule: []
         });
         passwords.objects[n] = 'demo123';
-        passwords.boss = 'boss123';
     }
     objects.forEach(o => {
         o.works.forEach(w => {
@@ -601,12 +593,38 @@ function loadDataFromLocal() {
             if (w.done === undefined) w.done = !1;
             if (w.forElectrician === undefined) w.forElectrician = !1;
             if (w.manual === undefined) w.manual = !1;
+            if (w.status === undefined) w.status = '';
         });
+        if (o.startDate === undefined) o.startDate = null;
+        if (o.plannedEndDate === undefined) o.plannedEndDate = null;
+        if (o.schedule === undefined) o.schedule = [];
     });
     recommendations.forEach(r => { if (!r.photos) r.photos = []; if (!r.purchasedPhotos) r.purchasedPhotos = []; });
     electricianTasks.forEach(t => { if (!t.photos) t.photos = []; if (t.done === undefined) t.done = !1; if (t.objectId === undefined) t.objectId = null; });
     objects.forEach(o => { if (!passwords.objects[o.id]) passwords.objects[o.id] = Math.random().toString(36).substring(2, 8).toUpperCase(); });
     loadUiState();
+}
+
+// ============================================================
+// КАБИНЕТЫ-ОБМАНКИ (ДИЗАЙНЕР, МАСТЕР, ЗАКУПЩИК)
+// ============================================================
+function renderFakeCabinet(role) {
+    const labels = {
+        designer: '🎨 Дизайнер',
+        master: '🔧 Мастер',
+        purchaser: '📦 Закупщик'
+    };
+    
+    document.getElementById('app').innerHTML = `
+    <div class="card" style="text-align:center;padding:40px 20px;min-height:400px;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+        <div style="font-size:64px;margin-bottom:20px;">🔒</div>
+        <h2 style="color:#c9a959;margin-bottom:10px;">${labels[role] || role}</h2>
+        <div style="color:#666;font-size:18px;margin-bottom:20px;">Доступ временно ограничен</div>
+        <div style="color:#444;font-size:14px;max-width:300px;margin-bottom:30px;">
+            Ведутся технические работы. Пожалуйста, обратитесь к руководителю.
+        </div>
+        <button class="btn btn-primary" onclick="currentUser=null;render()">🚪 Выйти</button>
+    </div>`;
 }
 
 // ============================================================
@@ -630,6 +648,17 @@ function renderPendingStatus() {
 }
 
 // ============================================================
+// ФУНКЦИЯ РАСЧЕТА ДНЕЙ ДО ЗАВЕРШЕНИЯ
+// ============================================================
+function getDaysRemaining(endDate) {
+    if (!endDate) return null;
+    const end = new Date(endDate);
+    const now = new Date();
+    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+    return diff;
+}
+
+// ============================================================
 // ОБНОВЛЁННЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ОБЪЕКТАМИ И ЭТАПАМИ
 // ============================================================
 window.addObject = function() {
@@ -643,7 +672,7 @@ window.addObject = function() {
     if (!pwd) { pwd = Math.random().toString(36).substring(2, 8).toUpperCase();
         showToast('Пароль: ' + pwd); }
     const id = Date.now();
-    const newObj = { id, code: Math.random().toString(36).substring(2, 8).toUpperCase(), name: n, address: a, works: [], completed: !1, archived: !1 };
+    const newObj = { id, code: Math.random().toString(36).substring(2, 8).toUpperCase(), name: n, address: a, works: [], completed: !1, archived: !1, startDate: null, plannedEndDate: null, schedule: [] };
     objects.push(newObj);
     passwords.objects[id] = pwd;
     saveDataToLocal();
@@ -667,7 +696,7 @@ window.addWork = function(id) {
     if (n) {
         const o = getObject(id);
         if (o) {
-            const newWork = { id: Date.now(), name: n, done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !0 };
+            const newWork = { id: Date.now(), name: n, done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !0, status: '' };
             o.works.push(newWork);
             saveDataToLocal();
             
@@ -720,7 +749,8 @@ window.setWorkDeadline = function(id, wi) {
                     addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
                 });
             }
-            renderBossObjects();
+            if (currentUser === 'boss') renderBossObjects();
+            else if (currentUser === 'wolf') renderWolfObjects();
             showToast('📅 Срок установлен');
         }
     }
@@ -988,6 +1018,175 @@ window.uploadWorkPhoto = async function(id, wi) {
     };
     setTimeout(() => inp.click(), 50);
 };
+
+// ============================================================
+// ФУНКЦИИ ДЛЯ УСТАНОВКИ ДАТ ОБЪЕКТА
+// ============================================================
+window.setObjectStartDate = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const date = prompt('Введите дату начала (ГГГГ-ММ-ДД):');
+    if (date && isValidDate(date)) {
+        obj.startDate = date;
+        saveDataToLocal();
+        if (isOnline()) {
+            saveToSupabase('objects', obj);
+        } else {
+            addPendingAction({ type: 'updateObject', data: obj });
+        }
+        renderBossObjects();
+        showToast('📅 Дата начала установлена');
+    } else if (date) {
+        showToast('❌ Неверный формат даты');
+    }
+};
+
+window.setObjectEndDate = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const date = prompt('Введите дату планового завершения (ГГГГ-ММ-ДД):');
+    if (date && isValidDate(date)) {
+        obj.plannedEndDate = date;
+        saveDataToLocal();
+        if (isOnline()) {
+            saveToSupabase('objects', obj);
+        } else {
+            addPendingAction({ type: 'updateObject', data: obj });
+        }
+        renderBossObjects();
+        showToast('📅 Дата завершения установлена');
+    } else if (date) {
+        showToast('❌ Неверный формат даты');
+    }
+};
+
+// ============================================================
+// ФУНКЦИИ ДЛЯ ГРАФИКА РАБОТ
+// ============================================================
+window.addScheduleItem = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    
+    const date = prompt('Дата (ГГГГ-ММ-ДД):');
+    if (!date || !isValidDate(date)) {
+        if (date) showToast('❌ Неверный формат даты');
+        return;
+    }
+    const text = prompt('Описание события:');
+    if (!text) return;
+    
+    if (!obj.schedule) obj.schedule = [];
+    obj.schedule.push({ date, text });
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
+    renderSchedule();
+    showToast('✅ Событие добавлено в график');
+};
+
+window.deleteScheduleItem = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule) return;
+    if (!confirm('Удалить событие из графика?')) return;
+    
+    obj.schedule.splice(idx, 1);
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
+    renderSchedule();
+    showToast('🗑 Событие удалено');
+};
+
+window.clearSchedule = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    if (!confirm('Очистить весь график?')) return;
+    
+    obj.schedule = [];
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
+    renderSchedule();
+    showToast('🗑 График очищен');
+};
+
+window.switchScheduleObject = function(objId) {
+    currentObjectId = parseInt(objId);
+    renderSchedule();
+};
+
+function renderSchedule() {
+    const container = document.getElementById('bossContent') || document.getElementById('wolfContent');
+    if (!container) return;
+    
+    if (currentUser === 'wolf') {
+        const objectsList = objects.filter(o => !o.archived);
+        if (objectsList.length === 0) {
+            container.innerHTML = '<div class="card">Нет объектов</div>';
+            return;
+        }
+        
+        let selectHtml = `
+            <div style="margin-bottom:12px;">
+                <select id="scheduleObjectSelect" onchange="switchScheduleObject(this.value)" style="background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:6px;padding:8px;width:100%;font-size:14px;">
+                    ${objectsList.map(o => `
+                        <option value="${o.id}" ${o.id === currentObjectId ? 'selected' : ''}>${escapeHtml(o.name)}</option>
+                    `).join('')}
+                </select>
+            </div>
+        `;
+        container.innerHTML = selectHtml;
+    }
+    
+    const obj = getObject(currentObjectId);
+    if (!obj) {
+        container.innerHTML += '<div class="card">Объект не найден</div>';
+        return;
+    }
+    
+    let html = `
+    <div class="card">
+        <h3>📋 График работ — ${escapeHtml(obj.name)}</h3>
+        <div style="margin:8px 0;">
+            <button class="btn btn-sm btn-primary" onclick="addScheduleItem(${obj.id})">➕ Добавить событие</button>
+            <button class="btn btn-sm" onclick="clearSchedule(${obj.id})">🗑 Очистить</button>
+        </div>
+        <div id="scheduleList">
+    `;
+    
+    if (!obj.schedule || obj.schedule.length === 0) {
+        html += '<div style="color:#666;">График пуст. Добавьте события.</div>';
+    } else {
+        const sorted = [...obj.schedule].sort((a, b) => new Date(a.date) - new Date(b.date));
+        html += sorted.map((item, idx) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;margin:4px 0;background:#121212;border-radius:6px;border:1px solid #282828;">
+                <div>
+                    <span style="color:#c9a959;">${fmt(item.date)}</span>
+                    <span style="margin-left:12px;">${escapeHtml(item.text)}</span>
+                </div>
+                <button class="btn btn-sm btn-danger" onclick="deleteScheduleItem(${obj.id}, ${idx})">×</button>
+            </div>
+        `).join('');
+    }
+    
+    html += '</div></div>';
+    container.innerHTML += html;
+}
 
 // ============================================================
 // ДИЗАЙН-ПРОЕКТЫ
@@ -1611,6 +1810,7 @@ function renderBoss() {
       <div class="tab" data-tab="purchases">Закупки (отчёт)</div>
       <div class="tab" data-tab="checks">Чеки</div>
       <div class="tab" data-tab="passwords">🔐 Пароли</div>
+      <div class="tab" data-tab="schedule">📋 График</div>
     </div>
     <div id="bossContent"></div>`;
     document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
@@ -1631,6 +1831,9 @@ function renderBoss() {
                 break;
             case 'passwords':
                 renderPasswords();
+                break;
+            case 'schedule':
+                renderSchedule();
                 break;
         }
     });
@@ -1699,6 +1902,16 @@ function renderBossObjects() {
             const hasPhoto = photos.length > 0;
             const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button><span class="status-badge">${r.approved ? '✅ одобр.' : '⏳ модер.'}</span></span>`).join('');
             const electricianLabel = w.forElectrician ? '⚡' : '';
+            
+            // Расчет дней до дедлайна
+            let daysHtml = '';
+            if (w.deadline && !w.done) {
+                const daysLeft = getDaysRemaining(w.deadline);
+                if (daysLeft !== null) {
+                    daysHtml = `<span style="font-size:12px;color:${daysLeft < 0 ? '#a04040' : '#4caf50'};margin-left:8px;">${daysLeft < 0 ? `⏰ просрочка ${Math.abs(daysLeft)} дн.` : `⏳ осталось ${daysLeft} дн.`}</span>`;
+                }
+            }
+            
             return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}">
                 <div class="work-header" onclick="toggleWork(event, this, '${wKey}')">
                     <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">
@@ -1708,6 +1921,7 @@ function renderBossObjects() {
                         <span class="work-status-check" onclick="event.stopPropagation();toggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>
                         <span class="work-electrician-toggle" onclick="event.stopPropagation();toggleElectrician(${obj.id},${originalIndex})" title="Назначить электрику">${electricianLabel || '⚡'}</span>
                         ${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}
+                        ${daysHtml}
                         <span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}" title="${hasPhoto ? 'Есть фото' : 'Нет фото'}"></span>
                         <span class="work-arrow ${wOpen ? 'open' : ''}">▶</span>
                     </span>
@@ -1731,7 +1945,26 @@ function renderBossObjects() {
         if (obj.archived) {
             archiveButtons = `<button class="btn btn-sm" onclick="event.stopPropagation();unarchiveObject(${obj.id})">↩ Вернуть из архива</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteObjectPermanently(${obj.id})">🗑 Удалить</button>`;
         }
-        return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}${!obj.archived ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();archiveObject(${obj.id})">📦</button>` : ''}${archiveButtons}<button class="btn btn-sm" onclick="event.stopPropagation();addWork(${obj.id})">➕ Этап</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}">${addButtons}<hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
+        
+        // Сводка по объекту
+        let summaryHtml = '';
+        if (obj.startDate) {
+            summaryHtml += `<div>📅 Начало: ${fmt(obj.startDate)}</div>`;
+        } else {
+            summaryHtml += `<div>📅 Начало: <span style="color:#666;">не указано</span></div>`;
+        }
+        if (obj.plannedEndDate) {
+            const daysLeft = getDaysRemaining(obj.plannedEndDate);
+            summaryHtml += `<div>🎯 Плановое завершение: ${fmt(obj.plannedEndDate)}`;
+            if (daysLeft !== null) {
+                summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#c9a959'};">(${daysLeft < 0 ? 'Просрочено на ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
+            }
+            summaryHtml += `</div>`;
+        } else {
+            summaryHtml += `<div>🎯 Плановое завершение: <span style="color:#666;">не указано</span></div>`;
+        }
+        
+        return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}${!obj.archived ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();archiveObject(${obj.id})">📦</button>` : ''}${archiveButtons}<button class="btn btn-sm" onclick="event.stopPropagation();addWork(${obj.id})">➕ Этап</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div><div style="margin:8px 0;padding:10px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;">${summaryHtml}<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="setObjectStartDate(${obj.id})">📅 Установить начало</button><button class="btn btn-sm" onclick="setObjectEndDate(${obj.id})">📅 Установить завершение</button></div></div></div><div class="object-detail ${objOpen ? 'open' : ''}">${addButtons}<hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
     }).join('');
 
     container.innerHTML = statusHtml + toolsHtml + filterTabs + sel + list;
@@ -1968,6 +2201,7 @@ function renderWolf() {
       <div class="tab" data-tab="notes">Ежедневник</div>
       <div class="tab" data-tab="purchases">Закупки</div>
       <div class="tab" data-tab="checks">Чеки</div>
+      <div class="tab" data-tab="schedule">📋 График</div>
     </div>
     <div id="wolfContent"></div>`;
     document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
@@ -1985,6 +2219,9 @@ function renderWolf() {
                 break;
             case 'checks':
                 renderWolfChecks();
+                break;
+            case 'schedule':
+                renderSchedule();
                 break;
         }
     });
@@ -2032,10 +2269,38 @@ function renderWolfObjects() {
             const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
             const hasPhoto = photos.length > 0;
             const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button><span class="status-badge">${r.approved ? '✅ одобр.' : '⏳ модер.'}</span></span>`).join('');
-            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}"><div class="work-header" onclick="toggleWork(event, this, '${wKey}')"><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;"><span class="drag-handle">⠿</span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}<span class="work-status-check" onclick="event.stopPropagation();wolfToggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}<span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}"></span><span class="work-arrow ${wOpen ? 'open' : ''}">▶</span></span><span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;"><button class="icon-btn" onclick="event.stopPropagation();wolfUploadWorkPhoto(${obj.id},${originalIndex})">📸</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkUp(${obj.id},${originalIndex})">⬆</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkDown(${obj.id},${originalIndex})">⬇</button></span></div><div class="work-detail ${wOpen ? 'open' : ''}"><div style="margin:6px 0;"><b>📸 Фото:</b></div><div class="photo-grid">${phHtml || 'Нет фото'}</div></div></div>`;
+            
+            let daysHtml = '';
+            if (w.deadline && !w.done) {
+                const daysLeft = getDaysRemaining(w.deadline);
+                if (daysLeft !== null) {
+                    daysHtml = `<span style="font-size:12px;color:${daysLeft < 0 ? '#a04040' : '#4caf50'};margin-left:8px;">${daysLeft < 0 ? `⏰ просрочка ${Math.abs(daysLeft)} дн.` : `⏳ осталось ${daysLeft} дн.`}</span>`;
+                }
+            }
+            
+            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}"><div class="work-header" onclick="toggleWork(event, this, '${wKey}')"><span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;"><span class="drag-handle">⠿</span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}<span class="work-status-check" onclick="event.stopPropagation();wolfToggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}${daysHtml}<span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}"></span><span class="work-arrow ${wOpen ? 'open' : ''}">▶</span></span><span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;"><button class="icon-btn" onclick="event.stopPropagation();wolfUploadWorkPhoto(${obj.id},${originalIndex})">📸</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkUp(${obj.id},${originalIndex})">⬆</button><button class="icon-btn" onclick="event.stopPropagation();wolfMoveWorkDown(${obj.id},${originalIndex})">⬇</button></span></div><div class="work-detail ${wOpen ? 'open' : ''}"><div style="margin:6px 0;"><b>📸 Фото:</b></div><div class="photo-grid">${phHtml || 'Нет фото'}</div></div></div>`;
         }).join('');
         const addWorkButton = `<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="wolfAddWork(${obj.id})">➕ Добавить этап</button></div>`;
-        return `<div class="card" id="wolf-obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="wolf-work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div>${addWorkButton}</div></div>`;
+        
+        // Сводка по объекту для волка
+        let summaryHtml = '';
+        if (obj.startDate) {
+            summaryHtml += `<div>📅 Начало: ${fmt(obj.startDate)}</div>`;
+        } else {
+            summaryHtml += `<div>📅 Начало: <span style="color:#666;">не указано</span></div>`;
+        }
+        if (obj.plannedEndDate) {
+            const daysLeft = getDaysRemaining(obj.plannedEndDate);
+            summaryHtml += `<div>🎯 Плановое завершение: ${fmt(obj.plannedEndDate)}`;
+            if (daysLeft !== null) {
+                summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#c9a959'};">(${daysLeft < 0 ? 'Просрочено на ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
+            }
+            summaryHtml += `</div>`;
+        } else {
+            summaryHtml += `<div>🎯 Плановое завершение: <span style="color:#666;">не указано</span></div>`;
+        }
+        
+        return `<div class="card" id="wolf-obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div><div style="margin:8px 0;padding:10px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;">${summaryHtml}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="wolf-work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div>${addWorkButton}</div></div>`;
     }).join('');
     container.innerHTML = sel + list;
     setTimeout(() => initDragDrop(), 50);
@@ -2050,7 +2315,7 @@ window.wolfAddWork = function(id) {
     if (n) {
         const o = getObject(id);
         if (o) {
-            const newWork = { id: Date.now(), name: n, done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !0 };
+            const newWork = { id: Date.now(), name: n, done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !0, status: '' };
             o.works.push(newWork);
             saveDataToLocal();
             
@@ -2389,14 +2654,71 @@ window.clientApproveDesign = function(id) {
 function renderClientWorks() {
     const container = document.getElementById('clientContent');
     const obj = getObject(currentObjectId);
-    let html = `<div class="card"><h3>Этапы работ</h3>`;
+    
+    // Ближайшие работы (фиксированные)
+    const upcomingWorks = [
+        { date: '20.07', name: 'Монтаж сантехники' },
+        { date: '25.07', name: 'Укладка плитки' },
+        { date: '01.08', name: 'Покраска' }
+    ];
+    
+    let html = `
+    <div class="card">
+        <h3>📌 Ближайшие работы</h3>
+        ${upcomingWorks.map(w => `
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;">
+                <span>${w.date}</span>
+                <span style="color:#c9a959;">${w.name}</span>
+            </div>
+        `).join('')}
+    </div>
+    <div class="card">
+        <h3>📋 Этапы работ</h3>`;
+    
     obj.works.forEach(w => {
-        const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id && r.approved);
-        html += `<div style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:8px 0;"><div class="flex"><b>${escapeHtml(w.name)}</b> ${w.quantity ? `<span style="color:#999;font-size:14px;">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}<span class="badge">${w.done ? '✅ выполнено' : '⏳ в работе'}</span></div>${w.deadline ? '<div><b>Срок:</b> ' + fmt(w.deadline) + '</div>' : ''}<div><b>Фото:</b> <div class="photo-grid">${photos.map(r => `<img src="${r.photos[0]}" style="width:60px;" onclick="showModal('${r.photos[0]}')">`).join('')}</div></div></div>`;
+        let statusHtml = '';
+        if (w.status) {
+            statusHtml = `<div style="font-size:13px;color:#c9a959;margin-top:4px;">📌 ${escapeHtml(w.status)}</div>`;
+        }
+        
+        html += `
+        <div style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:8px 0;">
+            <div class="flex">
+                <b>${escapeHtml(w.name)}</b>
+                <span class="badge">${w.done ? '✅ выполнено' : '⏳ в работе'}</span>
+            </div>
+            ${statusHtml}
+            <div style="margin-top:6px;">
+                <button class="btn btn-sm" onclick="clientAddWorkStatus(${obj.id}, ${obj.works.indexOf(w)})">📝 Добавить статус</button>
+            </div>
+        </div>`;
     });
+    
     html += '</div>';
     container.innerHTML = html;
 }
+
+window.clientAddWorkStatus = function(objId, workIdx) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const work = obj.works[workIdx];
+    if (!work) return;
+    
+    const status = prompt('Введите статус этапа (например: "заказаны материалы, ожидаем доставку"):');
+    if (status !== null && status.trim() !== '') {
+        work.status = status.trim();
+        saveDataToLocal();
+        
+        if (isOnline()) {
+            saveToSupabase('objects', obj);
+        } else {
+            addPendingAction({ type: 'updateObject', data: obj });
+        }
+        
+        renderClientWorks();
+        showToast('✅ Статус обновлён');
+    }
+};
 
 // ============================================================
 // ЭЛЕКТРИК
@@ -2850,13 +3172,13 @@ window.setWorkFilter = function(objId, filter) {
 function render() {
     const app = document.getElementById('app');
     if (!currentUser) renderLogin();
-    else if (currentUser === 'boss') renderBoss();
+    else if (['designer', 'master', 'purchaser'].includes(currentUser)) {
+        renderFakeCabinet(currentUser);
+    } else if (currentUser === 'boss') renderBoss();
     else if (currentUser === 'wolf') renderWolf();
     else if (currentUser === 'client') renderClient();
     else if (currentUser === 'electrician') renderElectrician();
-    else if (currentUser === 'master' || currentUser === 'designer' || currentUser === 'purchaser') {
-        renderGenericViewer(getUserLabel(currentUser));
-    } else renderPlaceholder();
+    else renderPlaceholder();
 }
 
 function renderLogin() {
@@ -2879,6 +3201,27 @@ function renderLogin() {
 }
 
 window.login = function(r) {
+    // Для кабинетов-обманок
+    if (['designer', 'master', 'purchaser'].includes(r)) {
+        if (!passwords[r]) {
+            if (r === 'designer') passwords.designer = 'design123';
+            else if (r === 'master') passwords.master = 'master123';
+            else if (r === 'purchaser') passwords.purchaser = 'purchase123';
+            saveDataToLocal();
+        }
+        
+        const p = prompt(`Введите пароль для роли "${getUserLabel(r)}":`);
+        if (p !== passwords[r]) {
+            alert('Неверный пароль');
+            return;
+        }
+        
+        currentUser = r;
+        render();
+        return;
+    }
+    
+    // Для остальных ролей
     if (passwords[r] && passwords[r].length > 0) {
         const p = prompt(`Введите пароль для роли "${getUserLabel(r)}":`);
         if (p !== passwords[r]) { alert('Неверный пароль'); return; }
@@ -2920,7 +3263,7 @@ loadDataFromLocal();
 // Показываем интерфейс сразу
 render();
 
-// Загружаем данные в фоне
+// Загружаем данные из Supabase в фоне
 setTimeout(() => {
     loadAllFromSupabase();
 }, 100);
@@ -2948,3 +3291,8 @@ window.addEventListener('offline', () => {
 });
 
 console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
+console.log('🔑 Пароли:');
+console.log('👔 Руководитель: boss123');
+console.log('🎨 Дизайнер: design123');
+console.log('🔧 Мастер: master123');
+console.log('📦 Закупщик: purchase123');
