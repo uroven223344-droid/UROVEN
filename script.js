@@ -1777,6 +1777,43 @@ window.setObjectPassword = function(objId) {
     passwords.objects[objId] = newPwd;
     saveDataToLocal();
     
+    // === ДОБАВЛЯЕМ СИНХРОНИЗАЦИЮ С SUPABASE ===
+    if (isOnline()) {
+        fetch(SUPABASE_URL + '/rest/v1/passwords?object_id=eq.' + objId, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.length > 0) {
+                return fetch(SUPABASE_URL + '/rest/v1/passwords?object_id=eq.' + objId, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY
+                    },
+                    body: JSON.stringify({ password: newPwd })
+                });
+            } else {
+                return fetch(SUPABASE_URL + '/rest/v1/passwords', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY
+                    },
+                    body: JSON.stringify({ object_id: objId, password: newPwd })
+                });
+            }
+        })
+        .then(() => console.log('✅ Пароль синхронизирован с Supabase'))
+        .catch(e => console.log('⚠️ Ошибка синхронизации:', e));
+    }
+    // ===== КОНЕЦ ДОБАВЛЕНИЯ =====
+    
+    renderPasswords();
+};
+    
     // Сохраняем в Supabase
     if (isOnline()) {
         // Проверяем, есть ли запись
