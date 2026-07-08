@@ -1,5 +1,5 @@
 // ============================================================
-// СТРОЙУЧЁТ — ПОЛНАЯ ВЕРСИЯ С СИНХРОНИЗАЦИЕЙ
+// СТРОЙУЧЁТ — ПОЛНАЯ ВЕРСИЯ
 // ============================================================
 
 const SUPABASE_URL = 'https://tcdanvvfxcdravgpdyat.supabase.co';
@@ -21,7 +21,6 @@ function loadPendingActions() {
 function savePendingActions() {
     try {
         localStorage.setItem('pendingActions', JSON.stringify(pendingActions));
-        updatePendingStatus();
     } catch (e) {}
 }
 
@@ -34,18 +33,11 @@ function addPendingAction(action) {
     savePendingActions();
 }
 
-function updatePendingStatus() {
-    const statusEl = document.getElementById('pendingStatus');
-    if (!statusEl) return;
-    const count = pendingActions.length;
-    if (count === 0) {
-        statusEl.innerHTML = '✅ Все данные синхронизированы';
-        statusEl.style.color = '#4caf50';
-    } else {
-        statusEl.innerHTML = `⏳ Ожидают синхронизации: ${count} действий <button class="btn btn-sm" onclick="syncPendingActions()" style="margin-left:12px;">Синхронизировать сейчас</button>`;
-        statusEl.style.color = '#c9a959';
-    }
-}
+// ============================================================
+// ПАРОЛИ (базовые)
+// ============================================================
+// Все пароли = 30986 (кроме клиента — у него пароль от объекта)
+const DEFAULT_PASSWORD = '30986';
 
 // ============================================================
 // ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE
@@ -518,7 +510,22 @@ function showToast(message, duration = 3000) {
 }
 
 function escapeHtml(s) { if (!s) return ''; const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }; return String(s).replace(/[&<>"']/g, c => m[c]); }
-function isValidDate(d) { const r = /^\d{4}-\d{2}-\d{2}$/; if (!r.test(d)) return !1; const p = d.split('-'), dt = new Date(+p[0], +p[1] - 1, +p[2]); return dt && dt.getFullYear() == +p[0] && dt.getMonth() == +p[1] - 1 && dt.getDate() == +p[2]; }
+function isValidDate(d) { const r = /^\d{2}\.\d{2}\.\d{4}$/; if (!r.test(d)) return !1; const p = d.split('.'), dt = new Date(+p[2], +p[1] - 1, +p[0]); return dt && dt.getFullYear() == +p[2] && dt.getMonth() == +p[1] - 1 && dt.getDate() == +p[0]; }
+
+// ПРЕОБРАЗОВАНИЕ ДАТЫ ИЗ ДД.ММ.ГГГГ В ГГГГ-ММ-ДД ДЛЯ БАЗЫ ДАННЫХ
+function dateToISO(dateStr) {
+    if (!dateStr) return null;
+    const p = dateStr.split('.');
+    return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
+// ПРЕОБРАЗОВАНИЕ ИЗ ГГГГ-ММ-ДД В ДД.ММ.ГГГГ
+function isoToDate(isoStr) {
+    if (!isoStr) return '';
+    const p = isoStr.split('-');
+    return `${p[2]}.${p[1]}.${p[0]}`;
+}
+
 function saveUiState() { try { localStorage.setItem('uiState', JSON.stringify(uiState)); } catch (e) {} }
 function loadUiState() { try { const s = localStorage.getItem('uiState'); if (s) uiState = JSON.parse(s); } catch (e) {} if (!uiState) uiState = {}; }
 function getObject(id) { return objects.find(o => o.id === id); }
@@ -553,7 +560,16 @@ let checks = [];
 let purchaseOrders = [];
 let notes = [];
 let electricianTasks = [];
-let passwords = { boss: 'boss123', wolf: '', client: '', master: '', designer: 'design123', purchaser: 'purchase123', electrician: '', objects: {} };
+let passwords = { 
+    boss: DEFAULT_PASSWORD, 
+    wolf: DEFAULT_PASSWORD, 
+    client: '', 
+    master: DEFAULT_PASSWORD, 
+    designer: DEFAULT_PASSWORD, 
+    purchaser: DEFAULT_PASSWORD, 
+    electrician: DEFAULT_PASSWORD, 
+    objects: {} 
+};
 let currentUser = null;
 let currentObjectId = null;
 let uiState = {};
@@ -583,7 +599,16 @@ function loadDataFromLocal() {
             purchaseOrders = d.purchaseOrders || [];
             notes = d.notes || [];
             electricianTasks = d.electricianTasks || [];
-            passwords = d.passwords || { boss: 'boss123', wolf: '', client: '', master: '', designer: 'design123', purchaser: 'purchase123', electrician: '', objects: {} };
+            passwords = d.passwords || { 
+                boss: DEFAULT_PASSWORD, 
+                wolf: DEFAULT_PASSWORD, 
+                client: '', 
+                master: DEFAULT_PASSWORD, 
+                designer: DEFAULT_PASSWORD, 
+                purchaser: DEFAULT_PASSWORD, 
+                electrician: DEFAULT_PASSWORD, 
+                objects: {} 
+            };
         }
     } catch (e) {}
     if (!objects.length) {
@@ -598,7 +623,8 @@ function loadDataFromLocal() {
             archived: !1,
             startDate: null,
             plannedEndDate: null,
-            clientStatus: ''
+            clientStatus: '',
+            schedule: []
         });
         passwords.objects[n] = 'demo123';
     }
@@ -610,15 +636,37 @@ function loadDataFromLocal() {
             if (w.forElectrician === undefined) w.forElectrician = !1;
             if (w.manual === undefined) w.manual = !1;
             if (w.status === undefined) w.status = '';
+            if (w.deadline && typeof w.deadline === 'string' && w.deadline.includes('-')) {
+                w.deadline = isoToDate(w.deadline);
+            }
         });
         if (o.startDate === undefined) o.startDate = null;
         if (o.plannedEndDate === undefined) o.plannedEndDate = null;
         if (o.clientStatus === undefined) o.clientStatus = '';
+        if (o.schedule === undefined) o.schedule = [];
+        if (o.startDate && typeof o.startDate === 'string' && o.startDate.includes('-')) {
+            o.startDate = isoToDate(o.startDate);
+        }
+        if (o.plannedEndDate && typeof o.plannedEndDate === 'string' && o.plannedEndDate.includes('-')) {
+            o.plannedEndDate = isoToDate(o.plannedEndDate);
+        }
     });
     recommendations.forEach(r => { if (!r.photos) r.photos = []; if (!r.purchasedPhotos) r.purchasedPhotos = []; });
     electricianTasks.forEach(t => { if (!t.photos) t.photos = []; if (t.done === undefined) t.done = !1; if (t.objectId === undefined) t.objectId = null; });
     objects.forEach(o => { if (!passwords.objects[o.id]) passwords.objects[o.id] = Math.random().toString(36).substring(2, 8).toUpperCase(); });
     loadUiState();
+}
+
+// ============================================================
+// ФУНКЦИЯ РАСЧЕТА ДНЕЙ ДО ЗАВЕРШЕНИЯ
+// ============================================================
+function getDaysRemaining(endDate) {
+    if (!endDate) return null;
+    const p = endDate.split('.');
+    const end = new Date(+p[2], +p[1] - 1, +p[0]);
+    const now = new Date();
+    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+    return diff;
 }
 
 // ============================================================
@@ -644,37 +692,6 @@ function renderFakeCabinet(role) {
 }
 
 // ============================================================
-// ИНДИКАТОР СТАТУСА СИНХРОНИЗАЦИИ
-// ============================================================
-function renderPendingStatus() {
-    const container = document.getElementById('bossContent');
-    if (!container) return;
-    const statusDiv = document.createElement('div');
-    statusDiv.id = 'pendingStatus';
-    statusDiv.style.cssText = 'padding:8px 12px;margin-bottom:12px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;text-align:center;';
-    const count = pendingActions.length;
-    if (count === 0) {
-        statusDiv.innerHTML = '✅ Все данные синхронизированы';
-        statusDiv.style.color = '#4caf50';
-    } else {
-        statusDiv.innerHTML = `⏳ Ожидают синхронизации: ${count} действий <button class="btn btn-sm" onclick="syncPendingActions()" style="margin-left:12px;">Синхронизировать сейчас</button>`;
-        statusDiv.style.color = '#c9a959';
-    }
-    container.prepend(statusDiv);
-}
-
-// ============================================================
-// ФУНКЦИЯ РАСЧЕТА ДНЕЙ ДО ЗАВЕРШЕНИЯ
-// ============================================================
-function getDaysRemaining(endDate) {
-    if (!endDate) return null;
-    const end = new Date(endDate);
-    const now = new Date();
-    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-    return diff;
-}
-
-// ============================================================
 // СТАТУС ДЛЯ КЛИЕНТА (ДОБАВЛЯЕТ РУКОВОДИТЕЛЬ)
 // ============================================================
 window.addClientStatus = function(objId) {
@@ -697,6 +714,365 @@ window.addClientStatus = function(objId) {
 };
 
 // ============================================================
+// ГРАФИК РАБОТ (ГАНТ-ДИАГРАММА)
+// ============================================================
+function renderSchedule() {
+    const container = document.getElementById('bossContent') || document.getElementById('wolfContent');
+    if (!container) return;
+    
+    // Выбор объекта
+    const objectsList = objects.filter(o => !o.archived);
+    if (objectsList.length === 0) {
+        container.innerHTML = '<div class="card">Нет активных объектов</div>';
+        return;
+    }
+    
+    // Если currentObjectId не выбран или объект в архиве, выбираем первый
+    if (!currentObjectId || !objects.find(o => o.id === currentObjectId && !o.archived)) {
+        currentObjectId = objectsList[0].id;
+    }
+    
+    const obj = getObject(currentObjectId);
+    if (!obj) {
+        container.innerHTML = '<div class="card">Объект не найден</div>';
+        return;
+    }
+    
+    // Инициализируем schedule если нет
+    if (!obj.schedule) obj.schedule = [];
+    
+    // Сортируем по дате начала
+    const sorted = [...obj.schedule].sort((a, b) => {
+        if (!a.startDate) return 1;
+        if (!b.startDate) return -1;
+        const p1 = a.startDate.split('.');
+        const p2 = b.startDate.split('.');
+        return new Date(+p1[2], +p1[1]-1, +p1[0]) - new Date(+p2[2], +p2[1]-1, +p2[0]);
+    });
+    
+    // Определяем диапазон дат для отображения
+    let minDate = null, maxDate = null;
+    for (const item of sorted) {
+        if (item.startDate) {
+            const p = item.startDate.split('.');
+            const d = new Date(+p[2], +p[1]-1, +p[0]);
+            if (!minDate || d < minDate) minDate = d;
+        }
+        if (item.endDate) {
+            const p = item.endDate.split('.');
+            const d = new Date(+p[2], +p[1]-1, +p[0]);
+            if (!maxDate || d > maxDate) maxDate = d;
+        }
+    }
+    
+    // Если нет дат, показываем текущий месяц
+    if (!minDate) {
+        const now = new Date();
+        minDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        maxDate = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+    }
+    
+    // Расширяем диапазон на 7 дней в обе стороны
+    minDate = new Date(minDate);
+    minDate.setDate(minDate.getDate() - 7);
+    maxDate = new Date(maxDate);
+    maxDate.setDate(maxDate.getDate() + 7);
+    
+    // Генерируем заголовки колонок (даты)
+    const days = [];
+    let current = new Date(minDate);
+    while (current <= maxDate) {
+        days.push(new Date(current));
+        current.setDate(current.getDate() + 1);
+    }
+    
+    // Формируем HTML
+    let html = `
+    <div style="margin-bottom:12px;">
+        <select onchange="switchScheduleObject(this.value)" style="background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:6px;padding:8px;width:100%;font-size:14px;">
+            ${objectsList.map(o => `
+                <option value="${o.id}" ${o.id === currentObjectId ? 'selected' : ''}>${escapeHtml(o.name)}</option>
+            `).join('')}
+        </select>
+    </div>
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+            <h3>📊 График работ — ${escapeHtml(obj.name)}</h3>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn btn-sm btn-primary" onclick="addScheduleTask(${obj.id})">➕ Добавить задачу</button>
+                <button class="btn btn-sm" onclick="syncScheduleFromWorks(${obj.id})">🔄 Из этапов</button>
+                <button class="btn btn-sm" onclick="shiftScheduleDates(${obj.id})">📅 Сдвинуть даты</button>
+            </div>
+        </div>
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:600px;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #282828;min-width:180px;">Этап</th>
+                        ${days.map(d => `<th style="text-align:center;padding:4px 2px;border-bottom:1px solid #282828;font-weight:300;font-size:11px;min-width:28px;">${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}</th>`).join('')}
+                        <th style="text-align:center;padding:4px 6px;border-bottom:1px solid #282828;min-width:60px;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    if (sorted.length === 0) {
+        html += `<tr><td colspan="${days.length + 2}" style="text-align:center;padding:20px;color:#666;">Нет задач в графике. Добавьте из этапов или создайте вручную.</td></tr>`;
+    } else {
+        for (const item of sorted) {
+            const isActive = item.showToClient || false;
+            const startP = item.startDate ? item.startDate.split('.') : null;
+            const endP = item.endDate ? item.endDate.split('.') : null;
+            const startDate = startP ? new Date(+startP[2], +startP[1]-1, +startP[0]) : null;
+            const endDate = endP ? new Date(+endP[2], +endP[1]-1, +endP[0]) : null;
+            
+            html += `<tr style="border-bottom:1px solid #1a1a1a;">`;
+            html += `<td style="padding:6px 8px;">
+                <span onclick="toggleScheduleShowToClient(${obj.id}, ${sorted.indexOf(item)})" style="cursor:pointer;font-size:16px;margin-right:6px;">${isActive ? '✅' : '⬜'}</span>
+                <span style="${isActive ? 'color:#4caf50;font-weight:500;' : ''}">${escapeHtml(item.name)}</span>
+                ${item.fromWork ? ' <span style="font-size:10px;color:#666;">(из этапов)</span>' : ''}
+                ${item.startDate ? `<div style="font-size:10px;color:#888;">${item.startDate} → ${item.endDate || '...'}</div>` : ''}
+            </td>`;
+            
+            for (const d of days) {
+                let color = '#1a1a1a';
+                let text = '';
+                if (startDate && endDate && d >= startDate && d <= endDate) {
+                    const total = (endDate - startDate) / (1000*60*60*24) + 1;
+                    const progress = ((d - startDate) / (1000*60*60*24)) / total;
+                    const r = Math.round(60 + 195 * progress);
+                    const g = Math.round(200 - 120 * progress);
+                    const b = Math.round(80 + 20 * progress);
+                    color = `rgb(${r}, ${g}, ${b})`;
+                    text = '█';
+                } else if (startDate && d.toDateString() === startDate.toDateString()) {
+                    color = '#c9a959';
+                    text = '▶';
+                } else if (endDate && d.toDateString() === endDate.toDateString()) {
+                    color = '#c9a959';
+                    text = '◀';
+                }
+                html += `<td style="text-align:center;padding:2px;font-size:10px;color:${color};background:${color !== '#1a1a1a' ? 'rgba(60,60,60,0.3)' : 'transparent'};">${text}</td>`;
+            }
+            
+            html += `<td style="text-align:center;padding:4px 6px;">
+                <button class="btn btn-sm" onclick="editScheduleTask(${obj.id}, ${sorted.indexOf(item)})" style="font-size:11px;padding:2px 6px;">✏️</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteScheduleTask(${obj.id}, ${sorted.indexOf(item)})" style="font-size:11px;padding:2px 6px;">🗑</button>
+            </td>`;
+            html += `</tr>`;
+        }
+    }
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:12px;font-size:12px;color:#888;flex-wrap:wrap;">
+            <span>✅ — показывать клиенту</span>
+            <span>⬜ — не показывать</span>
+            <span><span style="color:#c9a959;">▶</span> начало</span>
+            <span><span style="color:#c9a959;">◀</span> завершение</span>
+            <span><span style="color:#4caf50;">█</span> в работе</span>
+        </div>
+    </div>`;
+    
+    container.innerHTML = html;
+}
+
+// Переключение объекта в графике
+window.switchScheduleObject = function(objId) {
+    currentObjectId = parseInt(objId);
+    renderSchedule();
+};
+
+// Добавление задачи в график
+window.addScheduleTask = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    
+    const name = prompt('Название задачи:');
+    if (!name) return;
+    
+    const startDate = prompt('Дата начала (ДД.ММ.ГГГГ):');
+    if (!startDate || !isValidDate(startDate)) {
+        if (startDate) showToast('❌ Неверный формат даты');
+        return;
+    }
+    
+    const endDate = prompt('Дата завершения (ДД.ММ.ГГГГ):');
+    if (!endDate || !isValidDate(endDate)) {
+        if (endDate) showToast('❌ Неверный формат даты');
+        return;
+    }
+    
+    if (!obj.schedule) obj.schedule = [];
+    obj.schedule.push({
+        name: name.trim(),
+        startDate: startDate,
+        endDate: endDate,
+        showToClient: false,
+        fromWork: false
+    });
+    
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    else addPendingAction({ type: 'updateObject', data: obj });
+    
+    renderSchedule();
+    showToast('✅ Задача добавлена в график');
+};
+
+// Синхронизация из этапов
+window.syncScheduleFromWorks = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    
+    if (!obj.schedule) obj.schedule = [];
+    
+    // Получаем существующие названия задач из графика (из этапов)
+    const existingNames = new Set();
+    for (const item of obj.schedule) {
+        if (item.fromWork) existingNames.add(item.name);
+    }
+    
+    let added = 0;
+    for (const work of obj.works) {
+        if (!existingNames.has(work.name) && work.deadline) {
+            // Срок в формате ДД.ММ.ГГГГ
+            const deadline = work.deadline;
+            // Начало = сегодня или дедлайн - 7 дней
+            const today = new Date();
+            const endP = deadline.split('.');
+            const endDate = new Date(+endP[2], +endP[1]-1, +endP[0]);
+            const startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 7);
+            
+            const startStr = String(startDate.getDate()).padStart(2,'0') + '.' + String(startDate.getMonth()+1).padStart(2,'0') + '.' + startDate.getFullYear();
+            
+            obj.schedule.push({
+                name: work.name,
+                startDate: startStr,
+                endDate: deadline,
+                showToClient: false,
+                fromWork: true
+            });
+            added++;
+        }
+    }
+    
+    if (added === 0) {
+        showToast('⚠️ Нет новых этапов с указанными сроками');
+        return;
+    }
+    
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    else addPendingAction({ type: 'updateObject', data: obj });
+    
+    renderSchedule();
+    showToast(`✅ Добавлено ${added} задач из этапов`);
+};
+
+// Переключение отображения клиенту
+window.toggleScheduleShowToClient = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule || idx >= obj.schedule.length) return;
+    
+    obj.schedule[idx].showToClient = !obj.schedule[idx].showToClient;
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    else addPendingAction({ type: 'updateObject', data: obj });
+    
+    renderSchedule();
+};
+
+// Редактирование задачи в графике
+window.editScheduleTask = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule || idx >= obj.schedule.length) return;
+    
+    const item = obj.schedule[idx];
+    const newName = prompt('Название задачи:', item.name);
+    if (newName === null) return;
+    
+    const newStart = prompt('Дата начала (ДД.ММ.ГГГГ):', item.startDate || '');
+    if (newStart === null) return;
+    if (newStart && !isValidDate(newStart)) {
+        showToast('❌ Неверный формат даты');
+        return;
+    }
+    
+    const newEnd = prompt('Дата завершения (ДД.ММ.ГГГГ):', item.endDate || '');
+    if (newEnd === null) return;
+    if (newEnd && !isValidDate(newEnd)) {
+        showToast('❌ Неверный формат даты');
+        return;
+    }
+    
+    item.name = newName.trim() || item.name;
+    item.startDate = newStart || item.startDate;
+    item.endDate = newEnd || item.endDate;
+    
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    else addPendingAction({ type: 'updateObject', data: obj });
+    
+    renderSchedule();
+    showToast('✅ Задача обновлена');
+};
+
+// Удаление задачи из графика
+window.deleteScheduleTask = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule || idx >= obj.schedule.length) return;
+    if (!confirm('Удалить задачу из графика?')) return;
+    
+    obj.schedule.splice(idx, 1);
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    else addPendingAction({ type: 'updateObject', data: obj });
+    
+    renderSchedule();
+    showToast('🗑 Задача удалена');
+};
+
+// Сдвиг всех дат
+window.shiftScheduleDates = function(objId) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule || obj.schedule.length === 0) {
+        showToast('⚠️ Нет задач для сдвига');
+        return;
+    }
+    
+    const days = prompt('Сдвинуть все даты на сколько дней? (положительное число — вперёд, отрицательное — назад)');
+    if (days === null) return;
+    const shift = parseInt(days);
+    if (isNaN(shift)) { showToast('❌ Введите число'); return; }
+    
+    for (const item of obj.schedule) {
+        if (item.startDate) {
+            const p = item.startDate.split('.');
+            const d = new Date(+p[2], +p[1]-1, +p[0]);
+            d.setDate(d.getDate() + shift);
+            item.startDate = String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
+        }
+        if (item.endDate) {
+            const p = item.endDate.split('.');
+            const d = new Date(+p[2], +p[1]-1, +p[0]);
+            d.setDate(d.getDate() + shift);
+            item.endDate = String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
+        }
+    }
+    
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    else addPendingAction({ type: 'updateObject', data: obj });
+    
+    renderSchedule();
+    showToast(`✅ Даты сдвинуты на ${shift} дней`);
+};
+
+// ============================================================
 // ОБНОВЛЁННЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ОБЪЕКТАМИ И ЭТАПАМИ
 // ============================================================
 window.addObject = function() {
@@ -710,7 +1086,7 @@ window.addObject = function() {
     if (!pwd) { pwd = Math.random().toString(36).substring(2, 8).toUpperCase();
         showToast('Пароль: ' + pwd); }
     const id = Date.now();
-    const newObj = { id, code: Math.random().toString(36).substring(2, 8).toUpperCase(), name: n, address: a, works: [], completed: !1, archived: !1, startDate: null, plannedEndDate: null, clientStatus: '' };
+    const newObj = { id, code: Math.random().toString(36).substring(2, 8).toUpperCase(), name: n, address: a, works: [], completed: !1, archived: !1, startDate: null, plannedEndDate: null, clientStatus: '', schedule: [] };
     objects.push(newObj);
     passwords.objects[id] = pwd;
     saveDataToLocal();
@@ -768,29 +1144,6 @@ window.toggleWorkStatus = function(id, wi) {
             });
         }
         renderBossObjects();
-    }
-};
-
-window.setWorkDeadline = function(id, wi) {
-    const d = prompt('Дата (ГГГГ-ММ-ДД)');
-    if (d) {
-        if (!isValidDate(d)) { showToast('Неверный формат даты'); return; }
-        const o = getObject(id);
-        if (o) {
-            o.works[wi].deadline = d;
-            saveDataToLocal();
-            
-            if (!isOnline()) {
-                addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
-            } else {
-                saveToSupabase('objects', o).catch(() => {
-                    addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
-                });
-            }
-            if (currentUser === 'boss') renderBossObjects();
-            else if (currentUser === 'wolf') renderWolfObjects();
-            showToast('📅 Срок установлен');
-        }
     }
 };
 
@@ -912,42 +1265,6 @@ window.completeObject = function(id) {
     }
 };
 
-window.archiveObject = function(id) {
-    if (confirm('Отправить объект в архив?')) {
-        const o = getObject(id);
-        if (o) {
-            o.archived = !0;
-            saveDataToLocal();
-            if (!isOnline()) {
-                addPendingAction({ type: 'updateObject', data: o });
-            } else {
-                saveToSupabase('objects', o).catch(() => {
-                    addPendingAction({ type: 'updateObject', data: o });
-                });
-            }
-            renderBossObjects();
-            showToast('📦 Объект в архиве');
-        }
-    }
-};
-
-window.unarchiveObject = function(id) {
-    const o = getObject(id);
-    if (o) {
-        o.archived = false;
-        saveDataToLocal();
-        if (!isOnline()) {
-            addPendingAction({ type: 'updateObject', data: o });
-        } else {
-            saveToSupabase('objects', o).catch(() => {
-                addPendingAction({ type: 'updateObject', data: o });
-            });
-        }
-        renderBossObjects();
-        showToast('Объект возвращён из архива');
-    }
-};
-
 window.setBossObjectFilter = function(filter) {
     uiState['bossObjectFilter'] = filter;
     saveUiState();
@@ -1063,7 +1380,7 @@ window.uploadWorkPhoto = async function(id, wi) {
 window.setObjectStartDate = function(objId) {
     const obj = getObject(objId);
     if (!obj) return;
-    const date = prompt('Введите дату начала (ГГГГ-ММ-ДД):');
+    const date = prompt('Введите дату начала (ДД.ММ.ГГГГ):');
     if (date && isValidDate(date)) {
         obj.startDate = date;
         saveDataToLocal();
@@ -1075,14 +1392,14 @@ window.setObjectStartDate = function(objId) {
         renderBossObjects();
         showToast('📅 Дата начала установлена');
     } else if (date) {
-        showToast('❌ Неверный формат даты');
+        showToast('❌ Неверный формат даты (ДД.ММ.ГГГГ)');
     }
 };
 
 window.setObjectEndDate = function(objId) {
     const obj = getObject(objId);
     if (!obj) return;
-    const date = prompt('Введите дату планового завершения (ГГГГ-ММ-ДД):');
+    const date = prompt('Введите дату планового завершения (ДД.ММ.ГГГГ):');
     if (date && isValidDate(date)) {
         obj.plannedEndDate = date;
         saveDataToLocal();
@@ -1094,7 +1411,7 @@ window.setObjectEndDate = function(objId) {
         renderBossObjects();
         showToast('📅 Дата завершения установлена');
     } else if (date) {
-        showToast('❌ Неверный формат даты');
+        showToast('❌ Неверный формат даты (ДД.ММ.ГГГГ)');
     }
 };
 
@@ -1142,7 +1459,7 @@ function createDesignProject(objId, title, files) {
         addPendingAction({ type: 'addDesignProject', data: project });
     }
     
-    renderBossObjects();
+    renderBossDesign();
     showToast('📐 Дизайн-проект создан');
 }
 
@@ -1157,7 +1474,7 @@ window.deleteDesign = function(id) {
             addPendingAction({ type: 'deleteDesign', data: { id: id } });
         }
         
-        renderBossObjects();
+        renderBossDesign();
         showToast('🗑 Проект удалён');
     }
 };
@@ -1175,7 +1492,7 @@ window.deleteDesignFile = function(pid, fi) {
                 addPendingAction({ type: 'updateDesign', data: p });
             }
             
-            renderBossObjects();
+            renderBossDesign();
             showToast('🗑 Файл удалён');
         }
     }
@@ -1196,7 +1513,7 @@ window.addDesignComment = function(id) {
             addPendingAction({ type: 'updateDesign', data: p });
         }
         
-        renderBossObjects();
+        renderBossDesign();
         showToast('💬 Комментарий добавлен');
     }
 };
@@ -1213,7 +1530,7 @@ window.toggleDesignApprove = function(id) {
             addPendingAction({ type: 'updateDesign', data: p });
         }
         
-        renderBossObjects();
+        renderBossDesign();
         showToast(p.approvedByClient ? '✅ Проект утверждён' : '⏳ Утверждение снято');
     }
 };
@@ -1226,8 +1543,8 @@ window.addRecommendationForObject = function(objId) {
     if (!obj) return;
     const text = prompt('Текст рекомендации:');
     if (text === null || text.trim() === '') return;
-    const deadline = prompt('Срок (ГГГГ-ММ-ДД) или оставьте пустым:');
-    if (deadline !== null && deadline.trim() !== '' && !isValidDate(deadline.trim())) { showToast('Неверный формат даты'); return; }
+    const deadline = prompt('Срок (ДД.ММ.ГГГГ) или оставьте пустым:');
+    if (deadline !== null && deadline.trim() !== '' && !isValidDate(deadline.trim())) { showToast('Неверный формат даты (ДД.ММ.ГГГГ)'); return; }
     
     const rec = { id: Date.now(), objectId: objId, text: text.trim(), deadline: deadline ? deadline.trim() : null, photos: [], purchased: !1, purchasedDate: null, purchasedPhotos: [] };
     recommendations.push(rec);
@@ -1239,7 +1556,7 @@ window.addRecommendationForObject = function(objId) {
         addPendingAction({ type: 'addRecommendation', data: rec });
     }
     
-    renderBossObjects();
+    renderBossRecommendations();
     showToast('📋 Рекомендация добавлена');
 };
 
@@ -1254,7 +1571,7 @@ window.deleteRecommend = function(id) {
             addPendingAction({ type: 'deleteRecommendation', data: { id: id } });
         }
         
-        renderBossObjects();
+        renderBossRecommendations();
         showToast('🗑 Рекомендация удалена');
     }
 };
@@ -1273,7 +1590,8 @@ window.markPurchased = function(id) {
             addPendingAction({ type: 'updateRecommendation', data: r });
         }
         
-        renderBossObjects();
+        if (currentUser === 'boss') renderBossRecommendations();
+        else renderClientRecommend();
         showToast(r.purchased ? '✅ Отмечено куплено' : '↩ Отмена покупки');
     }
 };
@@ -1315,7 +1633,8 @@ window.addRecommendationPhoto = async function(id) {
                 }
             }
             saveDataToLocal();
-            renderBossObjects();
+            if (currentUser === 'boss') renderBossRecommendations();
+            else renderClientRecommend();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
@@ -1360,7 +1679,8 @@ window.addPurchasedPhoto = async function(id) {
                 }
             }
             saveDataToLocal();
-            renderBossObjects();
+            if (currentUser === 'boss') renderBossRecommendations();
+            else renderClientRecommend();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
@@ -1382,7 +1702,8 @@ window.deleteRecommendPhoto = function(id, idx, type) {
                 addPendingAction({ type: 'updateRecommendation', data: r });
             }
             
-            renderBossObjects();
+            if (currentUser === 'boss') renderBossRecommendations();
+            else renderClientRecommend();
             showToast('🗑 Фото удалено');
         }
     }
@@ -1537,7 +1858,6 @@ function renderChecksList(role, filter) {
         const obj = getObject(c.objectId);
         const paidStatus = c.paid ? '✅ Оплачен' : '⏳ Не оплачен';
         const paidInfo = c.paid ? ` (${c.paidBy === 'client' ? 'клиентом' : 'руководителем'}, ${fmtTime(c.paidDate)})` : '';
-        // Для клиента только дата, для остальных с временем
         const dateDisplay = role === 'client' ? fmtTime(c.date) : fmtTime(c.date);
         
         return `<div class="check-item ${c.paid ? 'paid' : ''}" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">
@@ -1733,7 +2053,7 @@ window.savePasswords = function() {
 };
 
 // ============================================================
-// БОСС
+// БОСС — ВКЛАДКИ
 // ============================================================
 function renderBoss() {
     document.getElementById('app').innerHTML = `
@@ -1745,10 +2065,13 @@ function renderBoss() {
     </div>
     <div class="tab-bar">
       <div class="tab active" data-tab="objects">Объекты</div>
+      <div class="tab" data-tab="design">Дизайн</div>
+      <div class="tab" data-tab="recommendations">Рекомендации</div>
       <div class="tab" data-tab="notes">Ежедневник</div>
-      <div class="tab" data-tab="purchases">Закупки (отчёт)</div>
+      <div class="tab" data-tab="purchases">Закупки</div>
       <div class="tab" data-tab="checks">Чеки</div>
-      <div class="tab" data-tab="passwords">🔐 Пароли</div>
+      <div class="tab" data-tab="passwords">Пароли</div>
+      <div class="tab" data-tab="schedule">📊 График</div>
     </div>
     <div id="bossContent"></div>`;
     
@@ -1758,6 +2081,12 @@ function renderBoss() {
         switch (this.dataset.tab) {
             case 'objects':
                 renderBossObjects();
+                break;
+            case 'design':
+                renderBossDesign();
+                break;
+            case 'recommendations':
+                renderBossRecommendations();
                 break;
             case 'notes':
                 renderBossNotes();
@@ -1771,11 +2100,17 @@ function renderBoss() {
             case 'passwords':
                 renderPasswords();
                 break;
+            case 'schedule':
+                renderSchedule();
+                break;
         }
     });
     renderBossObjects();
 }
 
+// ============================================================
+// БОСС — ОБЪЕКТЫ
+// ============================================================
 function renderBossObjects() {
     const container = document.getElementById('bossContent');
     if (!uiState['bossObjectFilter']) uiState['bossObjectFilter'] = 'active';
@@ -1785,52 +2120,19 @@ function renderBossObjects() {
     else if (filter === 'completed') objectsToShow = objects.filter(o => !o.archived && o.completed);
     else if (filter === 'archived') objectsToShow = objects.filter(o => o.archived);
 
-    const statusHtml = `<div id="pendingStatus" style="padding:8px 12px;margin-bottom:12px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;text-align:center;color:${pendingActions.length === 0 ? '#4caf50' : '#c9a959'};">${pendingActions.length === 0 ? '✅ Все данные синхронизированы' : '⏳ Ожидают синхронизации: ' + pendingActions.length + ' действий'}</div>`;
-
-    const toolsHtml = `
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;padding:12px;background:#121212;border-radius:12px;border:1px solid #282828;">
-      <button class="btn btn-primary" onclick="exportAllData()">📤 Экспорт всех данных</button>
-      <button class="btn btn-primary" onclick="importAllData()">📥 Импорт данных</button>
-      ${pendingActions.length > 0 ? `<button class="btn btn-primary" onclick="syncPendingActions()">🔄 Синхронизировать сейчас</button>` : ''}
-    </div>
-    <hr>
-    `;
-
-    const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span><span class="tab ${filter === 'archived' ? 'active' : ''}" onclick="setBossObjectFilter('archived')">Архив</span></div>`;
-    let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><button class="btn" onclick="uploadCSV()">📊 Загрузить CSV</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
+    const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span></div>`;
+    let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
     
     let list = objectsToShow.map(obj => {
         const objKey = 'obj-' + obj.id,
             objOpen = uiState[objKey] !== undefined ? uiState[objKey] : false;
-        const projs = designProjects.filter(p => p.objectId === obj.id);
-        const designKey = 'design-' + obj.id,
-            designOpen = uiState[designKey] !== undefined ? uiState[designKey] : false;
-        let designBlocks = projs.length ? projs.map(p => {
-            const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
-            const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
-            const files = (p.files || []).map((f, fi) => {
-                const isImg = f.startsWith('data:image/') || f.startsWith('http');
-                const isPdf = f.startsWith('data:application/pdf');
-                return `<span class="file-wrap">${isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:100px;max-height:100px;">` : isPdf ? `<span class="pdf" onclick="window.open('${f}','_blank')">📄</span>` : `<span class="pdf" onclick="window.open('${f}','_blank')">📎</span>`}<button class="del" onclick="deleteDesignFile(${p.id},${fi})" style="background:#a04040;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;">×</button></span>`;
-            }).join(' ') || 'нет';
-            return `<div class="design-block"><div class="design-header" onclick="toggleDesignBlock(this,'${designKey}')"><span><span class="design-title">${escapeHtml(p.title)}</span><span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span></span><div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDesign(${p.id})">🗑</button></div></div><div class="design-detail ${designOpen ? 'open' : ''}"><div class="design-meta"><b>Доступ:</b> ${escapeHtml(roles)}</div><div class="design-files"><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="addDesignComment(${p.id})">💬 Комментарий</button><button class="btn btn-sm" onclick="toggleDesignApprove(${p.id})">${p.approvedByClient ? 'Снять утверждение' : 'Утвердить'}</button></div></div></div>`;
-        }).join('') : '<span style="color:#666;font-size:14px;">Нет проектов</span>';
-        const recs = recommendations.filter(r => r.objectId === obj.id);
-        const recKey = 'rec-' + obj.id,
-            recOpen = uiState[recKey] !== undefined ? uiState[recKey] : false;
-        let recBlocks = recs.length ? recs.map(r => {
-            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
-            const phRec = (r.photos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'photos')">×</button></span>`).join('');
-            const phPur = (r.purchasedPhotos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'purchasedPhotos')">×</button></span>`).join('');
-            return `<div class="rec-block"><div class="rec-header" onclick="toggleRecBlock(this,'${recKey}')"><span><span class="rec-title">📋 ${escapeHtml(r.text)}</span><span class="badge">${status}</span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span></span><div><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteRecommend(${r.id})">🗑</button></div></div><div class="rec-detail ${recOpen ? 'open' : ''}"><div class="rec-body"><div class="rec-text"><div class="rec-meta"><b>Срок:</b> ${r.deadline ? fmt(r.deadline) : 'не указан'}</div><div class="rec-actions"><button class="btn btn-sm" onclick="markPurchased(${r.id})">✅ Отметить куплено</button><button class="btn btn-sm" onclick="addRecommendationPhoto(${r.id})">📎 Фото к рекомендации</button><button class="btn btn-sm" onclick="addPurchasedPhoto(${r.id})">📸 Фото покупки</button></div></div><div class="rec-photos">${phRec}${phPur}</div></div></div></div>`;
-        }).join('') : '<span style="color:#666;font-size:14px;">Нет рекомендаций</span>';
-        const statusTabs = `<div class="flex" style="margin:8px 0;"><button class="btn btn-sm btn-primary" onclick="setWorkFilter('${obj.id}','all')">Все</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','done')">✅ Выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','undone')">⏳ Не выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','unpaid')">💰 Неоплаченные (ручные)</button></div>`;
+        
+        const statusTabs = `<div class="flex" style="margin:8px 0;"><button class="btn btn-sm btn-primary" onclick="setWorkFilter('${obj.id}','all')">Все</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','done')">✅ Выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','undone')">⏳ Не выполненные</button></div>`;
         if (!uiState['filter-' + obj.id]) uiState['filter-' + obj.id] = 'all';
         const currentFilter = uiState['filter-' + obj.id] || 'all';
         let filteredWorks = obj.works;
         if (currentFilter === 'done') filteredWorks = obj.works.filter(w => w.done === true);
         else if (currentFilter === 'undone') filteredWorks = obj.works.filter(w => w.done === false);
-        else if (currentFilter === 'unpaid') filteredWorks = obj.works.filter(w => w.manual === true && w.done === false);
         
         const worksHtml = filteredWorks.map((w, wi) => {
             const originalIndex = obj.works.indexOf(w);
@@ -1864,7 +2166,6 @@ function renderBossObjects() {
                     </span>
                     <span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;">
                         <button class="icon-btn" onclick="event.stopPropagation();uploadWorkPhoto(${obj.id},${originalIndex})" title="Загрузить фото">📸</button>
-                        <button class="icon-btn" onclick="event.stopPropagation();setWorkDeadline(${obj.id},${originalIndex})" title="Срок">📅</button>
                         <button class="icon-btn" onclick="event.stopPropagation();moveWorkUp(${obj.id},${originalIndex})" title="Вверх">⬆</button>
                         <button class="icon-btn" onclick="event.stopPropagation();moveWorkDown(${obj.id},${originalIndex})" title="Вниз">⬇</button>
                         <button class="icon-btn danger" onclick="event.stopPropagation();deleteWorkWithConfirm(${obj.id},${originalIndex})" title="Удалить этап">🗑</button>
@@ -1877,37 +2178,73 @@ function renderBossObjects() {
             </div>`;
         }).join('');
         setTimeout(() => initDragDrop(), 50);
-        const addButtons = `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-primary" onclick="addDesignProjectForObject(${obj.id})">➕ Дизайн-проект</button><button class="btn btn-sm btn-primary" onclick="addRecommendationForObject(${obj.id})">➕ Рекомендация</button></div>`;
-        let archiveButtons = '';
-        if (obj.archived) {
-            archiveButtons = `<button class="btn btn-sm" onclick="event.stopPropagation();unarchiveObject(${obj.id})">↩ Вернуть из архива</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteObjectPermanently(${obj.id})">🗑 Удалить</button>`;
-        }
         
         let summaryHtml = '';
         if (obj.startDate) {
-            summaryHtml += `<div>📅 Начало: ${fmt(obj.startDate)}</div>`;
-        } else {
-            summaryHtml += `<div>📅 Начало: <span style="color:#666;">не указано</span></div>`;
-        }
-        if (obj.plannedEndDate) {
-            const daysLeft = getDaysRemaining(obj.plannedEndDate);
-            summaryHtml += `<div>🎯 Плановое завершение: ${fmt(obj.plannedEndDate)}`;
-            if (daysLeft !== null) {
-                summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#c9a959'};">(${daysLeft < 0 ? 'Просрочено на ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
+            summaryHtml += `<span>📅 ${fmt(obj.startDate)} → ${obj.plannedEndDate ? fmt(obj.plannedEndDate) : '...'}`;
+            if (obj.plannedEndDate) {
+                const daysLeft = getDaysRemaining(obj.plannedEndDate);
+                if (daysLeft !== null) {
+                    summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#4caf50'};">(${daysLeft < 0 ? 'просрочка ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
+                }
             }
-            summaryHtml += `</div>`;
         } else {
-            summaryHtml += `<div>🎯 Плановое завершение: <span style="color:#666;">не указано</span></div>`;
+            summaryHtml += `<span style="color:#666;">📅 даты не установлены</span>`;
         }
         
-        return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}${!obj.archived ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();archiveObject(${obj.id})">📦</button>` : ''}${archiveButtons}<button class="btn btn-sm" onclick="event.stopPropagation();addWork(${obj.id})">➕ Этап</button><button class="btn btn-sm" onclick="event.stopPropagation();addClientStatus(${obj.id})">📢 Статус клиенту</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div><div style="margin:8px 0;padding:10px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;">${summaryHtml}<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="setObjectStartDate(${obj.id})">📅 Установить начало</button><button class="btn btn-sm" onclick="setObjectEndDate(${obj.id})">📅 Установить завершение</button></div></div></div><div class="object-detail ${objOpen ? 'open' : ''}">${addButtons}<hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
+        return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"><span class="badge">ID: ${obj.id}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}<button class="btn btn-sm" onclick="event.stopPropagation();addWork(${obj.id})">➕ Этап</button><button class="btn btn-sm" onclick="event.stopPropagation();addClientStatus(${obj.id})">📢 Статус</button><button class="btn btn-sm" onclick="event.stopPropagation();setObjectStartDate(${obj.id})">📅 Начало</button><button class="btn btn-sm" onclick="event.stopPropagation();setObjectEndDate(${obj.id})">📅 Завершение</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div><div style="margin:4px 0;font-size:13px;color:#c9a959;">${summaryHtml}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
     }).join('');
 
-    container.innerHTML = statusHtml + toolsHtml + filterTabs + sel + list;
+    container.innerHTML = filterTabs + sel + list;
 }
 
 // ============================================================
-// ЭКСПОРТ / ИМПОРТ
+// БОСС — ДИЗАЙН
+// ============================================================
+function renderBossDesign() {
+    const container = document.getElementById('bossContent');
+    const projs = designProjects.slice().sort((a, b) => a.id - b.id);
+    
+    if (!projs.length) {
+        container.innerHTML = `<div class="card"><h3>🎨 Дизайн-проекты</h3><p style="color:#666;">Нет дизайн-проектов. Создайте в карточке объекта.</p></div>`;
+        return;
+    }
+    
+    container.innerHTML = `<h3>🎨 Дизайн-проекты</h3>` + projs.map(p => {
+        const obj = getObject(p.objectId);
+        const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
+        const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
+        const files = (p.files || []).map((f, fi) => {
+            const isImg = f.startsWith('data:image/') || f.startsWith('http');
+            return `<span class="file-wrap">${isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:80px;max-height:80px;">` : `<a href="${f}" target="_blank">📄</a>`}<button class="del" onclick="deleteDesignFile(${p.id},${fi})" style="background:#a04040;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;">×</button></span>`;
+        }).join(' ') || 'нет';
+        return `<div class="card"><div class="flex"><h3>${escapeHtml(p.title)}</h3><span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span><button class="btn btn-sm btn-danger" onclick="deleteDesign(${p.id})">🗑</button></div><div><b>Объект:</b> ${obj ? escapeHtml(obj.name) : '—'}</div><div><b>Доступ:</b> ${escapeHtml(roles)}</div><div><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="addDesignComment(${p.id})">💬 Комментарий</button><button class="btn btn-sm" onclick="toggleDesignApprove(${p.id})">${p.approvedByClient ? 'Снять утверждение' : 'Утвердить'}</button></div></div>`;
+    }).join('');
+}
+
+// ============================================================
+// БОСС — РЕКОМЕНДАЦИИ
+// ============================================================
+function renderBossRecommendations() {
+    const container = document.getElementById('bossContent');
+    const recs = recommendations.slice().sort((a, b) => a.id - b.id);
+    
+    if (!recs.length) {
+        container.innerHTML = `<div class="card"><h3>📋 Рекомендации</h3><p style="color:#666;">Нет рекомендаций. Создайте в карточке объекта.</p></div>`;
+        return;
+    }
+    
+    container.innerHTML = `<h3>📋 Рекомендации</h3>` + recs.map(r => {
+        const obj = getObject(r.objectId);
+        const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
+        const phRec = (r.photos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'photos')">×</button></span>`).join('');
+        const phPur = (r.purchasedPhotos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'purchasedPhotos')">×</button></span>`).join('');
+        return `<div class="card"><div class="flex"><h3>📋 ${escapeHtml(r.text)}</h3><span class="badge">${status}</span><button class="btn btn-sm btn-danger" onclick="deleteRecommend(${r.id})">🗑</button></div><div><b>Объект:</b> ${obj ? escapeHtml(obj.name) : '—'}</div><div><b>Срок:</b> ${r.deadline ? fmt(r.deadline) : 'не указан'}</div><div><b>Фото:</b> ${phRec || 'нет'} ${phPur ? `<span style="margin-left:8px;">📸 покупки: ${phPur}</span>` : ''}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="markPurchased(${r.id})">${r.purchased ? 'Отменить покупку' : '✅ Отметить куплено'}</button><button class="btn btn-sm" onclick="addRecommendationPhoto(${r.id})">📎 Фото</button><button class="btn btn-sm" onclick="addPurchasedPhoto(${r.id})">📸 Фото покупки</button></div></div>`;
+    }).join('');
+}
+
+// ============================================================
+// ЭКСПОРТ / ИМПОРТ (ИКОНКА В УГЛУ)
 // ============================================================
 window.exportAllData = function() {
     const data = {
@@ -2134,9 +2471,12 @@ function renderWolf() {
     </div>
     <div class="tab-bar">
       <div class="tab active" data-tab="objects">Объекты</div>
+      <div class="tab" data-tab="design">Дизайн</div>
+      <div class="tab" data-tab="recommendations">Рекомендации</div>
       <div class="tab" data-tab="notes">Ежедневник</div>
       <div class="tab" data-tab="purchases">Закупки</div>
       <div class="tab" data-tab="checks">Чеки</div>
+      <div class="tab" data-tab="schedule">📊 График</div>
     </div>
     <div id="wolfContent"></div>`;
     
@@ -2147,6 +2487,12 @@ function renderWolf() {
             case 'objects':
                 renderWolfObjects();
                 break;
+            case 'design':
+                renderBossDesign();
+                break;
+            case 'recommendations':
+                renderBossRecommendations();
+                break;
             case 'notes':
                 renderWolfNotes();
                 break;
@@ -2155,6 +2501,9 @@ function renderWolf() {
                 break;
             case 'checks':
                 renderWolfChecks();
+                break;
+            case 'schedule':
+                renderSchedule();
                 break;
         }
     });
@@ -2168,27 +2517,7 @@ function renderWolfObjects() {
     let list = active.map(obj => {
         const objKey = 'wolf-obj-' + obj.id,
             objOpen = uiState[objKey] !== undefined ? uiState[objKey] : false;
-        const projs = designProjects.filter(p => p.objectId === obj.id);
-        const designKey = 'wolf-design-' + obj.id,
-            designOpen = uiState[designKey] !== undefined ? uiState[designKey] : false;
-        let designBlocks = projs.length ? projs.map(p => {
-            const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
-            const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
-            const files = (p.files || []).map(f => {
-                const isImg = f.startsWith('data:image/') || f.startsWith('http');
-                return isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:100px;max-height:100px;">` : `<a href="${f}" target="_blank">📄</a>`;
-            }).join(' ') || 'нет';
-            return `<div class="design-block"><div class="design-header" onclick="toggleDesignBlock(this,'${designKey}')"><span><span class="design-title">${escapeHtml(p.title)}</span><span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span></span></div><div class="design-detail ${designOpen ? 'open' : ''}"><div class="design-meta"><b>Доступ:</b> ${escapeHtml(roles)}</div><div class="design-files"><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div></div></div>`;
-        }).join('') : '<span style="color:#666;font-size:14px;">Нет проектов</span>';
-        const recs = recommendations.filter(r => r.objectId === obj.id);
-        const recKey = 'wolf-rec-' + obj.id,
-            recOpen = uiState[recKey] !== undefined ? uiState[recKey] : false;
-        let recBlocks = recs.length ? recs.map(r => {
-            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
-            const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
-            const phPur = (r.purchasedPhotos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
-            return `<div class="rec-block"><div class="rec-header" onclick="toggleRecBlock(this,'${recKey}')"><span><span class="rec-title">📋 ${escapeHtml(r.text)}</span><span class="badge">${status}</span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span></span></div><div class="rec-detail ${recOpen ? 'open' : ''}"><div class="rec-body"><div class="rec-text"><div class="rec-meta"><b>Срок:</b> ${r.deadline ? fmt(r.deadline) : 'не указан'}</div></div><div class="rec-photos">${phRec}${phPur}</div></div></div></div>`;
-        }).join('') : '<span style="color:#666;font-size:14px;">Нет рекомендаций</span>';
+        
         const statusTabs = `<div class="flex" style="margin:8px 0;"><button class="btn btn-sm btn-primary" onclick="setWolfWorkFilter('${obj.id}','all')">Все</button><button class="btn btn-sm" onclick="setWolfWorkFilter('${obj.id}','done')">✅ Выполненные</button><button class="btn btn-sm" onclick="setWolfWorkFilter('${obj.id}','undone')">⏳ Не выполненные</button></div>`;
         if (!uiState['wolf-filter-' + obj.id]) uiState['wolf-filter-' + obj.id] = 'all';
         const currentFilter = uiState['wolf-filter-' + obj.id] || 'all';
@@ -2218,22 +2547,18 @@ function renderWolfObjects() {
         
         let summaryHtml = '';
         if (obj.startDate) {
-            summaryHtml += `<div>📅 Начало: ${fmt(obj.startDate)}</div>`;
-        } else {
-            summaryHtml += `<div>📅 Начало: <span style="color:#666;">не указано</span></div>`;
-        }
-        if (obj.plannedEndDate) {
-            const daysLeft = getDaysRemaining(obj.plannedEndDate);
-            summaryHtml += `<div>🎯 Плановое завершение: ${fmt(obj.plannedEndDate)}`;
-            if (daysLeft !== null) {
-                summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#c9a959'};">(${daysLeft < 0 ? 'Просрочено на ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
+            summaryHtml += `<span>📅 ${fmt(obj.startDate)} → ${obj.plannedEndDate ? fmt(obj.plannedEndDate) : '...'}`;
+            if (obj.plannedEndDate) {
+                const daysLeft = getDaysRemaining(obj.plannedEndDate);
+                if (daysLeft !== null) {
+                    summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#4caf50'};">(${daysLeft < 0 ? 'просрочка ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
+                }
             }
-            summaryHtml += `</div>`;
         } else {
-            summaryHtml += `<div>🎯 Плановое завершение: <span style="color:#666;">не указано</span></div>`;
+            summaryHtml += `<span style="color:#666;">📅 даты не установлены</span>`;
         }
         
-        return `<div class="card" id="wolf-obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div><div style="margin:8px 0;padding:10px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;">${summaryHtml}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Дизайн-проекты</h4><div class="design-block-container"><div class="design-block-header" onclick="toggleDesignBlockHeader(this,'${designKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="design-arrow ${designOpen ? 'open' : ''}">▶</span> Дизайн-проекты (${projs.length})</span></div><div class="design-detail-container ${designOpen ? 'open' : ''}" style="display:${designOpen ? 'block' : 'none'};">${designBlocks}</div></div><hr><h4>Рекомендации</h4><div class="rec-block-container"><div class="rec-block-header" onclick="toggleRecBlockHeader(this,'${recKey}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span><span class="rec-arrow ${recOpen ? 'open' : ''}">▶</span> Рекомендации (${recs.length})</span></div><div class="rec-detail-container ${recOpen ? 'open' : ''}" style="display:${recOpen ? 'block' : 'none'};">${recBlocks}</div></div><hr><h4>Этапы работ</h4>${statusTabs}<div id="wolf-work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div>${addWorkButton}</div></div>`;
+        return `<div class="card" id="wolf-obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"><span class="badge">ID: ${obj.id}</span><span style="color:#c9a959;font-size:13px;">${summaryHtml}</span></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Этапы работ</h4>${statusTabs}<div id="wolf-work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div>${addWorkButton}</div></div>`;
     }).join('');
     container.innerHTML = sel + list;
     setTimeout(() => initDragDrop(), 50);
@@ -2421,9 +2746,9 @@ function renderClient() {
     </div>
     <div class="tab-bar">
       <div class="tab active" data-tab="recommend">Рекомендации</div>
-      <div class="tab" data-tab="design">Дизайн</div>
       <div class="tab" data-tab="works">Этапы</div>
       <div class="tab" data-tab="checks">Чеки</div>
+      <div class="tab" data-tab="design">Дизайн</div>
     </div>
     <div id="clientContent"></div>`;
     document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
@@ -2433,14 +2758,14 @@ function renderClient() {
             case 'recommend':
                 renderClientRecommend();
                 break;
-            case 'design':
-                renderClientDesign();
-                break;
             case 'works':
                 renderClientWorks();
                 break;
             case 'checks':
                 renderClientChecks();
+                break;
+            case 'design':
+                renderClientDesign();
                 break;
         }
     });
@@ -2459,8 +2784,16 @@ function renderClientRecommend() {
     const container = document.getElementById('clientContent');
     const obj = getObject(currentObjectId);
     const recs = recommendations.filter(r => r.objectId === obj.id);
-    if (!recs.length) { container.innerHTML = '<div class="card">Нет рекомендаций</div>'; return; }
-    container.innerHTML = recs.map(r => {
+    
+    // Сортировка: сначала не купленные, потом купленные
+    const sorted = [...recs].sort((a, b) => {
+        if (a.purchased && !b.purchased) return 1;
+        if (!a.purchased && b.purchased) return -1;
+        return 0;
+    });
+    
+    if (!sorted.length) { container.innerHTML = '<div class="card">Нет рекомендаций</div>'; return; }
+    container.innerHTML = sorted.map(r => {
         const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
         const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
         const phPur = (r.purchasedPhotos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
@@ -2588,12 +2921,15 @@ function renderClientWorks() {
     const container = document.getElementById('clientContent');
     const obj = getObject(currentObjectId);
     
-    // Ближайшие работы (фиксированные)
-    const upcomingWorks = [
-        { date: '20.07', name: 'Монтаж сантехники' },
-        { date: '25.07', name: 'Укладка плитки' },
-        { date: '01.08', name: 'Покраска' }
-    ];
+    // Получаем ближайшие работы из графика (отмеченные showToClient = true)
+    const scheduleTasks = (obj.schedule || []).filter(item => item.showToClient === true);
+    const sortedSchedule = [...scheduleTasks].sort((a, b) => {
+        if (!a.startDate) return 1;
+        if (!b.startDate) return -1;
+        const p1 = a.startDate.split('.');
+        const p2 = b.startDate.split('.');
+        return new Date(+p1[2], +p1[1]-1, +p1[0]) - new Date(+p2[2], +p2[1]-1, +p2[0]);
+    });
     
     let html = '';
     
@@ -2605,21 +2941,26 @@ function renderClientWorks() {
         </div>`;
     }
     
+    // Ближайшие работы из графика
+    if (sortedSchedule.length > 0) {
+        html += `
+        <div class="card">
+            <h3>📌 Ближайшие работы</h3>
+            ${sortedSchedule.slice(0, 3).map(item => `
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;">
+                    <span>${item.startDate || 'дата не указана'}</span>
+                    <span style="color:#c9a959;">${escapeHtml(item.name)}</span>
+                </div>
+            `).join('')}
+        </div>`;
+    }
+    
+    // Этапы работ
     html += `
-    <div class="card">
-        <h3>📌 Ближайшие работы</h3>
-        ${upcomingWorks.map(w => `
-            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;">
-                <span>${w.date}</span>
-                <span style="color:#c9a959;">${w.name}</span>
-            </div>
-        `).join('')}
-    </div>
     <div class="card">
         <h3>📋 Этапы работ</h3>`;
     
     obj.works.forEach(w => {
-        // Фото для этапа
         const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
         const photoHtml = photos.length ? `
             <div style="margin:6px 0;">
@@ -2985,58 +3326,6 @@ function toggleObject(h, k) {
     }
 }
 
-function toggleDesignBlock(h, k) {
-    const d = h.parentElement.querySelector('.design-detail'),
-        a = h.querySelector('.design-arrow');
-    if (d) {
-        const isOpen = d.classList.contains('open');
-        if (isOpen) { d.classList.remove('open'); if (a) a.classList.remove('open');
-            uiState[k] = !1; } else { d.classList.add('open'); if (a) a.classList.add('open');
-            uiState[k] = !0; }
-        saveUiState();
-    }
-}
-
-function toggleRecBlock(h, k) {
-    const d = h.parentElement.querySelector('.rec-detail'),
-        a = h.querySelector('.rec-arrow');
-    if (d) {
-        const isOpen = d.classList.contains('open');
-        if (isOpen) { d.classList.remove('open'); if (a) a.classList.remove('open');
-            uiState[k] = !1; } else { d.classList.add('open'); if (a) a.classList.add('open');
-            uiState[k] = !0; }
-        saveUiState();
-    }
-}
-
-function toggleDesignBlockHeader(h, k) {
-    const c = h.parentElement.querySelector('.design-detail-container'),
-        a = h.querySelector('.design-arrow');
-    if (c) {
-        const isOpen = c.classList.contains('open');
-        if (isOpen) { c.classList.remove('open');
-            c.style.display = 'none'; if (a) a.classList.remove('open');
-            uiState[k] = !1; } else { c.classList.add('open');
-            c.style.display = 'block'; if (a) a.classList.add('open');
-            uiState[k] = !0; }
-        saveUiState();
-    }
-}
-
-function toggleRecBlockHeader(h, k) {
-    const c = h.parentElement.querySelector('.rec-detail-container'),
-        a = h.querySelector('.rec-arrow');
-    if (c) {
-        const isOpen = c.classList.contains('open');
-        if (isOpen) { c.classList.remove('open');
-            c.style.display = 'none'; if (a) a.classList.remove('open');
-            uiState[k] = !1; } else { c.classList.add('open');
-            c.style.display = 'block'; if (a) a.classList.add('open');
-            uiState[k] = !0; }
-        saveUiState();
-    }
-}
-
 function showModal(src) {
     let m = document.getElementById('modal');
     if (!m) {
@@ -3128,9 +3417,9 @@ function renderLogin() {
 window.login = function(r) {
     if (['designer', 'master', 'purchaser'].includes(r)) {
         if (!passwords[r]) {
-            if (r === 'designer') passwords.designer = 'design123';
-            else if (r === 'master') passwords.master = 'master123';
-            else if (r === 'purchaser') passwords.purchaser = 'purchase123';
+            if (r === 'designer') passwords.designer = DEFAULT_PASSWORD;
+            else if (r === 'master') passwords.master = DEFAULT_PASSWORD;
+            else if (r === 'purchaser') passwords.purchaser = DEFAULT_PASSWORD;
             saveDataToLocal();
         }
         
@@ -3178,6 +3467,104 @@ function renderPlaceholder() {
 }
 
 // ============================================================
+// ИКОНКА СИНХРОНИЗАЦИИ И ЭКСПОРТА В УГЛУ
+// ============================================================
+function addGlobalUI() {
+    // Иконка синхронизации
+    const syncIndicator = document.createElement('div');
+    syncIndicator.id = 'syncIndicator';
+    syncIndicator.style.cssText = `
+        position: fixed;
+        top: 12px;
+        right: 60px;
+        z-index: 999;
+        font-size: 13px;
+        color: #4caf50;
+        background: #121212;
+        padding: 4px 12px;
+        border-radius: 12px;
+        border: 1px solid #282828;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        pointer-events: none;
+    `;
+    syncIndicator.innerHTML = '🟢 Синхр. OK';
+    document.body.appendChild(syncIndicator);
+    
+    // Иконка настроек (экспорт/импорт)
+    const settingsBtn = document.createElement('div');
+    settingsBtn.style.cssText = `
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 999;
+        cursor: pointer;
+        font-size: 22px;
+        background: #121212;
+        padding: 4px 8px;
+        border-radius: 8px;
+        border: 1px solid #282828;
+        color: #888;
+        transition: all 0.2s;
+        user-select: none;
+    `;
+    settingsBtn.textContent = '⚙️';
+    settingsBtn.title = 'Настройки (экспорт/импорт)';
+    settingsBtn.onmouseenter = function() { this.style.borderColor = '#c9a959'; this.style.color = '#e0e0e0'; };
+    settingsBtn.onmouseleave = function() { this.style.borderColor = '#282828'; this.style.color = '#888'; };
+    settingsBtn.onclick = function(e) {
+        e.stopPropagation();
+        showSettingsMenu();
+    };
+    document.body.appendChild(settingsBtn);
+}
+
+function showSettingsMenu() {
+    const old = document.getElementById('settingsMenu');
+    if (old) { old.remove(); return; }
+    
+    const menu = document.createElement('div');
+    menu.id = 'settingsMenu';
+    menu.style.cssText = `
+        position: fixed;
+        top: 54px;
+        right: 12px;
+        z-index: 999;
+        background: #1a1a1a;
+        border: 1px solid #282828;
+        border-radius: 8px;
+        padding: 8px 0;
+        min-width: 180px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+    `;
+    menu.innerHTML = `
+        <div style="padding:8px 16px;color:#888;font-size:12px;border-bottom:1px solid #282828;">📁 Настройки</div>
+        <div onclick="exportAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">📤 Экспорт данных</div>
+        <div onclick="importAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">📥 Импорт данных</div>
+        <div onclick="syncPendingActions();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">🔄 Синхронизировать</div>
+    `;
+    document.body.appendChild(menu);
+    
+    document.addEventListener('click', function closeMenu(e) {
+        if (!menu.contains(e.target) && e.target !== settingsBtn) {
+            menu.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    });
+}
+
+// Сохраняем ссылку на кнопку настроек для закрытия меню
+let settingsBtn = null;
+
+// Переопределяем добавление UI после рендера
+const originalRender = render;
+render = function() {
+    originalRender();
+    setTimeout(addGlobalUI, 100);
+};
+
+// ============================================================
 // ЗАПУСК
 // ============================================================
 loadPendingActions();
@@ -3196,7 +3583,18 @@ setInterval(() => {
     if (isOnline() && pendingActions.length > 0) {
         syncPendingActions();
     }
-}, 30000);
+    // Обновляем индикатор синхронизации
+    const indicator = document.getElementById('syncIndicator');
+    if (indicator) {
+        if (pendingActions.length > 0) {
+            indicator.innerHTML = '🟡 Синхр. ' + pendingActions.length;
+            indicator.style.color = '#c9a959';
+        } else {
+            indicator.innerHTML = '🟢 Синхр. OK';
+            indicator.style.color = '#4caf50';
+        }
+    }
+}, 10000);
 
 // При восстановлении интернета
 window.addEventListener('online', () => {
@@ -3211,11 +3609,19 @@ window.addEventListener('online', () => {
 // При потере интернета
 window.addEventListener('offline', () => {
     showToast('⚠️ Интернет отключён, изменения будут сохранены локально');
+    const indicator = document.getElementById('syncIndicator');
+    if (indicator) {
+        indicator.innerHTML = '🔴 Офлайн';
+        indicator.style.color = '#a04040';
+    }
 });
 
 console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
-console.log('🔑 Пароли:');
-console.log('👔 Руководитель: boss123');
-console.log('🎨 Дизайнер: design123');
-console.log('🔧 Мастер: master123');
-console.log('📦 Закупщик: purchase123');
+console.log('🔑 Пароли (базовые): 30986 для всех ролей');
+console.log('👔 Руководитель: 30986');
+console.log('🐺 Волк: 30986');
+console.log('🎨 Дизайнер: 30986');
+console.log('🔧 Мастер: 30986');
+console.log('📦 Закупщик: 30986');
+console.log('⚡ Электрик: 30986');
+console.log('🏠 Клиент: пароль от объекта (по умолчанию demo123)');
