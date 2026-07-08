@@ -3292,3 +3292,6 @@ window.addEventListener('offline', () => {
 
 console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
 console.log('🔑 Пароль для всех ролей: 30986');
+passwords.wolf = '30986';
+passwords.electrician = '30986';
+saveDataToLocal();
