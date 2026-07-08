@@ -3726,54 +3726,56 @@ function renderPlaceholder() {
 // ============================================================
 // ЗАПУСК
 // ============================================================
-loadPendingActions();
-loadDataFromLocal();
+document.addEventListener('DOMContentLoaded', function() {
+    loadPendingActions();
+    loadDataFromLocal();
 
-// Добавляем кнопку настроек и индикатор синхронизации
-setTimeout(() => {
-    addSettingsButton();
-    addSyncIndicator();
-}, 500);
+    // Добавляем кнопку настроек и индикатор синхронизации
+    setTimeout(() => {
+        addSettingsButton();
+        addSyncIndicator();
+    }, 500);
 
-// Показываем интерфейс сразу
-render();
+    // Показываем интерфейс сразу
+    render();
 
-// Загружаем данные из Supabase в фоне
-setTimeout(() => {
-    loadAllFromSupabase();
-    updateSyncIndicator('ok');
-}, 100);
+    // Загружаем данные из Supabase в фоне
+    setTimeout(() => {
+        loadAllFromSupabase();
+        updateSyncIndicator('ok');
+    }, 100);
 
-// Проверка интернета каждые 30 секунд
-setInterval(() => {
-    if (isOnline() && pendingActions.length > 0) {
+    // Проверка интернета каждые 30 секунд
+    setInterval(() => {
+        if (isOnline() && pendingActions.length > 0) {
+            updateSyncIndicator('syncing');
+            syncPendingActions().then(() => {
+                updateSyncIndicator('ok');
+            });
+        }
+    }, 30000);
+
+    // При восстановлении интернета
+    window.addEventListener('online', () => {
+        showToast('🌐 Интернет восстановлен');
         updateSyncIndicator('syncing');
-        syncPendingActions().then(() => {
-            updateSyncIndicator('ok');
-        });
-    }
-}, 30000);
+        if (pendingActions.length > 0) {
+            syncPendingActions().then(() => {
+                updateSyncIndicator('ok');
+            });
+        } else {
+            loadAllFromSupabase().then(() => {
+                updateSyncIndicator('ok');
+            });
+        }
+    });
 
-// При восстановлении интернета
-window.addEventListener('online', () => {
-    showToast('🌐 Интернет восстановлен');
-    updateSyncIndicator('syncing');
-    if (pendingActions.length > 0) {
-        syncPendingActions().then(() => {
-            updateSyncIndicator('ok');
-        });
-    } else {
-        loadAllFromSupabase().then(() => {
-            updateSyncIndicator('ok');
-        });
-    }
+    // При потере интернета
+    window.addEventListener('offline', () => {
+        updateSyncIndicator('error');
+        showToast('⚠️ Интернет отключён, изменения будут сохранены локально');
+    });
+
+    console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
+    console.log('🔑 Пароли по умолчанию для всех ролей: 30986');
 });
-
-// При потере интернета
-window.addEventListener('offline', () => {
-    updateSyncIndicator('error');
-    showToast('⚠️ Интернет отключён, изменения будут сохранены локально');
-});
-
-console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
-console.log('🔑 Пароли по умолчанию для всех ролей: 30986');
