@@ -311,7 +311,7 @@ async function loadAllFromSupabase() {
 function renderLogin() {
     document.getElementById('app').innerHTML = `
     <div class="card" style="text-align:center;padding:30px;">
-      <div class="login-header"><div class="slogan">Умная система учёта работ<small>Управляй учётом вместе с УРОВНЕМ</small></div></div>
+      <div class="login-header"><div class="slogan">Умная система учёта работы<small>Управляй учётом вместе с УРОВНЕМ</small></div></div>
       <hr>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:400px;margin:0 auto;">
         <button class="btn btn-primary" onclick="login('boss')">👔 Руководитель</button>
@@ -418,12 +418,13 @@ function renderBossObjects() {
         '</div>';
 
     // ============================================================
-    // КНОПКИ ЭКСПОРТ/ИМПОРТ — ПРАВЫЙ ВЕРХНИЙ УГОЛ
+    // КНОПКИ ЭКСПОРТ/ИМПОРТ/СИНХРОНИЗАЦИЯ — ПРАВЫЙ ВЕРХНИЙ УГОЛ
     // ============================================================
-    var toolsHtml = '<div style="position:fixed;top:10px;right:60px;z-index:9999;display:flex;align-items:center;gap:4px;background:#0d0d0d;border-radius:12px;border:1px solid #1a1a1a;padding:4px 8px;">' +
-        '<span onclick="exportAllData()" style="cursor:pointer;font-size:16px;color:#666;padding:4px 6px;border-radius:4px;transition:all 0.2s;" onmouseover="this.style.color=\'#c9a959\';this.style.background=\'#1a1a1a\'" onmouseout="this.style.color=\'#666\';this.style.background=\'transparent\'" title="Экспорт данных">📤</span>' +
-        '<span onclick="importAllData()" style="cursor:pointer;font-size:16px;color:#666;padding:4px 6px;border-radius:4px;transition:all 0.2s;" onmouseover="this.style.color=\'#c9a959\';this.style.background=\'#1a1a1a\'" onmouseout="this.style.color=\'#666\';this.style.background=\'transparent\'" title="Импорт данных">📥</span>' +
-        (pendingActions.length > 0 ? '<span onclick="syncPendingActions()" style="cursor:pointer;font-size:14px;color:#c9a959;padding:4px 6px;border-radius:4px;transition:all 0.2s;" onmouseover="this.style.background=\'#1a1a1a\'" onmouseout="this.style.background=\'transparent\'" title="Синхронизировать">🔄</span>' : '') +
+    var toolsHtml = '<div style="position:fixed;top:10px;right:100px;z-index:9999;display:flex;align-items:center;gap:8px;background:#0d0d0d;border-radius:12px;border:1px solid #1a1a1a;padding:6px 12px;">' +
+        '<span onclick="exportAllData()" style="cursor:pointer;font-size:18px;color:#666;padding:2px 6px;border-radius:4px;transition:all 0.2s;line-height:1;" onmouseover="this.style.color=\'#c9a959\';this.style.background=\'#1a1a1a\'" onmouseout="this.style.color=\'#666\';this.style.background=\'transparent\'" title="Экспорт данных">📤</span>' +
+        '<span style="color:#333;font-size:12px;line-height:1;">|</span>' +
+        '<span onclick="importAllData()" style="cursor:pointer;font-size:18px;color:#666;padding:2px 6px;border-radius:4px;transition:all 0.2s;line-height:1;" onmouseover="this.style.color=\'#c9a959\';this.style.background=\'#1a1a1a\'" onmouseout="this.style.color=\'#666\';this.style.background=\'transparent\'" title="Импорт данных">📥</span>' +
+        (pendingActions.length > 0 ? '<span style="color:#333;font-size:12px;line-height:1;">|</span><span onclick="syncPendingActions()" style="cursor:pointer;font-size:16px;color:#c9a959;padding:2px 6px;border-radius:4px;transition:all 0.2s;line-height:1;" onmouseover="this.style.background=\'#1a1a1a\'" onmouseout="this.style.background=\'transparent\'" title="Синхронизировать">🔄</span>' : '') +
         '</div>';
 
     var filterTabs = '<div class="obj-filter-tabs"><span class="tab ' + (filter === 'active' ? 'active' : '') + '" onclick="setBossObjectFilter(\'active\')">Активные</span><span class="tab ' + (filter === 'completed' ? 'active' : '') + '" onclick="setBossObjectFilter(\'completed\')">Сданные</span></div>';
@@ -461,7 +462,20 @@ function renderBossObjects() {
                     var file = pr.files[f];
                     var isImg = file.startsWith('data:image/') || file.startsWith('http');
                     var isPdf = file.startsWith('data:application/pdf');
-                    files += '<span class="file-wrap">' + (isImg ? '<img src="' + file + '" onclick="showModal(\'' + file + '\')" style="max-width:100px;max-height:100px;">' : isPdf ? '<span class="pdf" onclick="window.open(\'' + file + '\',\'_blank\')">📄</span>' : '<span class="pdf" onclick="window.open(\'' + file + '\',\'_blank\')">📎</span>') + '<button class="del" onclick="deleteDesignFile(' + pr.id + ',' + f + ')" style="background:#a04040;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;">×</button></span>';
+                    var isDoc = file.startsWith('data:application/msword') || file.startsWith('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                    var isExcel = file.startsWith('data:application/vnd.ms-excel') || file.startsWith('data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    
+                    var icon = '📎';
+                    if (isImg) icon = '🖼️';
+                    else if (isPdf) icon = '📄';
+                    else if (isDoc) icon = '📝';
+                    else if (isExcel) icon = '📊';
+                    
+                    files += '<span class="file-wrap" style="display:inline-flex;align-items:center;gap:4px;background:#1a1a1a;padding:4px 8px;border-radius:4px;margin:2px;">' + 
+                        (isImg ? '<img src="' + file + '" onclick="showModal(\'' + file + '\')" style="max-width:80px;max-height:80px;border-radius:4px;cursor:pointer;">' : 
+                        '<span onclick="window.open(\'' + file + '\',\'_blank\')" style="cursor:pointer;font-size:20px;color:#c9a959;">' + icon + '</span>') + 
+                        '<button class="del" onclick="deleteDesignFile(' + pr.id + ',' + f + ')" style="background:#a04040;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;line-height:1;">×</button>' +
+                        '</span>';
                 }
             }
             if (!files) files = 'нет';
@@ -562,7 +576,7 @@ function renderBossObjects() {
                 contractorHtml = '<span style="font-size:12px;color:#555;margin-left:4px;cursor:pointer;" onclick="assignContractor(' + obj.id + ',' + originalIndex + ')" title="Назначить исполнителя">👤 Назначить</span>';
             }
             
-            var electricianDisplay = work.forElectrician ? '⚡' : '⚡';
+            var electricianDisplay = '⚡';
             var electricianColor = work.forElectrician ? '#c9a959' : '#555';
             
             worksHtml += '<div class="work-block" draggable="true" data-object-id="' + obj.id + '" data-work-index="' + originalIndex + '" data-work-id="' + work.id + '">' +
@@ -572,12 +586,11 @@ function renderBossObjects() {
                 '<span class="work-title">' + escapeHtml(work.name) + '</span>' +
                 contractorHtml +
                 (work.quantity ? ' <span class="work-quantity">(' + escapeHtml(work.quantity) + ' ' + escapeHtml(work.unit) + ')</span>' : '') +
-                '<span class="work-status-check" onclick="event.stopPropagation();toggleWorkStatus(' + obj.id + ',' + originalIndex + ')">' + (work.done ? '☑' : '☐') + '</span>' +
-                '<span class="work-electrician-toggle" onclick="event.stopPropagation();toggleElectrician(' + obj.id + ',' + originalIndex + ')" title="Назначить электрику" style="cursor:pointer;font-size:16px;color:' + electricianColor + ';transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'' + electricianColor + '\'">' + electricianDisplay + '</span>' +
-                (work.forElectrician ? '<span style="font-size:8px;color:#c9a959;margin-left:2px;">●</span>' : '') +
+                '<span class="work-status-check" onclick="event.stopPropagation();toggleWorkStatus(' + obj.id + ',' + originalIndex + ')" style="cursor:pointer;font-size:18px;color:' + (work.done ? '#4caf50' : '#666') + ';transition:color 0.2s;">' + (work.done ? '☑' : '☐') + '</span>' +
+                '<span class="work-electrician-toggle" onclick="event.stopPropagation();toggleElectrician(' + obj.id + ',' + originalIndex + ')" title="Назначить электрику" style="cursor:pointer;font-size:16px;color:' + electricianColor + ';transition:color 0.2s;display:inline-flex;align-items:center;gap:2px;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'' + electricianColor + '\'">' + electricianDisplay + (work.forElectrician ? '<span style="display:inline-block;width:8px;height:8px;background:#c9a959;border-radius:50%;box-shadow:0 0 8px #c9a959;"></span>' : '') + '</span>' +
                 daysHtml +
                 (work.manual && currentFilter === 'unpaid' ? '<span onclick="event.stopPropagation();toggleWorkPaid(' + obj.id + ',' + originalIndex + ')" style="cursor:pointer;font-size:14px;color:' + (work.paid ? '#4caf50' : '#c9a959') + ';margin-left:4px;" title="' + (work.paid ? 'Оплачено' : 'Отметить оплату') + '">' + (work.paid ? '💰' : '💳') + '</span>' : '') +
-                '<span class="photo-indicator" title="' + (photos.length ? 'Есть фото' : 'Нет фото') + '"></span>' +
+                (photos.length > 0 ? '<span class="photo-indicator" title="Есть фото" style="display:inline-block;width:8px;height:8px;background:#4caf50;border-radius:50%;margin-left:4px;box-shadow:0 0 8px rgba(76,175,80,0.5);"></span>' : '<span class="photo-indicator" title="Нет фото" style="display:inline-block;width:8px;height:8px;background:#333;border-radius:50%;margin-left:4px;"></span>') +
                 '<span class="work-arrow ' + (wOpen ? 'open' : '') + '">▶</span>' +
                 '</span>' +
                 '<span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;">' +
@@ -594,14 +607,6 @@ function renderBossObjects() {
         }
         setTimeout(initDragDrop, 50);
 
-        var summaryHtml = '<div style="margin:8px 0;padding:6px 12px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a;font-size:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
-            '<span style="color:#888;">📅</span>' +
-            '<span onclick="setObjectStartDate(' + obj.id + ')" style="cursor:pointer;color:' + (obj.startDate ? '#e0e0e0' : '#555') + ';transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'' + (obj.startDate ? '#e0e0e0' : '#555') + '\'">' + (obj.startDate ? fmt(obj.startDate) : 'Начало') + '</span>' +
-            '<span style="color:#555;">→</span>' +
-            '<span onclick="setObjectEndDate(' + obj.id + ')" style="cursor:pointer;color:' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + ';transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + '\'">' + (obj.plannedEndDate ? fmt(obj.plannedEndDate) : 'Завершение') + '</span>' +
-            (obj.plannedEndDate ? '<span style="color:' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '#a04040' : '#4caf50') + ';font-size:11px;">' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '⚠️ просрочка ' + Math.abs(getDaysRemaining(obj.plannedEndDate)) + 'дн' : 'осталось ' + getDaysRemaining(obj.plannedEndDate) + 'дн') + '</span>' : '') +
-            '</div>';
-
         var notesHtml = '';
         if (obj.notes) {
             notesHtml = '<div style="margin:6px 0;padding:8px 12px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a;font-size:13px;color:#888;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
@@ -609,20 +614,19 @@ function renderBossObjects() {
                 '<button class="btn btn-sm" onclick="editObjectNotes(' + obj.id + ')" style="padding:2px 8px;font-size:11px;flex-shrink:0;">✏️</button>' +
                 '</div>';
         } else {
-            notesHtml = '<div style="margin:6px 0;display:flex;justify-content:flex-end;">' +
-                '<button class="btn btn-sm" onclick="editObjectNotes(' + obj.id + ')" style="padding:2px 8px;font-size:11px;color:#555;">📝 Добавить заметку</button>' +
-                '</div>';
+            notesHtml = '';
         }
 
         list += '<div class="card" id="obj-' + obj.id + '">' +
             '<div class="object-header" onclick="toggleObject(this,\'' + objKey + '\')">' +
             '<div class="flex"><h3>' + escapeHtml(obj.name) + ' <span style="font-weight:300;color:#888;">(' + escapeHtml(obj.code) + ')</span><span class="arrow ' + (objOpen ? 'open' : '') + '">▶</span></h3>' +
-            '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">' +
-            '<span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:#888;">' +
-            '<span onclick="setObjectStartDate(' + obj.id + ')" style="cursor:pointer;color:' + (obj.startDate ? '#e0e0e0' : '#555') + ';">' + (obj.startDate ? fmt(obj.startDate) : 'Начало') + '</span>' +
-            '<span style="color:#555;">→</span>' +
-            '<span onclick="setObjectEndDate(' + obj.id + ')" style="cursor:pointer;color:' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + ';">' + (obj.plannedEndDate ? fmt(obj.plannedEndDate) : 'Завершение') + '</span>' +
-            (obj.plannedEndDate ? '<span style="color:' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '#a04040' : '#4caf50') + ';font-size:11px;">' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '⚠️ ' + Math.abs(getDaysRemaining(obj.plannedEndDate)) + 'дн' : 'осталось ' + getDaysRemaining(obj.plannedEndDate) + 'дн') + '</span>' : '') +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+            '<span class="badge" style="font-size:11px;background:#1a1a1a;color:#888;padding:2px 8px;border-radius:4px;">ID: ' + obj.id + '</span>' +
+            '<span style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555;">' +
+            '<span onclick="setObjectStartDate(' + obj.id + ')" style="cursor:pointer;color:' + (obj.startDate ? '#e0e0e0' : '#555') + ';transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'' + (obj.startDate ? '#e0e0e0' : '#555') + '\'">' + (obj.startDate ? fmt(obj.startDate) : '📅') + '</span>' +
+            '<span style="color:#444;">→</span>' +
+            '<span onclick="setObjectEndDate(' + obj.id + ')" style="cursor:pointer;color:' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + ';transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + '\'">' + (obj.plannedEndDate ? fmt(obj.plannedEndDate) : '📅') + '</span>' +
+            (obj.plannedEndDate ? '<span style="color:' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '#a04040' : '#4caf50') + ';font-size:10px;">' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '⚠️' : '✅') + '</span>' : '') +
             '</span>' +
             '<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(' + obj.id + ')">' + (obj.completed ? 'Вернуть' : 'Сдать') + '</button>' +
             '<button class="btn btn-sm" onclick="event.stopPropagation();addWork(' + obj.id + ')">➕ Этап</button>' +
@@ -730,7 +734,20 @@ function renderWolfObjects() {
                 for (var f = 0; f < pr.files.length; f++) {
                     var file = pr.files[f];
                     var isImg = file.startsWith('data:image/') || file.startsWith('http');
-                    files += (isImg ? '<img src="' + file + '" onclick="showModal(\'' + file + '\')" style="max-width:80px;max-height:80px;border-radius:4px;">' : '<a href="' + file + '" target="_blank">📄</a>');
+                    var isPdf = file.startsWith('data:application/pdf');
+                    var isDoc = file.startsWith('data:application/msword') || file.startsWith('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                    var isExcel = file.startsWith('data:application/vnd.ms-excel') || file.startsWith('data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    
+                    var icon = '📎';
+                    if (isImg) icon = '🖼️';
+                    else if (isPdf) icon = '📄';
+                    else if (isDoc) icon = '📝';
+                    else if (isExcel) icon = '📊';
+                    
+                    files += '<span style="display:inline-flex;align-items:center;gap:4px;background:#1a1a1a;padding:4px 8px;border-radius:4px;margin:2px;">' + 
+                        (isImg ? '<img src="' + file + '" onclick="showModal(\'' + file + '\')" style="max-width:60px;max-height:60px;border-radius:4px;cursor:pointer;">' : 
+                        '<span onclick="window.open(\'' + file + '\',\'_blank\')" style="cursor:pointer;font-size:18px;color:#c9a959;">' + icon + '</span>') + 
+                        '</span>';
                 }
             }
             if (!files) files = 'нет';
@@ -821,6 +838,9 @@ function renderWolfObjects() {
                 contractorHtml = '<span style="font-size:12px;color:#555;margin-left:4px;cursor:pointer;" onclick="assignContractor(' + obj.id + ',' + originalIndex + ')" title="Назначить исполнителя">👤 Назначить</span>';
             }
             
+            var electricianDisplay = '⚡';
+            var electricianColor = work.forElectrician ? '#c9a959' : '#555';
+            
             worksHtml += '<div class="work-block" draggable="true" data-object-id="' + obj.id + '" data-work-index="' + originalIndex + '" data-work-id="' + work.id + '">' +
                 '<div class="work-header" onclick="toggleWork(event, this, \'' + wKey + '\')">' +
                 '<span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">' +
@@ -828,9 +848,10 @@ function renderWolfObjects() {
                 '<span class="work-title">' + escapeHtml(work.name) + '</span>' +
                 contractorHtml +
                 (work.quantity ? ' <span class="work-quantity">(' + escapeHtml(work.quantity) + ' ' + escapeHtml(work.unit) + ')</span>' : '') +
-                '<span class="work-status-check" onclick="event.stopPropagation();wolfToggleWorkStatus(' + obj.id + ',' + originalIndex + ')">' + (work.done ? '☑' : '☐') + '</span>' +
+                '<span class="work-status-check" onclick="event.stopPropagation();wolfToggleWorkStatus(' + obj.id + ',' + originalIndex + ')" style="cursor:pointer;font-size:18px;color:' + (work.done ? '#4caf50' : '#666') + ';transition:color 0.2s;">' + (work.done ? '☑' : '☐') + '</span>' +
+                '<span class="work-electrician-toggle" onclick="event.stopPropagation();toggleElectrician(' + obj.id + ',' + originalIndex + ')" title="Назначить электрику" style="cursor:pointer;font-size:16px;color:' + electricianColor + ';transition:color 0.2s;display:inline-flex;align-items:center;gap:2px;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'' + electricianColor + '\'">' + electricianDisplay + (work.forElectrician ? '<span style="display:inline-block;width:8px;height:8px;background:#c9a959;border-radius:50%;box-shadow:0 0 8px #c9a959;"></span>' : '') + '</span>' +
                 daysHtml +
-                '<span class="photo-indicator ' + (photos.length ? 'has-photo' : '') + '"></span>' +
+                (photos.length > 0 ? '<span class="photo-indicator" title="Есть фото" style="display:inline-block;width:8px;height:8px;background:#4caf50;border-radius:50%;margin-left:4px;box-shadow:0 0 8px rgba(76,175,80,0.5);"></span>' : '<span class="photo-indicator" title="Нет фото" style="display:inline-block;width:8px;height:8px;background:#333;border-radius:50%;margin-left:4px;"></span>') +
                 '<span class="work-arrow ' + (wOpen ? 'open' : '') + '">▶</span>' +
                 '</span>' +
                 '<span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;">' +
@@ -845,14 +866,6 @@ function renderWolfObjects() {
         }
         var addWorkButton = '<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="wolfAddWork(' + obj.id + ')">➕ Добавить этап</button></div>';
 
-        var summaryHtml = '<div style="margin:8px 0;padding:6px 12px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a;font-size:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
-            '<span style="color:#888;">📅</span>' +
-            '<span style="color:' + (obj.startDate ? '#e0e0e0' : '#555') + ';">' + (obj.startDate ? fmt(obj.startDate) : 'Начало') + '</span>' +
-            '<span style="color:#555;">→</span>' +
-            '<span style="color:' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + ';">' + (obj.plannedEndDate ? fmt(obj.plannedEndDate) : 'Завершение') + '</span>' +
-            (obj.plannedEndDate ? '<span style="color:' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '#a04040' : '#4caf50') + ';font-size:11px;">' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '⚠️ просрочка ' + Math.abs(getDaysRemaining(obj.plannedEndDate)) + 'дн' : 'осталось ' + getDaysRemaining(obj.plannedEndDate) + 'дн') + '</span>' : '') +
-            '</div>';
-
         var notesHtml = '';
         if (obj.notes) {
             notesHtml = '<div style="margin:6px 0;padding:8px 12px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a;font-size:13px;color:#888;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
@@ -860,18 +873,23 @@ function renderWolfObjects() {
                 '<button class="btn btn-sm" onclick="editObjectNotes(' + obj.id + ')" style="padding:2px 8px;font-size:11px;flex-shrink:0;">✏️</button>' +
                 '</div>';
         } else {
-            notesHtml = '<div style="margin:6px 0;display:flex;justify-content:flex-end;">' +
-                '<button class="btn btn-sm" onclick="editObjectNotes(' + obj.id + ')" style="padding:2px 8px;font-size:11px;color:#555;">📝 Добавить заметку</button>' +
-                '</div>';
+            notesHtml = '';
         }
 
         list += '<div class="card" id="wolf-obj-' + obj.id + '">' +
             '<div class="object-header" onclick="toggleObject(this,\'' + objKey + '\')">' +
             '<div class="flex"><h3>' + escapeHtml(obj.name) + ' <span style="font-weight:300;color:#888;">(' + escapeHtml(obj.code) + ')</span><span class="arrow ' + (objOpen ? 'open' : '') + '">▶</span></h3>' +
-            '<div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ' + obj.id + '</span></div></div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+            '<span class="badge" style="font-size:11px;background:#1a1a1a;color:#888;padding:2px 8px;border-radius:4px;">ID: ' + obj.id + '</span>' +
+            '<span style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555;">' +
+            '<span style="color:' + (obj.startDate ? '#e0e0e0' : '#555') + ';">' + (obj.startDate ? fmt(obj.startDate) : '📅') + '</span>' +
+            '<span style="color:#444;">→</span>' +
+            '<span style="color:' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + ';">' + (obj.plannedEndDate ? fmt(obj.plannedEndDate) : '📅') + '</span>' +
+            (obj.plannedEndDate ? '<span style="color:' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '#a04040' : '#4caf50') + ';font-size:10px;">' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '⚠️' : '✅') + '</span>' : '') +
+            '</span>' +
+            '</div></div>' +
             '<div style="color:#999;font-size:14px;">📍 ' + escapeHtml(obj.address) + '</div>' +
             notesHtml +
-            summaryHtml +
             '</div>' +
             '<div class="object-detail ' + (objOpen ? 'open' : '') + '">' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;padding:4px 0;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">' +
@@ -1060,47 +1078,74 @@ function renderClientWorks() {
         container.innerHTML = '<div class="card" style="text-align:center;padding:40px;">Объект не найден</div>';
         return;
     }
+    
     var html = '';
+    
     if (obj.clientStatus) {
-        html += '<div style="background:#1a1a1a;border-left:3px solid #c9a959;padding:10px 14px;margin-bottom:16px;border-radius:4px;">' +
-            '<span style="color:#c9a959;font-size:14px;">📌 ' + escapeHtml(obj.clientStatus) + '</span>' +
+        html += '<div style="background:linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);border-left:4px solid #c9a959;padding:16px 20px;margin-bottom:20px;border-radius:12px;box-shadow:0 4px 20px rgba(201,169,89,0.05);">' +
+            '<div style="display:flex;align-items:center;gap:12px;">' +
+            '<span style="font-size:24px;">📌</span>' +
+            '<span style="color:#e8e8e8;font-size:15px;font-weight:400;letter-spacing:0.3px;">' + escapeHtml(obj.clientStatus) + '</span>' +
+            '</div>' +
             '</div>';
     }
+    
     var upcomingWorks = obj.works.filter(function(w) { return !w.done && w.deadline; }).sort(function(a, b) {
         var pa = a.deadline.split('.'), pb = b.deadline.split('.');
         return new Date(+pa[2], +pa[1] - 1, +pa[0]) - new Date(+pb[2], +pb[1] - 1, +pb[0]);
     }).slice(0, 5);
-    html += '<div style="margin-bottom:16px;">' +
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
-        '<span style="font-size:18px;">📌</span>' +
-        '<span style="font-size:15px;font-weight:500;color:#e0e0e0;">Ближайшие работы</span>' +
+    
+    html += '<div style="background:linear-gradient(145deg, #161616 0%, #0d0d0d 100%);border-radius:16px;padding:20px;margin-bottom:20px;border:1px solid #222;box-shadow:0 4px 30px rgba(0,0,0,0.3);">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
+        '<span style="font-size:22px;background:linear-gradient(135deg, #c9a959, #a8893a);border-radius:8px;padding:6px 10px;color:#0d0d0d;">📌</span>' +
+        '<span style="font-size:17px;font-weight:500;color:#e8e8e8;letter-spacing:0.5px;">Ближайшие работы</span>' +
+        '<span style="margin-left:auto;font-size:12px;color:#666;background:#1a1a1a;padding:4px 12px;border-radius:20px;">' + upcomingWorks.length + ' задач</span>' +
         '</div>';
+    
     if (upcomingWorks.length === 0) {
-        html += '<div style="color:#555;font-size:14px;padding:8px 0;">✅ Все работы выполнены</div>';
+        html += '<div style="text-align:center;padding:20px 0;color:#555;font-size:14px;">' +
+            '<span style="font-size:32px;display:block;margin-bottom:8px;">✅</span>' +
+            'Все работы выполнены' +
+            '</div>';
     } else {
         for (var i = 0; i < upcomingWorks.length; i++) {
             var w = upcomingWorks[i];
             var isFirst = (i === 0);
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a1a1a;">' +
-                '<span style="color:' + (isFirst ? '#c9a959' : '#e0e0e0') + ';font-size:14px;">' + (isFirst ? '▶' : '•') + ' ' + escapeHtml(w.name) + '</span>' +
-                '<span style="color:' + (isFirst ? '#c9a959' : '#888') + ';font-size:13px;">' + fmt(w.deadline) + '</span>' +
+            var daysLeft = getDaysRemaining(w.deadline);
+            var statusColor = daysLeft < 0 ? '#a04040' : '#c9a959';
+            
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:6px;background:' + (isFirst ? 'linear-gradient(90deg, rgba(201,169,89,0.1) 0%, transparent 100%)' : 'transparent') + ';border-radius:8px;border-left:2px solid ' + (isFirst ? '#c9a959' : '#1a1a1a') + ';transition:all 0.2s;" onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'' + (isFirst ? 'linear-gradient(90deg, rgba(201,169,89,0.1) 0%, transparent 100%)' : 'transparent') + '\'">' +
+                '<div style="display:flex;align-items:center;gap:10px;">' +
+                (isFirst ? '<span style="font-size:14px;color:#c9a959;">▶</span>' : '<span style="font-size:12px;color:#444;">•</span>') +
+                '<span style="color:' + (isFirst ? '#e8e8e8' : '#aaa') + ';font-size:14px;font-weight:' + (isFirst ? '500' : '400') + ';">' + escapeHtml(w.name) + '</span>' +
+                '</div>' +
+                '<div style="display:flex;align-items:center;gap:10px;">' +
+                '<span style="color:' + statusColor + ';font-size:12px;background:rgba(0,0,0,0.3);padding:2px 10px;border-radius:12px;">' + 
+                    (daysLeft < 0 ? '⚠️ ' + Math.abs(daysLeft) + ' дн.' : '⏳ ' + daysLeft + ' дн.') + 
+                '</span>' +
+                '<span style="color:#888;font-size:13px;background:#1a1a1a;padding:2px 12px;border-radius:12px;">' + fmt(w.deadline) + '</span>' +
+                '</div>' +
                 '</div>';
         }
     }
     html += '</div>';
-    html += '<div>' +
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
-        '<span style="font-size:18px;">📋</span>' +
-        '<span style="font-size:15px;font-weight:500;color:#e0e0e0;">Этапы работ</span>' +
+    
+    html += '<div style="background:linear-gradient(145deg, #161616 0%, #0d0d0d 100%);border-radius:16px;padding:20px;border:1px solid #222;box-shadow:0 4px 30px rgba(0,0,0,0.3);">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
+        '<span style="font-size:22px;background:linear-gradient(135deg, #c9a959, #a8893a);border-radius:8px;padding:6px 10px;color:#0d0d0d;">📋</span>' +
+        '<span style="font-size:17px;font-weight:500;color:#e8e8e8;letter-spacing:0.5px;">Все этапы работ</span>' +
+        '<span style="margin-left:auto;font-size:12px;color:#666;background:#1a1a1a;padding:4px 12px;border-radius:20px;">' + obj.works.length + ' этапов</span>' +
         '</div>';
+    
     if (obj.works.length === 0) {
-        html += '<div style="color:#555;font-size:14px;padding:8px 0;">Нет этапов</div>';
+        html += '<div style="text-align:center;padding:20px 0;color:#555;font-size:14px;">Нет этапов</div>';
     } else {
         var sortedWorks = obj.works.slice().sort(function(a, b) {
             if (!a.done && b.done) return -1;
             if (a.done && !b.done) return 1;
             return 0;
         });
+        
         for (var i = 0; i < sortedWorks.length; i++) {
             var w = sortedWorks[i];
             var photos = [];
@@ -1109,27 +1154,41 @@ function renderClientWorks() {
                     photos.push(reports[p]);
                 }
             }
+            
+            var statusColor = w.done ? '#4caf50' : '#c9a959';
+            var statusText = w.done ? 'Выполнено' : 'В работе';
+            var statusIcon = w.done ? '✅' : '⏳';
+            var borderColor = w.done ? 'rgba(76,175,80,0.2)' : 'rgba(201,169,89,0.2)';
+            
             var photoHtml = '';
             if (photos.length > 0) {
-                photoHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">';
+                photoHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">';
                 for (var j = 0; j < photos.length; j++) {
                     var photoUrl = photos[j].photos[0];
-                    photoHtml += '<img src="' + photoUrl + '" onclick="showModal(\'' + photoUrl + '\')" style="width:50px;height:50px;object-fit:cover;border-radius:4px;border:1px solid #282828;cursor:pointer;">';
+                    photoHtml += '<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid #222;transition:transform 0.2s;" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">' +
+                        '<img src="' + photoUrl + '" onclick="showModal(\'' + photoUrl + '\')" style="width:56px;height:56px;object-fit:cover;cursor:pointer;">' +
+                        '</div>';
                 }
                 photoHtml += '</div>';
             }
-            var statusColor = w.done ? '#4caf50' : '#c9a959';
-            var statusText = w.done ? 'Выполнено' : 'В работе';
-            html += '<div style="padding:8px 0;border-bottom:1px solid #1a1a1a;">' +
-                '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-                '<span style="font-size:14px;color:#e0e0e0;">' + escapeHtml(w.name) + '</span>' +
-                '<span style="color:' + statusColor + ';font-size:12px;">' + statusText + '</span>' +
+            
+            html += '<div style="padding:12px 16px;margin-bottom:8px;background:#0d0d0d;border-radius:10px;border-left:3px solid ' + statusColor + ';transition:all 0.2s;" onmouseover="this.style.background=\'#141414\'" onmouseout="this.style.background=\'#0d0d0d\'">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
+                '<div style="display:flex;align-items:center;gap:10px;">' +
+                '<span style="font-size:18px;">' + statusIcon + '</span>' +
+                '<span style="font-size:15px;color:#e8e8e8;font-weight:400;">' + escapeHtml(w.name) + '</span>' +
                 '</div>' +
-                photoHtml +
+                '<div style="display:flex;align-items:center;gap:8px;">' +
+                '<span style="background:' + statusColor + '20;color:' + statusColor + ';font-size:12px;padding:3px 14px;border-radius:20px;font-weight:500;border:1px solid ' + statusColor + '40;">' + statusText + '</span>' +
+                (w.deadline ? '<span style="color:#666;font-size:12px;background:#1a1a1a;padding:2px 10px;border-radius:12px;">📅 ' + fmt(w.deadline) + '</span>' : '') +
+                '</div>' +
+                '</div>' +
+                (photoHtml || '<div style="color:#444;font-size:12px;margin-top:4px;padding-left:32px;">📸 Нет фото</div>') +
                 '</div>';
         }
     }
     html += '</div>';
+    
     container.innerHTML = html;
 }
 
@@ -1954,37 +2013,120 @@ window.addDesignProjectForObject = function(objId) {
     if (!obj) return;
     var title = prompt('Название проекта:');
     if (!title) return;
+    
     var inp = document.createElement('input');
     inp.type = 'file';
     inp.multiple = true;
-    inp.accept = '*/*';
+    inp.accept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx';
     inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
     document.body.appendChild(inp);
+    
     inp.onchange = function(e) {
         var files = e.target.files;
         var data = [];
-        if (!files.length) { createDesignProject(obj.id, title, []); inp.remove(); return; }
-        var readers = [];
-        for (var f = 0; f < files.length; f++) {
-            var r = new FileReader();
-            readers.push(new Promise(function(res) {
-                r.onload = function(ev) { data.push(ev.target.result); res(); };
-                r.readAsDataURL(files[f]);
-            }));
+        if (!files.length) { 
+            createDesignProject(obj.id, title, []); 
+            inp.remove(); 
+            return; 
         }
-        Promise.all(readers).then(function() { createDesignProject(obj.id, title, data); inp.remove(); });
+        
+        showToast('⏳ Обработка ' + files.length + ' файлов...');
+        var processed = 0;
+        
+        for (var f = 0; f < files.length; f++) {
+            var file = files[f];
+            var reader = new FileReader();
+            
+            reader.onload = (function(fileObj) {
+                return function(ev) {
+                    var result = ev.target.result;
+                    
+                    if (fileObj.type === 'application/pdf' || 
+                        fileObj.type === 'application/msword' ||
+                        fileObj.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                        fileObj.type === 'application/vnd.ms-excel' ||
+                        fileObj.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+                        data.push(result);
+                        processed++;
+                        if (processed === files.length) {
+                            createDesignProject(obj.id, title, data);
+                            inp.remove();
+                        }
+                    } 
+                    else if (fileObj.type.startsWith('image/')) {
+                        var img = new Image();
+                        img.onload = function() {
+                            var canvas = document.createElement('canvas');
+                            var w = img.width, h = img.height;
+                            var maxSize = 1200;
+                            if (w > maxSize || h > maxSize) {
+                                if (w > h) { h = h * maxSize / w; w = maxSize; }
+                                else { w = w * maxSize / h; h = maxSize; }
+                            }
+                            canvas.width = w;
+                            canvas.height = h;
+                            var ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, w, h);
+                            var compressed = canvas.toDataURL('image/webp', 0.8);
+                            data.push(compressed);
+                            processed++;
+                            if (processed === files.length) {
+                                createDesignProject(obj.id, title, data);
+                                inp.remove();
+                            }
+                        };
+                        img.onerror = function() {
+                            data.push(result);
+                            processed++;
+                            if (processed === files.length) {
+                                createDesignProject(obj.id, title, data);
+                                inp.remove();
+                            }
+                        };
+                        img.src = result;
+                    } else {
+                        data.push(result);
+                        processed++;
+                        if (processed === files.length) {
+                            createDesignProject(obj.id, title, data);
+                            inp.remove();
+                        }
+                    }
+                };
+            })(file);
+            
+            reader.readAsDataURL(file);
+        }
     };
+    
     setTimeout(function() { inp.click(); }, 50);
 };
 
 function createDesignProject(objId, title, files) {
-    var project = { id: Date.now() + Math.random() * 1000, objectId: objId, title: title, files: files, roles: ['boss', 'wolf', 'client', 'electrician'], comments: [], approvedByClient: false };
+    var project = { 
+        id: Date.now() + Math.random() * 1000, 
+        objectId: objId, 
+        title: title, 
+        files: files, 
+        roles: ['boss', 'wolf', 'client', 'electrician'], 
+        comments: [], 
+        approvedByClient: false,
+        fileNames: []
+    };
+    
+    if (files && files.length > 0) {
+        for (var i = 0; i < files.length; i++) {
+            if (!project.fileNames) project.fileNames = [];
+            project.fileNames.push('Файл ' + (i + 1));
+        }
+    }
+    
     designProjects.push(project);
     saveDataToLocal();
     if (isOnline()) saveToSupabase('design_projects', project);
     if (currentUser === 'boss') renderBossObjects();
     else if (currentUser === 'wolf') renderWolfObjects();
-    showToast('📐 Дизайн-проект создан');
+    showToast('📐 Дизайн-проект создан (' + files.length + ' файлов)');
 }
 
 window.deleteDesign = function(id) {
@@ -2097,30 +2239,214 @@ function renderSchedule() {
         }
     }
     
-    var html = '<div class="card"><h3>📋 График работ — ' + escapeHtml(obj.name) + '</h3>';
-    html += '<div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">';
-    html += '<button class="btn btn-sm btn-primary" onclick="addScheduleItem(' + obj.id + ')">➕ Добавить задачу</button>';
-    html += '</div>';
-    html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    html += '<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #282828;">Этап</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #282828;">Дата</th></tr></thead><tbody>';
-    
-    var hasWorks = false;
+    var worksWithDates = [];
+    var hasDates = false;
     for (var i = 0; i < obj.works.length; i++) {
         var w = obj.works[i];
         if (w.deadline) {
-            hasWorks = true;
-            html += '<tr><td style="padding:6px 8px;border-bottom:1px solid #1a1a1a;">' + escapeHtml(w.name) + '</td>';
-            html += '<td style="padding:6px 8px;border-bottom:1px solid #1a1a1a;">' + fmt(w.deadline) + '</td></tr>';
+            hasDates = true;
+            worksWithDates.push({
+                name: w.name,
+                deadline: w.deadline,
+                done: w.done || false,
+                id: w.id
+            });
         }
     }
-    if (!hasWorks) {
-        html += '<tr><td colspan="2" style="padding:20px;text-align:center;color:#666;">Нет этапов с указанными датами</td></tr>';
+    
+    worksWithDates.sort(function(a, b) {
+        var pa = a.deadline.split('.'), pb = b.deadline.split('.');
+        return new Date(+pa[2], +pa[1] - 1, +pa[0]) - new Date(+pb[2], +pb[1] - 1, +pb[0]);
+    });
+    
+    var today = new Date();
+    var startDate = new Date(today);
+    startDate.setDate(today.getDate() - 7);
+    
+    var endDate = new Date(today);
+    endDate.setDate(today.getDate() + 60);
+    
+    if (worksWithDates.length > 0) {
+        var firstDate = worksWithDates[0].deadline.split('.');
+        var first = new Date(+firstDate[2], +firstDate[1] - 1, +firstDate[0]);
+        var lastDate = worksWithDates[worksWithDates.length - 1].deadline.split('.');
+        var last = new Date(+lastDate[2], +lastDate[1] - 1, +lastDate[0]);
+        
+        if (first < startDate) startDate = new Date(first);
+        if (last > endDate) endDate = new Date(last);
+        
+        startDate.setDate(startDate.getDate() - 7);
+        endDate.setDate(endDate.getDate() + 7);
     }
-    html += '</tbody></table></div>';
+    
+    var totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    if (totalDays < 30) totalDays = 30;
+    
+    var html = '<div class="card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">' +
+        '<h3 style="margin:0;">📋 Календарный график — ' + escapeHtml(obj.name) + '</h3>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<button class="btn btn-sm btn-primary" onclick="addScheduleItem(' + obj.id + ')">➕ Добавить этап</button>' +
+        '<button class="btn btn-sm" onclick="zoomSchedule(-1)">🔍-</button>' +
+        '<button class="btn btn-sm" onclick="zoomSchedule(1)">🔍+</button>' +
+        '</div>' +
+        '</div>';
+    
+    html += '<div style="display:flex;gap:16px;margin-bottom:12px;font-size:12px;flex-wrap:wrap;">' +
+        '<span><span style="display:inline-block;width:20px;height:4px;background:#c9a959;border-radius:2px;margin-right:4px;"></span> Выполнено</span>' +
+        '<span><span style="display:inline-block;width:20px;height:4px;background:#4caf50;border-radius:2px;margin-right:4px;"></span> В работе</span>' +
+        '<span><span style="display:inline-block;width:20px;height:4px;background:#a04040;border-radius:2px;margin-right:4px;"></span> Просрочено</span>' +
+        '<span style="color:#888;">⏳ ' + (obj.plannedEndDate ? getDaysRemaining(obj.plannedEndDate) + ' дней до завершения' : '') + '</span>' +
+        '</div>';
+    
+    html += '<div style="overflow-x:auto;position:relative;padding-bottom:10px;">';
+    html += '<div style="min-width:' + (totalDays * 32 + 200) + 'px;position:relative;">';
+    
+    html += '<div style="display:flex;border-bottom:1px solid #282828;padding:4px 0;position:sticky;top:0;background:#0d0d0d;z-index:5;">';
+    html += '<div style="min-width:180px;flex-shrink:0;font-size:12px;color:#888;padding-left:8px;">Этап</div>';
+    
+    var currentMonth = -1;
+    var monthWidth = 0;
+    var monthNames = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+    
+    for (var d = 0; d <= totalDays; d++) {
+        var date = new Date(startDate);
+        date.setDate(date.getDate() + d);
+        var month = date.getMonth();
+        var day = date.getDate();
+        
+        if (month !== currentMonth) {
+            if (currentMonth !== -1) {
+                html += '<div style="flex:0 0 ' + monthWidth + 'px;text-align:center;font-size:11px;color:#888;border-left:1px solid #1a1a1a;">' + monthNames[currentMonth] + '</div>';
+            }
+            currentMonth = month;
+            monthWidth = 0;
+        }
+        monthWidth += 32;
+    }
+    if (currentMonth !== -1) {
+        html += '<div style="flex:0 0 ' + monthWidth + 'px;text-align:center;font-size:11px;color:#888;border-left:1px solid #1a1a1a;">' + monthNames[currentMonth] + '</div>';
+    }
     html += '</div>';
+    
+    html += '<div style="display:flex;border-bottom:1px solid #1a1a1a;padding:2px 0;">';
+    html += '<div style="min-width:180px;flex-shrink:0;"></div>';
+    for (var d = 0; d <= totalDays; d++) {
+        var date = new Date(startDate);
+        date.setDate(date.getDate() + d);
+        var day = date.getDate();
+        var isWeekend = (date.getDay() === 0 || date.getDay() === 6);
+        html += '<div style="flex:0 0 32px;text-align:center;font-size:9px;color:' + (isWeekend ? '#555' : '#666') + ';border-left:1px solid ' + (isWeekend ? '#1a1a1a' : '#111') + ';">' + day + '</div>';
+    }
+    html += '</div>';
+    
+    if (worksWithDates.length === 0) {
+        html += '<div style="padding:30px;text-align:center;color:#666;">Нет этапов с установленными датами</div>';
+    } else {
+        for (var i = 0; i < worksWithDates.length; i++) {
+            var w = worksWithDates[i];
+            var deadlineParts = w.deadline.split('.');
+            var deadlineDate = new Date(+deadlineParts[2], +deadlineParts[1] - 1, +deadlineParts[0]);
+            
+            var daysFromStart = Math.ceil((deadlineDate - startDate) / (1000 * 60 * 60 * 24));
+            var posLeft = daysFromStart * 32;
+            
+            var color = '#4caf50';
+            if (w.done) color = '#c9a959';
+            else if (deadlineDate < today) color = '#a04040';
+            
+            var daysLeft = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+            var label = '';
+            if (w.done) label = '✅';
+            else if (daysLeft < 0) label = '⚠️ ' + Math.abs(daysLeft) + ' дн.';
+            else label = daysLeft + ' дн.';
+            
+            html += '<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #0d0d0d;">';
+            html += '<div style="min-width:180px;flex-shrink:0;font-size:13px;color:#e0e0e0;padding-left:8px;display:flex;align-items:center;gap:6px;">' +
+                '<span>' + escapeHtml(w.name) + '</span>' +
+                '<span style="font-size:11px;color:#888;">' + w.deadline + '</span>' +
+                '</div>';
+            
+            html += '<div style="flex:1;position:relative;height:28px;border-left:1px solid #1a1a1a;">';
+            html += '<div style="position:absolute;left:' + posLeft + 'px;top:4px;height:20px;background:' + color + ';border-radius:4px;min-width:4px;opacity:0.8;' + 
+                (posLeft < 0 ? 'left:0;' : '') + 'width:8px;"></div>';
+            
+            html += '<div style="position:absolute;left:' + posLeft + 'px;top:-2px;width:12px;height:12px;background:' + color + ';border-radius:50%;border:2px solid #0d0d0d;' + 
+                (posLeft < 0 ? 'left:0;' : '') + '"></div>';
+            
+            html += '<div style="position:absolute;left:' + (posLeft + 16) + 'px;top:4px;font-size:9px;color:' + color + ';white-space:nowrap;">' + label + '</div>';
+            
+            html += '</div>';
+            html += '</div>';
+        }
+    }
+    
+    html += '</div></div>';
+    
+    html += '<div style="margin-top:12px;padding:12px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a;">' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+        '<input type="text" id="newScheduleWorkName" placeholder="Название этапа" style="flex:2;min-width:150px;padding:8px;background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:4px;">' +
+        '<input type="text" id="newScheduleWorkDate" placeholder="ДД.ММ.ГГГГ" style="flex:1;min-width:120px;padding:8px;background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:4px;">' +
+        '<button class="btn btn-primary" onclick="addScheduleWorkWithDate(' + obj.id + ')">➕ Добавить</button>' +
+        '</div>' +
+        '</div>';
     
     container.innerHTML += html;
 }
+
+window.zoomSchedule = function(direction) {
+    showToast(direction > 0 ? '🔍 Приближено' : '🔍 Отдалено');
+    renderSchedule();
+};
+
+window.addScheduleWorkWithDate = function(objId) {
+    var obj = getObject(objId);
+    if (!obj) {
+        showToast('❌ Объект не найден');
+        return;
+    }
+    
+    var nameInput = document.getElementById('newScheduleWorkName');
+    var dateInput = document.getElementById('newScheduleWorkDate');
+    
+    var name = nameInput ? nameInput.value.trim() : '';
+    var deadline = dateInput ? dateInput.value.trim() : '';
+    
+    if (!name) {
+        showToast('❌ Введите название этапа');
+        return;
+    }
+    
+    if (!deadline || !isValidDate(deadline)) {
+        showToast('❌ Введите корректную дату (ДД.ММ.ГГГГ)');
+        return;
+    }
+    
+    var newWork = {
+        id: Date.now() + Math.random() * 1000,
+        name: name,
+        done: false,
+        deadline: deadline,
+        quantity: '',
+        unit: '',
+        forElectrician: false,
+        manual: true,
+        status: '',
+        paid: false,
+        contractor: null,
+        contractorStatus: 'unassigned'
+    };
+    
+    obj.works.push(newWork);
+    saveDataToLocal();
+    if (isOnline()) saveToSupabase('objects', obj);
+    
+    if (nameInput) nameInput.value = '';
+    if (dateInput) dateInput.value = '';
+    
+    renderSchedule();
+    showToast('✅ Этап "' + name + '" добавлен в график');
+};
 
 window.addScheduleItem = function(objId) {
     var obj = getObject(objId);
@@ -2581,7 +2907,8 @@ function renderWolfPurchases() {
             '<button class="btn btn-sm" onclick="wolfAddItemToOrder(' + order.id + ')">➕ Добавить</button>' +
             '</div>' +
             (order.photos && order.photos.length > 0 ? '<div style="margin-top:6px;"><b>Фото накладных:</b> ' + order.photos.map(function(p) { return '<img src="' + p + '" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="showModal(\'' + p + '\')">'; }).join('') + '</div>' : '') +
-            '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">' +
+            '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+            '<button class="btn btn-sm" onclick="editOrderComment(' + order.id + ')" style="padding:2px 8px;font-size:11px;">✏️ Комментарий</button>' +
             '<button class="btn btn-sm" onclick="wolfUploadOrderPhoto(' + order.id + ')">📸 Добавить фото</button>' +
             '<button class="btn btn-sm btn-primary" onclick="exportOrderToWhatsApp(' + order.id + ')">📱 Отправить в WhatsApp</button>' +
             '</div>' +
@@ -2589,6 +2916,26 @@ function renderWolfPurchases() {
     }
     container.innerHTML = html;
 }
+
+window.editOrderComment = function(orderId) {
+    var order = null;
+    for (var i = 0; i < purchaseOrders.length; i++) {
+        if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
+    }
+    if (!order) {
+        showToast('❌ Заявка не найдена');
+        return;
+    }
+    
+    var newComment = prompt('Редактировать комментарий к заявке:', order.comment || '');
+    if (newComment !== null) {
+        order.comment = newComment.trim();
+        saveDataToLocal();
+        if (isOnline()) saveToSupabase('purchase_orders', order);
+        renderWolfPurchases();
+        showToast('✅ Комментарий обновлён');
+    }
+};
 
 window.addPurchaseOrder = function() {
     var available = [];
@@ -2607,13 +2954,16 @@ window.addPurchaseOrder = function() {
     if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
     var obj = available[idx];
     
+    var comment = prompt('Комментарий к заявке (магазин, контакты, примечания):');
+    
     var order = {
         id: Date.now() + Math.random() * 1000,
         objectId: obj.id,
         items: [],
         photos: [],
         date: new Date(),
-        status: 'active'
+        status: 'active',
+        comment: comment || ''
     };
     purchaseOrders.push(order);
     saveDataToLocal();
@@ -2746,7 +3096,10 @@ window.exportOrderToWhatsApp = function(orderId) {
     var text = '📦 ЗАЯВКА НА МАТЕРИАЛЫ\n';
     text += '─────────────────────\n';
     text += '🏠 Объект: ' + obj.name + '\n';
-    text += '📅 Дата: ' + fmt(new Date()) + '\n';
+    text += '📅 Дата: ' + new Date().toLocaleDateString('ru-RU') + '\n';
+    if (order.comment) {
+        text += '📝 Комментарий: ' + order.comment + '\n';
+    }
     text += '─────────────────────\n\n';
     text += '📋 СПИСОК ТОВАРОВ:\n';
     
@@ -2766,9 +3119,9 @@ window.exportOrderToWhatsApp = function(orderId) {
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(function() {
-            var encodedText = encodeURIComponent(text);
             var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
-            if (phoneNumber) {
+            if (phoneNumber && phoneNumber.trim()) {
+                var encodedText = encodeURIComponent(text);
                 var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
                 window.open(whatsappUrl, '_blank');
                 showToast('✅ Заявка скопирована и открыта в WhatsApp');
@@ -2778,7 +3131,7 @@ window.exportOrderToWhatsApp = function(orderId) {
         }).catch(function() {
             var encodedText = encodeURIComponent(text);
             var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
-            if (phoneNumber) {
+            if (phoneNumber && phoneNumber.trim()) {
                 var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
                 window.open(whatsappUrl, '_blank');
                 showToast('📋 Заявка открыта в WhatsApp');
@@ -2790,7 +3143,7 @@ window.exportOrderToWhatsApp = function(orderId) {
     } else {
         var encodedText = encodeURIComponent(text);
         var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
-        if (phoneNumber) {
+        if (phoneNumber && phoneNumber.trim()) {
             var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
             window.open(whatsappUrl, '_blank');
             showToast('📋 Заявка открыта в WhatsApp');
