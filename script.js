@@ -2917,10 +2917,13 @@ function renderPlaceholder() {
 loadPendingActions();
 loadDataFromLocal();
 
-// Загружаем данные из Supabase при старте
+// Показываем интерфейс сразу
+render();
+
+// Загружаем данные в фоне
 setTimeout(() => {
     loadAllFromSupabase();
-}, 1500);
+}, 100);
 
 // Проверка интернета каждые 30 секунд
 setInterval(() => {
