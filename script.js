@@ -537,7 +537,7 @@ let checks = [];
 let purchaseOrders = [];
 let notes = [];
 let electricianTasks = [];
-let passwords = { boss: '30986', wolf: '30986', client: '30986', master: '30986', designer: '30986', purchaser: '30986', electrician: '30986', objects: {} };
+let passwords = { boss: 'boss123', wolf: '', client: '', master: '', designer: 'design123', purchaser: 'purchase123', electrician: '', objects: {} };
 let currentUser = null;
 let currentObjectId = null;
 let uiState = {};
@@ -567,7 +567,7 @@ function loadDataFromLocal() {
             purchaseOrders = d.purchaseOrders || [];
             notes = d.notes || [];
             electricianTasks = d.electricianTasks || [];
-            passwords = d.passwords || { boss: '30986', wolf: '30986', client: '30986', master: '30986', designer: '30986', purchaser: '30986', electrician: '30986', objects: {} };
+            passwords = d.passwords || { boss: 'boss123', wolf: '', client: '', master: '', designer: 'design123', purchaser: 'purchase123', electrician: '', objects: {} };
         }
     } catch (e) {}
     if (!objects.length) {
@@ -1855,14 +1855,13 @@ function renderBossObjects() {
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;padding:12px;background:#121212;border-radius:12px;border:1px solid #282828;">
       <button class="btn btn-primary" onclick="exportAllData()">📤 Экспорт всех данных</button>
       <button class="btn btn-primary" onclick="importAllData()">📥 Импорт данных</button>
-      <button class="btn btn-primary" onclick="uploadCSV()">📊 Загрузить CSV</button>
       ${pendingActions.length > 0 ? `<button class="btn btn-primary" onclick="syncPendingActions()">🔄 Синхронизировать сейчас</button>` : ''}
     </div>
     <hr>
     `;
 
     const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span><span class="tab ${filter === 'archived' ? 'active' : ''}" onclick="setBossObjectFilter('archived')">Архив</span></div>`;
-    let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
+    let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><button class="btn" onclick="uploadCSV()">📊 Загрузить CSV</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
     let list = objectsToShow.map(obj => {
         const objKey = 'obj-' + obj.id,
             objOpen = uiState[objKey] !== undefined ? uiState[objKey] : false;
@@ -1970,83 +1969,6 @@ function renderBossObjects() {
 
     container.innerHTML = statusHtml + toolsHtml + filterTabs + sel + list;
 }
-
-// ============================================================
-// ФУНКЦИЯ ЗАГРУЗКИ CSV
-// ============================================================
-window.uploadCSV = function() {
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = '.csv';
-    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
-    document.body.appendChild(inp);
-    inp.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) { inp.remove(); return; }
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            try {
-                const text = ev.target.result;
-                const lines = text.split('\n').filter(line => line.trim() !== '');
-                if (lines.length < 2) {
-                    showToast('❌ CSV должен содержать заголовки и данные');
-                    inp.remove();
-                    return;
-                }
-                // Парсим заголовки
-                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-                const nameIdx = headers.findIndex(h => h.toLowerCase().includes('назв') || h.toLowerCase().includes('имя') || h.toLowerCase().includes('name'));
-                const addressIdx = headers.findIndex(h => h.toLowerCase().includes('адрес') || h.toLowerCase().includes('address'));
-                
-                if (nameIdx === -1) {
-                    showToast('❌ Не найден столбец с названием объекта');
-                    inp.remove();
-                    return;
-                }
-                
-                let added = 0;
-                for (let i = 1; i < lines.length; i++) {
-                    const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                    if (values.length <= nameIdx) continue;
-                    const name = values[nameIdx] || 'Без названия';
-                    const address = addressIdx !== -1 && values[addressIdx] ? values[addressIdx] : 'Адрес не указан';
-                    
-                    const id = Date.now() + i;
-                    const newObj = {
-                        id: id,
-                        code: Math.random().toString(36).substring(2, 8).toUpperCase(),
-                        name: name,
-                        address: address,
-                        works: [],
-                        completed: false,
-                        archived: false,
-                        startDate: null,
-                        plannedEndDate: null,
-                        schedule: []
-                    };
-                    objects.push(newObj);
-                    const pwd = Math.random().toString(36).substring(2, 8).toUpperCase();
-                    passwords.objects[id] = pwd;
-                    added++;
-                }
-                saveDataToLocal();
-                if (isOnline()) {
-                    for (const obj of objects.slice(-added)) {
-                        saveToSupabase('objects', obj);
-                    }
-                }
-                renderBossObjects();
-                showToast(`✅ Загружено ${added} объектов из CSV`);
-            } catch (err) {
-                showToast('❌ Ошибка парсинга CSV: ' + err.message);
-                console.error(err);
-            }
-            inp.remove();
-        };
-        reader.readAsText(file);
-    };
-    setTimeout(() => inp.click(), 50);
-};
 
 // ============================================================
 // ЭКСПОРТ / ИМПОРТ
@@ -3220,8 +3142,12 @@ function renderBossPurchases() {
 }
 
 // ============================================================
-// ФУНКЦИИ ДЛЯ CSV (уже есть выше)
+// ФУНКЦИИ ДЛЯ CSV
 // ============================================================
+window.uploadCSV = function() {
+    showToast('📊 Функция загрузки CSV в разработке');
+};
+
 window.scrollToObject = function(v) {
     if (!v) return;
     const el = document.getElementById(v);
@@ -3278,9 +3204,9 @@ window.login = function(r) {
     // Для кабинетов-обманок
     if (['designer', 'master', 'purchaser'].includes(r)) {
         if (!passwords[r]) {
-            if (r === 'designer') passwords.designer = '30986';
-            else if (r === 'master') passwords.master = '30986';
-            else if (r === 'purchaser') passwords.purchaser = '30986';
+            if (r === 'designer') passwords.designer = 'design123';
+            else if (r === 'master') passwords.master = 'master123';
+            else if (r === 'purchaser') passwords.purchaser = 'purchase123';
             saveDataToLocal();
         }
         
@@ -3365,4 +3291,8 @@ window.addEventListener('offline', () => {
 });
 
 console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
-console.log('🔑 Пароль по умолчанию для всех ролей: 30986');
+console.log('🔑 Пароли:');
+console.log('👔 Руководитель: boss123');
+console.log('🎨 Дизайнер: design123');
+console.log('🔧 Мастер: master123');
+console.log('📦 Закупщик: purchase123');
