@@ -1,5 +1,5 @@
 // ============================================================
-// СТРОЙУЧЁТ — ПОЛНАЯ СИНХРОНИЗАЦИЯ С SUPABASE
+// СТРОЙУЧЁТ — ПОЛНАЯ ВЕРСИЯ С СИНХРОНИЗАЦИЕЙ
 // ============================================================
 
 const SUPABASE_URL = 'https://tcdanvvfxcdravgpdyat.supabase.co';
@@ -34,12 +34,7 @@ function addPendingAction(action) {
 }
 
 // ============================================================
-// БАЗОВЫЙ ПАРОЛЬ
-// ============================================================
-const DEFAULT_PASSWORD = '30986';
-
-// ============================================================
-// ГЛАВНАЯ ФУНКЦИЯ ЗАГРУЗКИ ДАННЫХ ИЗ SUPABASE
+// ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE
 // ============================================================
 async function loadAllFromSupabase() {
     if (!navigator.onLine) {
@@ -48,106 +43,129 @@ async function loadAllFromSupabase() {
     }
 
     try {
-        console.log('🔄 Загрузка данных из Supabase...');
-        showToast('⏳ Синхронизация...');
+        console.log('🔄 Загрузка всех данных из Supabase...');
+        showToast('⏳ Синхронизация всех данных...');
         
-        // Загружаем объекты
         const objectsResp = await fetch(`${SUPABASE_URL}/rest/v1/objects?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         if (objectsResp.ok) {
             const data = await objectsResp.json();
             if (data.length > 0) {
-                objects = data;
+                for (const item of data) {
+                    const existing = objects.find(o => o.id === item.id);
+                    if (!existing) objects.push(item);
+                    else Object.assign(existing, item);
+                }
                 console.log(`✅ Загружено ${data.length} объектов`);
             }
         }
 
-        // Загружаем чеки
         const checksResp = await fetch(`${SUPABASE_URL}/rest/v1/checks?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         if (checksResp.ok) {
             const data = await checksResp.json();
             if (data.length > 0) {
-                checks = data;
+                for (const item of data) {
+                    const existing = checks.find(c => c.id === item.id);
+                    if (!existing) checks.push(item);
+                    else Object.assign(existing, item);
+                }
                 console.log(`✅ Загружено ${data.length} чеков`);
             }
         }
 
-        // Загружаем рекомендации
         const recsResp = await fetch(`${SUPABASE_URL}/rest/v1/recommendations?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         if (recsResp.ok) {
             const data = await recsResp.json();
             if (data.length > 0) {
-                recommendations = data;
+                for (const item of data) {
+                    const existing = recommendations.find(r => r.id === item.id);
+                    if (!existing) recommendations.push(item);
+                    else Object.assign(existing, item);
+                }
                 console.log(`✅ Загружено ${data.length} рекомендаций`);
             }
         }
 
-        // Загружаем заметки
         const notesResp = await fetch(`${SUPABASE_URL}/rest/v1/notes?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         if (notesResp.ok) {
             const data = await notesResp.json();
             if (data.length > 0) {
-                notes = data;
+                for (const item of data) {
+                    const existing = notes.find(n => n.id === item.id);
+                    if (!existing) notes.push(item);
+                    else Object.assign(existing, item);
+                }
                 console.log(`✅ Загружено ${data.length} заметок`);
             }
         }
 
-        // Загружаем дизайн-проекты
         const designResp = await fetch(`${SUPABASE_URL}/rest/v1/design_projects?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         if (designResp.ok) {
             const data = await designResp.json();
             if (data.length > 0) {
-                designProjects = data;
+                for (const item of data) {
+                    const existing = designProjects.find(d => d.id === item.id);
+                    if (!existing) designProjects.push(item);
+                    else Object.assign(existing, item);
+                }
                 console.log(`✅ Загружено ${data.length} дизайн-проектов`);
             }
         }
 
-        // Загружаем задачи электрика
         const tasksResp = await fetch(`${SUPABASE_URL}/rest/v1/electrician_tasks?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         if (tasksResp.ok) {
             const data = await tasksResp.json();
             if (data.length > 0) {
-                electricianTasks = data;
+                for (const item of data) {
+                    const existing = electricianTasks.find(t => t.id === item.id);
+                    if (!existing) electricianTasks.push(item);
+                    else Object.assign(existing, item);
+                }
                 console.log(`✅ Загружено ${data.length} задач электрика`);
             }
         }
 
-        // Загружаем заказы на закупку
         const ordersResp = await fetch(`${SUPABASE_URL}/rest/v1/purchase_orders?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         if (ordersResp.ok) {
             const data = await ordersResp.json();
             if (data.length > 0) {
-                purchaseOrders = data;
-                console.log(`✅ Загружено ${data.length} заказов`);
+                for (const item of data) {
+                    const existing = purchaseOrders.find(o => o.id === item.id);
+                    if (!existing) purchaseOrders.push(item);
+                    else Object.assign(existing, item);
+                }
+                console.log(`✅ Загружено ${data.length} заказов на закупку`);
             }
         }
 
-        // Загружаем отчеты (фото)
         const reportsResp = await fetch(`${SUPABASE_URL}/rest/v1/reports?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
         if (reportsResp.ok) {
             const data = await reportsResp.json();
             if (data.length > 0) {
-                reports = data;
+                for (const item of data) {
+                    const existing = reports.find(r => r.id === item.id);
+                    if (!existing) reports.push(item);
+                    else Object.assign(existing, item);
+                }
                 console.log(`✅ Загружено ${data.length} отчетов`);
             }
         }
 
-        // Загружаем пароли
         const pwdResp = await fetch(`${SUPABASE_URL}/rest/v1/passwords?select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -162,7 +180,6 @@ async function loadAllFromSupabase() {
 
         saveDataToLocal();
         
-        // Обновляем интерфейс
         if (currentUser === 'boss') {
             renderBossObjects();
         } else if (currentUser === 'wolf') {
@@ -173,22 +190,21 @@ async function loadAllFromSupabase() {
             renderElectricianObjects();
         }
 
-        showToast('✅ Данные синхронизированы');
+        showToast('✅ Все данные синхронизированы с облаком');
         console.log('✅ Все данные загружены из Supabase');
     } catch (e) {
-        console.error('❌ Ошибка загрузки:', e);
+        console.error('❌ Ошибка загрузки данных:', e);
         showToast('⚠️ Используем локальные данные');
     }
 }
 
 // ============================================================
-// СОХРАНЕНИЕ В SUPABASE (УНИВЕРСАЛЬНОЕ)
+// УНИВЕРСАЛЬНОЕ СОХРАНЕНИЕ В SUPABASE
 // ============================================================
 async function saveToSupabase(table, data) {
     if (!navigator.onLine) return false;
     
     try {
-        // Проверяем, есть ли запись
         const checkResp = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${data.id}`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
         });
@@ -197,7 +213,6 @@ async function saveToSupabase(table, data) {
             const existing = await checkResp.json();
             
             if (existing.length > 0) {
-                // Обновляем
                 const resp = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${data.id}`, {
                     method: 'PATCH',
                     headers: {
@@ -210,7 +225,6 @@ async function saveToSupabase(table, data) {
                 });
                 if (!resp.ok) throw new Error(`Update failed: ${resp.status}`);
             } else {
-                // Создаем
                 const resp = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
                     method: 'POST',
                     headers: {
@@ -259,64 +273,6 @@ async function deleteFromSupabase(table, id) {
 }
 
 // ============================================================
-// СИНХРОНИЗАЦИЯ ВСЕХ ДАННЫХ
-// ============================================================
-async function syncAllData() {
-    if (!navigator.onLine) {
-        showToast('⚠️ Нет интернета');
-        return;
-    }
-    
-    showToast('⏳ Синхронизация...');
-    
-    // Сохраняем объекты
-    for (const obj of objects) {
-        await saveToSupabase('objects', obj);
-    }
-    
-    // Сохраняем чеки
-    for (const check of checks) {
-        await saveToSupabase('checks', check);
-    }
-    
-    // Сохраняем рекомендации
-    for (const rec of recommendations) {
-        await saveToSupabase('recommendations', rec);
-    }
-    
-    // Сохраняем заметки
-    for (const note of notes) {
-        await saveToSupabase('notes', note);
-    }
-    
-    // Сохраняем дизайн-проекты
-    for (const proj of designProjects) {
-        await saveToSupabase('design_projects', proj);
-    }
-    
-    // Сохраняем задачи электрика
-    for (const task of electricianTasks) {
-        await saveToSupabase('electrician_tasks', task);
-    }
-    
-    // Сохраняем заказы
-    for (const order of purchaseOrders) {
-        await saveToSupabase('purchase_orders', order);
-    }
-    
-    // Сохраняем отчеты
-    for (const report of reports) {
-        await saveToSupabase('reports', report);
-    }
-    
-    // Сохраняем пароли
-    await syncPasswordsToSupabase();
-    
-    showToast('✅ Все данные синхронизированы');
-    console.log('✅ Все данные синхронизированы с Supabase');
-}
-
-// ============================================================
 // СИНХРОНИЗАЦИЯ ПАРОЛЕЙ
 // ============================================================
 async function syncPasswordsToSupabase() {
@@ -348,6 +304,101 @@ async function syncPasswordsToSupabase() {
 // ============================================================
 function isOnline() {
     return navigator.onLine;
+}
+
+async function syncPendingActions() {
+    if (isSyncing) return;
+    if (!isOnline()) {
+        console.log('⚠️ Нет интернета, синхронизация отложена');
+        return;
+    }
+    if (pendingActions.length === 0) {
+        console.log('✅ Нет отложенных действий');
+        return;
+    }
+
+    isSyncing = true;
+    console.log(`🔄 Синхронизация ${pendingActions.length} действий...`);
+    showToast(`⏳ Синхронизация ${pendingActions.length} действий...`);
+
+    let synced = 0;
+    let failed = [];
+
+    for (const action of pendingActions) {
+        try {
+            switch (action.type) {
+                case 'addObject':
+                    await saveToSupabase('objects', action.data);
+                    break;
+                case 'updateObject':
+                    await saveToSupabase('objects', action.data);
+                    break;
+                case 'deleteObject':
+                    await deleteFromSupabase('objects', action.data.id);
+                    break;
+                case 'addCheck':
+                    await saveToSupabase('checks', action.data);
+                    break;
+                case 'updateCheck':
+                    await saveToSupabase('checks', action.data);
+                    break;
+                case 'deleteCheck':
+                    await deleteFromSupabase('checks', action.data.id);
+                    break;
+                case 'addRecommendation':
+                    await saveToSupabase('recommendations', action.data);
+                    break;
+                case 'updateRecommendation':
+                    await saveToSupabase('recommendations', action.data);
+                    break;
+                case 'deleteRecommendation':
+                    await deleteFromSupabase('recommendations', action.data.id);
+                    break;
+                case 'addNote':
+                    await saveToSupabase('notes', action.data);
+                    break;
+                case 'deleteNote':
+                    await deleteFromSupabase('notes', action.data.id);
+                    break;
+                case 'addWork':
+                    await saveToSupabase('objects', action.data.object);
+                    break;
+                case 'updateWork':
+                    await saveToSupabase('objects', action.data.object);
+                    break;
+                case 'deleteWork':
+                    await saveToSupabase('objects', action.data.object);
+                    break;
+                case 'uploadPhoto':
+                    await saveToSupabase('reports', action.data);
+                    break;
+                case 'deletePhoto':
+                    await deleteFromSupabase('reports', action.data.reportId);
+                    break;
+                default:
+                    console.warn('Неизвестное действие:', action.type);
+                    failed.push(action);
+                    continue;
+            }
+            synced++;
+        } catch (e) {
+            console.error('❌ Ошибка синхронизации действия:', action, e);
+            failed.push(action);
+        }
+    }
+
+    pendingActions = pendingActions.filter(a => failed.includes(a));
+    savePendingActions();
+
+    if (failed.length === 0) {
+        await loadAllFromSupabase();
+        showToast(`✅ Синхронизировано ${synced} действий`);
+    } else {
+        showToast(`⚠️ Синхронизировано ${synced}, ошибок: ${failed.length}`);
+    }
+
+    isSyncing = false;
+    render();
 }
 
 // ============================================================
@@ -393,7 +444,7 @@ async function uploadPhotoToStorage(objectId, workId, base64Data) {
         const formData = new FormData();
         formData.append('file', blob, fileName);
 
-        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/reports/${fileName}`, {
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/photos/${fileName}`, {
             method: 'POST',
             headers: {
                 'apikey': SUPABASE_KEY,
@@ -408,7 +459,7 @@ async function uploadPhotoToStorage(objectId, workId, base64Data) {
             return null;
         }
 
-        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/reports/${fileName}`;
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/photos/${fileName}`;
         console.log('✅ Фото загружено:', publicUrl);
         return publicUrl;
     } catch (e) {
@@ -453,13 +504,77 @@ function showToast(message, duration = 3000) {
 }
 
 function escapeHtml(s) { if (!s) return ''; const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }; return String(s).replace(/[&<>"']/g, c => m[c]); }
-function isValidDate(d) { const r = /^\d{2}\.\d{2}\.\d{4}$/; if (!r.test(d)) return !1; const p = d.split('.'), dt = new Date(+p[2], +p[1] - 1, +p[0]); return dt && dt.getFullYear() == +p[2] && dt.getMonth() == +p[1] - 1 && dt.getDate() == +p[0]; }
+
+function isValidDate(d) {
+    // Поддержка формата ДД.ММ.ГГГГ
+    const r = /^\d{2}\.\d{2}\.\d{4}$/;
+    if (!r.test(d)) return false;
+    const parts = d.split('.');
+    const day = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const year = parseInt(parts[2]);
+    const dt = new Date(year, month, day);
+    return dt && dt.getFullYear() === year && dt.getMonth() === month && dt.getDate() === day;
+}
+
+function formatDateForDisplay(d) {
+    if (!d) return '';
+    // Если уже в формате ДД.ММ.ГГГГ
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(d)) return d;
+    // Если ГГГГ-ММ-ДД
+    const parts = d.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    }
+    return d;
+}
+
+function formatDateForSave(d) {
+    if (!d) return '';
+    // Если уже в формате ГГГГ-ММ-ДД
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    // Если ДД.ММ.ГГГГ
+    const parts = d.split('.');
+    if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return d;
+}
+
 function saveUiState() { try { localStorage.setItem('uiState', JSON.stringify(uiState)); } catch (e) {} }
 function loadUiState() { try { const s = localStorage.getItem('uiState'); if (s) uiState = JSON.parse(s); } catch (e) {} if (!uiState) uiState = {}; }
 function getObject(id) { return objects.find(o => o.id === id); }
 function getUserLabel(r) { const m = { boss: 'Руководитель', wolf: 'Волк', client: 'Клиент', designer: 'Дизайнер', master: 'Мастер', purchaser: 'Закупщик', electrician: 'Электрик' }; return m[r] || r; }
-function fmt(d) { if (!d) return ''; let dt = new Date(d); if (isNaN(dt.getTime())) return d; const day = String(dt.getDate()).padStart(2, '0'); const month = String(dt.getMonth() + 1).padStart(2, '0'); const year = dt.getFullYear(); return `${day}.${month}.${year}`; }
-function fmtTime(d) { if (!d) return ''; let dt = new Date(d); if (isNaN(dt.getTime())) return d; return dt.toLocaleDateString('ru-RU'); }
+
+function fmt(d) {
+    if (!d) return '';
+    let dt = new Date(d);
+    if (isNaN(dt.getTime())) {
+        // Попробуем распарсить ДД.ММ.ГГГГ
+        const parts = d.split('.');
+        if (parts.length === 3) {
+            dt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            if (!isNaN(dt.getTime())) {
+                const day = String(dt.getDate()).padStart(2, '0');
+                const month = String(dt.getMonth() + 1).padStart(2, '0');
+                const year = dt.getFullYear();
+                return `${day}.${month}.${year}`;
+            }
+        }
+        return d;
+    }
+    const day = String(dt.getDate()).padStart(2, '0');
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const year = dt.getFullYear();
+    return `${day}.${month}.${year}`;
+}
+
+function fmtTime(d) {
+    if (!d) return '';
+    let dt = new Date(d);
+    if (isNaN(dt.getTime())) return d;
+    return dt.toLocaleDateString('ru-RU');
+}
 
 // ============================================================
 // ОСНОВНЫЕ ПЕРЕМЕННЫЕ
@@ -472,16 +587,7 @@ let checks = [];
 let purchaseOrders = [];
 let notes = [];
 let electricianTasks = [];
-let passwords = { 
-    boss: DEFAULT_PASSWORD, 
-    wolf: DEFAULT_PASSWORD, 
-    client: '', 
-    master: DEFAULT_PASSWORD, 
-    designer: DEFAULT_PASSWORD, 
-    purchaser: DEFAULT_PASSWORD, 
-    electrician: DEFAULT_PASSWORD, 
-    objects: {} 
-};
+let passwords = { boss: '30986', wolf: '30986', client: '30986', master: '30986', designer: '30986', purchaser: '30986', electrician: '30986', objects: {} };
 let currentUser = null;
 let currentObjectId = null;
 let uiState = {};
@@ -511,16 +617,7 @@ function loadDataFromLocal() {
             purchaseOrders = d.purchaseOrders || [];
             notes = d.notes || [];
             electricianTasks = d.electricianTasks || [];
-            passwords = d.passwords || { 
-                boss: DEFAULT_PASSWORD, 
-                wolf: DEFAULT_PASSWORD, 
-                client: '', 
-                master: DEFAULT_PASSWORD, 
-                designer: DEFAULT_PASSWORD, 
-                purchaser: DEFAULT_PASSWORD, 
-                electrician: DEFAULT_PASSWORD, 
-                objects: {} 
-            };
+            passwords = d.passwords || { boss: '30986', wolf: '30986', client: '30986', master: '30986', designer: '30986', purchaser: '30986', electrician: '30986', objects: {} };
         }
     } catch (e) {}
     if (!objects.length) {
@@ -530,9 +627,9 @@ function loadDataFromLocal() {
             code: 'DEMO',
             name: 'Демо-объект',
             address: 'ул. Примерная, 1',
-            works: [{ id: n + 1, name: 'Демонтаж', done: !1, deadline: null, quantity: '', unit: '', forElectrician: !1, manual: !1, status: '' }],
-            completed: !1,
-            archived: !1,
+            works: [{ id: n + 1, name: 'Демонтаж', done: false, deadline: null, quantity: '', unit: '', forElectrician: false, manual: false, status: '' }],
+            completed: false,
+            archived: false,
             startDate: null,
             plannedEndDate: null,
             clientStatus: '',
@@ -544,18 +641,26 @@ function loadDataFromLocal() {
         o.works.forEach(w => {
             if (w.quantity === undefined) w.quantity = '';
             if (w.unit === undefined) w.unit = '';
-            if (w.done === undefined) w.done = !1;
-            if (w.forElectrician === undefined) w.forElectrician = !1;
-            if (w.manual === undefined) w.manual = !1;
+            if (w.done === undefined) w.done = false;
+            if (w.forElectrician === undefined) w.forElectrician = false;
+            if (w.manual === undefined) w.manual = false;
             if (w.status === undefined) w.status = '';
+            if (w.deadline !== null && w.deadline !== undefined && w.deadline !== '') {
+                w.deadline = formatDateForDisplay(w.deadline);
+            }
         });
         if (o.startDate === undefined) o.startDate = null;
         if (o.plannedEndDate === undefined) o.plannedEndDate = null;
         if (o.clientStatus === undefined) o.clientStatus = '';
         if (o.schedule === undefined) o.schedule = [];
+        if (o.startDate) o.startDate = formatDateForDisplay(o.startDate);
+        if (o.plannedEndDate) o.plannedEndDate = formatDateForDisplay(o.plannedEndDate);
+        o.schedule.forEach(s => {
+            if (s.date) s.date = formatDateForDisplay(s.date);
+        });
     });
     recommendations.forEach(r => { if (!r.photos) r.photos = []; if (!r.purchasedPhotos) r.purchasedPhotos = []; });
-    electricianTasks.forEach(t => { if (!t.photos) t.photos = []; if (t.done === undefined) t.done = !1; if (t.objectId === undefined) t.objectId = null; });
+    electricianTasks.forEach(t => { if (!t.photos) t.photos = []; if (t.done === undefined) t.done = false; if (t.objectId === undefined) t.objectId = null; });
     objects.forEach(o => { if (!passwords.objects[o.id]) passwords.objects[o.id] = Math.random().toString(36).substring(2, 8).toUpperCase(); });
     loadUiState();
 }
@@ -583,56 +688,435 @@ function renderFakeCabinet(role) {
 }
 
 // ============================================================
-// СТАТУС ДЛЯ КЛИЕНТА
+// ФУНКЦИЯ РАСЧЕТА ДНЕЙ ДО ЗАВЕРШЕНИЯ
+// ============================================================
+function getDaysRemaining(endDate) {
+    if (!endDate) return null;
+    const parts = endDate.split('.');
+    if (parts.length === 3) {
+        const end = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        const now = new Date();
+        const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+        return diff;
+    }
+    return null;
+}
+
+// ============================================================
+// ФУНКЦИИ ДЛЯ ГРАФИКА
+// ============================================================
+window.addScheduleItem = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    
+    const name = prompt('Название задачи:');
+    if (!name) return;
+    const startDate = prompt('Дата начала (ДД.ММ.ГГГГ):');
+    if (!startDate || !isValidDate(startDate)) {
+        if (startDate) showToast('❌ Неверный формат даты');
+        return;
+    }
+    const endDate = prompt('Дата завершения (ДД.ММ.ГГГГ):');
+    if (!endDate || !isValidDate(endDate)) {
+        if (endDate) showToast('❌ Неверный формат даты');
+        return;
+    }
+    
+    if (!obj.schedule) obj.schedule = [];
+    obj.schedule.push({ 
+        id: Date.now() + Math.random() * 1000,
+        name, 
+        startDate, 
+        endDate,
+        showToClient: false,
+        fromWork: false,
+        workId: null
+    });
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
+    renderSchedule();
+    showToast('✅ Задача добавлена в график');
+};
+
+window.deleteScheduleItem = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule) return;
+    if (!confirm('Удалить задачу из графика?')) return;
+    
+    obj.schedule.splice(idx, 1);
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
+    renderSchedule();
+    showToast('🗑 Задача удалена');
+};
+
+window.toggleScheduleShowToClient = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule) return;
+    obj.schedule[idx].showToClient = !obj.schedule[idx].showToClient;
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
+    renderSchedule();
+};
+
+window.refreshScheduleFromWorks = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    if (!obj.schedule) obj.schedule = [];
+    
+    const existingNames = new Set(obj.schedule.map(s => s.name));
+    let added = 0;
+    
+    obj.works.forEach(w => {
+        if (!existingNames.has(w.name) && w.deadline) {
+            const dateParts = w.deadline.split('.');
+            // Предполагаем, что длительность 7 дней
+            const start = new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]) - 7);
+            const startStr = fmt(start);
+            obj.schedule.push({
+                id: Date.now() + Math.random() * 1000,
+                name: w.name,
+                startDate: startStr,
+                endDate: w.deadline,
+                showToClient: false,
+                fromWork: true,
+                workId: w.id
+            });
+            added++;
+        }
+    });
+    
+    if (added > 0) {
+        saveDataToLocal();
+        if (isOnline()) {
+            saveToSupabase('objects', obj);
+        } else {
+            addPendingAction({ type: 'updateObject', data: obj });
+        }
+        renderSchedule();
+        showToast(`✅ Добавлено ${added} этапов в график`);
+    } else {
+        showToast('ℹ️ Новых этапов для добавления нет');
+    }
+};
+
+window.editScheduleDates = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule) return;
+    const item = obj.schedule[idx];
+    if (!item) return;
+    
+    const newStart = prompt('Новая дата начала (ДД.ММ.ГГГГ):', item.startDate);
+    if (newStart && isValidDate(newStart)) {
+        item.startDate = newStart;
+    } else if (newStart) {
+        showToast('❌ Неверный формат даты');
+        return;
+    }
+    
+    const newEnd = prompt('Новая дата завершения (ДД.ММ.ГГГГ):', item.endDate);
+    if (newEnd && isValidDate(newEnd)) {
+        item.endDate = newEnd;
+    } else if (newEnd) {
+        showToast('❌ Неверный формат даты');
+        return;
+    }
+    
+    saveDataToLocal();
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    renderSchedule();
+    showToast('✅ Даты обновлены');
+};
+
+window.shiftAllDates = function(objId) {
+    const obj = getObject(objId);
+    if (!obj || !obj.schedule || obj.schedule.length === 0) return;
+    
+    const days = prompt('На сколько дней сдвинуть все даты? (положительное число = вперед, отрицательное = назад)');
+    if (days === null) return;
+    const daysNum = parseInt(days);
+    if (isNaN(daysNum)) { showToast('❌ Введите число'); return; }
+    
+    obj.schedule.forEach(item => {
+        if (item.startDate) {
+            const parts = item.startDate.split('.');
+            const dt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            dt.setDate(dt.getDate() + daysNum);
+            item.startDate = fmt(dt);
+        }
+        if (item.endDate) {
+            const parts = item.endDate.split('.');
+            const dt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            dt.setDate(dt.getDate() + daysNum);
+            item.endDate = fmt(dt);
+        }
+    });
+    
+    saveDataToLocal();
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    renderSchedule();
+    showToast(`✅ Все даты сдвинуты на ${daysNum} дней`);
+};
+
+// ============================================================
+// ФУНКЦИЯ ДЛЯ ГАНТ-ДИАГРАММЫ
+// ============================================================
+function renderSchedule() {
+    const container = document.getElementById('bossContent') || document.getElementById('wolfContent');
+    if (!container) return;
+    
+    // Выбор объекта для волка
+    if (currentUser === 'wolf') {
+        const objectsList = objects.filter(o => !o.archived);
+        if (objectsList.length === 0) {
+            container.innerHTML = '<div class="card">Нет активных объектов</div>';
+            return;
+        }
+        let selectHtml = `
+            <div style="margin-bottom:12px;">
+                <select id="scheduleObjectSelect" onchange="switchScheduleObject(this.value)" style="background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:6px;padding:8px;width:100%;font-size:14px;">
+                    ${objectsList.map(o => `
+                        <option value="${o.id}" ${o.id === currentObjectId ? 'selected' : ''}>${escapeHtml(o.name)}</option>
+                    `).join('')}
+                </select>
+            </div>
+        `;
+        container.innerHTML = selectHtml;
+    }
+    
+    const obj = getObject(currentObjectId);
+    if (!obj) {
+        container.innerHTML += '<div class="card">Объект не найден</div>';
+        return;
+    }
+    
+    if (!obj.schedule) obj.schedule = [];
+    const sorted = [...obj.schedule].sort((a, b) => {
+        if (!a.startDate) return 1;
+        if (!b.startDate) return -1;
+        const partsA = a.startDate.split('.');
+        const partsB = b.startDate.split('.');
+        const dateA = new Date(parseInt(partsA[2]), parseInt(partsA[1]) - 1, parseInt(partsA[0]));
+        const dateB = new Date(parseInt(partsB[2]), parseInt(partsB[1]) - 1, parseInt(partsB[0]));
+        return dateA - dateB;
+    });
+    
+    // Находим минимальную и максимальную дату для шкалы
+    let minDate = null;
+    let maxDate = null;
+    sorted.forEach(item => {
+        if (item.startDate) {
+            const parts = item.startDate.split('.');
+            const dt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            if (!minDate || dt < minDate) minDate = dt;
+            if (!maxDate || dt > maxDate) maxDate = dt;
+        }
+        if (item.endDate) {
+            const parts = item.endDate.split('.');
+            const dt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            if (!maxDate || dt > maxDate) maxDate = dt;
+        }
+    });
+    
+    if (!minDate || !maxDate) {
+        container.innerHTML += `<div class="card"><h3>📊 График работ — ${escapeHtml(obj.name)}</h3><div style="color:#666;">График пуст. Добавьте задачи.</div>
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm btn-primary" onclick="addScheduleItem(${obj.id})">➕ Добавить задачу</button>
+                <button class="btn btn-sm" onclick="refreshScheduleFromWorks(${obj.id})">🔄 Обновить из этапов</button>
+            </div>
+        </div>`;
+        return;
+    }
+    
+    // Добавляем 2 дня запаса
+    minDate = new Date(minDate);
+    minDate.setDate(minDate.getDate() - 2);
+    maxDate = new Date(maxDate);
+    maxDate.setDate(maxDate.getDate() + 2);
+    
+    const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+    const maxColumns = 20;
+    let step = Math.ceil(totalDays / maxColumns);
+    if (step < 1) step = 1;
+    
+    // Генерируем шкалу
+    let scaleDates = [];
+    let currentDate = new Date(minDate);
+    while (currentDate <= maxDate) {
+        scaleDates.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + step);
+    }
+    
+    // Ширина колонки
+    const colWidth = Math.max(60, Math.min(100, 800 / scaleDates.length));
+    
+    let html = `
+    <div class="card">
+        <h3>📊 График работ — ${escapeHtml(obj.name)}</h3>
+        <div style="overflow-x:auto;margin-top:10px;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:600px;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #282828;width:200px;min-width:150px;">Задача</th>
+                        ${scaleDates.map(d => `
+                            <th style="text-align:center;padding:2px 4px;border-bottom:1px solid #282828;font-size:11px;width:${colWidth}px;min-width:40px;">
+                                ${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth()+1).padStart(2, '0')}
+                            </th>
+                        `).join('')}
+                        <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #282828;width:80px;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    sorted.forEach((item, idx) => {
+        const isWork = item.fromWork;
+        const showToClient = item.showToClient || false;
+        
+        let startIdx = 0;
+        let endIdx = scaleDates.length - 1;
+        
+        if (item.startDate) {
+            const parts = item.startDate.split('.');
+            const startDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            startIdx = Math.max(0, Math.round((startDt - minDate) / (1000 * 60 * 60 * 24) / step));
+        }
+        if (item.endDate) {
+            const parts = item.endDate.split('.');
+            const endDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            endIdx = Math.min(scaleDates.length - 1, Math.round((endDt - minDate) / (1000 * 60 * 60 * 24) / step));
+        }
+        
+        if (startIdx > endIdx) {
+            const temp = startIdx;
+            startIdx = endIdx;
+            endIdx = temp;
+        }
+        
+        // Проверка на просрочку
+        const now = new Date();
+        let isOverdue = false;
+        if (item.endDate) {
+            const parts = item.endDate.split('.');
+            const endDt = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            if (endDt < now) isOverdue = true;
+        }
+        
+        html += `
+            <tr>
+                <td style="padding:4px 8px;border-bottom:1px solid #1a1a1a;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="cursor:pointer;font-size:16px;" onclick="toggleScheduleShowToClient(${obj.id}, ${idx})" title="Показать клиенту">
+                            ${showToClient ? '✅' : '⬜'}
+                        </span>
+                        <span style="${isOverdue ? 'color:#a04040;' : ''}${isWork ? 'color:#c9a959;' : ''}">
+                            ${escapeHtml(item.name)}
+                            ${isWork ? ' <span style="font-size:10px;color:#666;">(этап)</span>' : ' <span style="font-size:10px;color:#666;">(ручной)</span>'}
+                        </span>
+                    </div>
+                    <div style="font-size:10px;color:#666;">
+                        ${item.startDate || '—'} → ${item.endDate || '—'}
+                        ${isOverdue ? ' <span style="color:#a04040;">⚠️ просрочка</span>' : ''}
+                    </div>
+                </td>
+                ${scaleDates.map((d, di) => {
+                    let cellClass = '';
+                    let cellContent = '';
+                    if (di >= startIdx && di <= endIdx) {
+                        cellClass = 'schedule-bar';
+                        if (di === startIdx) cellClass += ' schedule-bar-start';
+                        if (di === endIdx) cellClass += ' schedule-bar-end';
+                        if (isOverdue) cellClass += ' schedule-bar-overdue';
+                        else if (showToClient) cellClass += ' schedule-bar-client';
+                        cellContent = '▬';
+                    }
+                    return `<td style="text-align:center;padding:2px 2px;border-bottom:1px solid #1a1a1a;background:${di >= startIdx && di <= endIdx ? (isOverdue ? '#3a1a1a' : showToClient ? '#1a2a1a' : '#1a1a1a') : 'transparent'};">
+                        ${cellContent}
+                    </td>`;
+                }).join('')}
+                <td style="text-align:center;padding:4px 8px;border-bottom:1px solid #1a1a1a;">
+                    <button class="btn btn-sm" onclick="editScheduleDates(${obj.id}, ${idx})" style="padding:2px 6px;font-size:11px;">✏️</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteScheduleItem(${obj.id}, ${idx})" style="padding:2px 6px;font-size:11px;">×</button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-sm btn-primary" onclick="addScheduleItem(${obj.id})">➕ Добавить задачу</button>
+            <button class="btn btn-sm" onclick="refreshScheduleFromWorks(${obj.id})">🔄 Обновить из этапов</button>
+            <button class="btn btn-sm" onclick="shiftAllDates(${obj.id})">📅 Сдвинуть все даты</button>
+            <span style="font-size:11px;color:#666;margin-left:10px;">
+                ⬜ — не показывать клиенту &nbsp;|&nbsp; ✅ — показывать клиенту
+            </span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:#666;">
+            <span style="color:#c9a959;">█</span> — этап &nbsp;|&nbsp; <span style="color:#888;">█</span> — ручная задача &nbsp;|&nbsp; <span style="color:#a04040;">█</span> — просрочка
+        </div>
+    </div>`;
+    
+    container.innerHTML += html;
+}
+
+window.switchScheduleObject = function(objId) {
+    currentObjectId = parseInt(objId);
+    renderSchedule();
+};
+
+// ============================================================
+// СТАТУС ДЛЯ КЛИЕНТА (ДОБАВЛЯЕТ РУКОВОДИТЕЛЬ)
 // ============================================================
 window.addClientStatus = function(objId) {
     const obj = getObject(objId);
     if (!obj) return;
-    const status = prompt('Введите статус для клиента:');
+    const status = prompt('Введите статус для клиента (будет отображаться над блоком "Ближайшие работы"):');
     if (status !== null && status.trim() !== '') {
         obj.clientStatus = status.trim();
         saveDataToLocal();
-        saveToSupabase('objects', obj);
+        
+        if (isOnline()) {
+            saveToSupabase('objects', obj);
+        } else {
+            addPendingAction({ type: 'updateObject', data: obj });
+        }
+        
         renderBossObjects();
-        showToast('✅ Статус обновлён');
+        showToast('✅ Статус для клиента обновлён');
     }
 };
 
 // ============================================================
-// ДАТЫ ОБЪЕКТА
-// ============================================================
-window.setObjectStartDate = function(objId) {
-    const obj = getObject(objId);
-    if (!obj) return;
-    const date = prompt('Введите дату начала (ДД.ММ.ГГГГ):');
-    if (date && isValidDate(date)) {
-        obj.startDate = date;
-        saveDataToLocal();
-        saveToSupabase('objects', obj);
-        renderBossObjects();
-        showToast('📅 Дата начала установлена');
-    } else if (date) {
-        showToast('❌ Неверный формат даты');
-    }
-};
-
-window.setObjectEndDate = function(objId) {
-    const obj = getObject(objId);
-    if (!obj) return;
-    const date = prompt('Введите дату завершения (ДД.ММ.ГГГГ):');
-    if (date && isValidDate(date)) {
-        obj.plannedEndDate = date;
-        saveDataToLocal();
-        saveToSupabase('objects', obj);
-        renderBossObjects();
-        showToast('📅 Дата завершения установлена');
-    } else if (date) {
-        showToast('❌ Неверный формат даты');
-    }
-};
-
-// ============================================================
-// ОБЪЕКТЫ И ЭТАПЫ
+// ОБНОВЛЁННЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С ОБЪЕКТАМИ И ЭТАПАМИ
 // ============================================================
 window.addObject = function() {
     const n = prompt('Название объекта:');
@@ -645,25 +1129,23 @@ window.addObject = function() {
     if (!pwd) { pwd = Math.random().toString(36).substring(2, 8).toUpperCase();
         showToast('Пароль: ' + pwd); }
     const id = Date.now();
-    const newObj = { 
-        id, 
-        code: Math.random().toString(36).substring(2, 8).toUpperCase(), 
-        name: n, 
-        address: a, 
-        works: [], 
-        completed: false, 
-        archived: false, 
-        startDate: null, 
-        plannedEndDate: null, 
-        clientStatus: '', 
-        schedule: [] 
-    };
+    const newObj = { id, code: Math.random().toString(36).substring(2, 8).toUpperCase(), name: n, address: a, works: [], completed: false, archived: false, startDate: null, plannedEndDate: null, clientStatus: '', schedule: [] };
     objects.push(newObj);
     passwords.objects[id] = pwd;
     saveDataToLocal();
-    saveToSupabase('objects', newObj);
+    
+    if (!isOnline()) {
+        addPendingAction({ type: 'addObject', data: newObj });
+        showToast('📦 Объект сохранён локально (ожидает интернет)');
+    } else {
+        saveToSupabase('objects', newObj).then(() => {
+            showToast('✅ Объект создан и синхронизирован');
+        }).catch(() => {
+            addPendingAction({ type: 'addObject', data: newObj });
+            showToast('⚠️ Объект сохранён локально, будет синхронизирован позже');
+        });
+    }
     renderBossObjects();
-    showToast('✅ Объект создан');
 };
 
 window.addWork = function(id) {
@@ -671,22 +1153,22 @@ window.addWork = function(id) {
     if (n) {
         const o = getObject(id);
         if (o) {
-            const newWork = { 
-                id: Date.now(), 
-                name: n, 
-                done: false, 
-                deadline: null, 
-                quantity: '', 
-                unit: '', 
-                forElectrician: false, 
-                manual: true, 
-                status: '' 
-            };
+            const newWork = { id: Date.now(), name: n, done: false, deadline: null, quantity: '', unit: '', forElectrician: false, manual: true, status: '' };
             o.works.push(newWork);
             saveDataToLocal();
-            saveToSupabase('objects', o);
+            
+            if (!isOnline()) {
+                addPendingAction({ type: 'addWork', data: { objectId: id, work: newWork } });
+                showToast('📦 Этап сохранён локально (ожидает интернет)');
+            } else {
+                saveToSupabase('objects', o).then(() => {
+                    showToast('➕ Этап добавлен и синхронизирован');
+                }).catch(() => {
+                    addPendingAction({ type: 'addWork', data: { objectId: id, work: newWork } });
+                    showToast('⚠️ Этап сохранён локально');
+                });
+            }
             renderBossObjects();
-            showToast('➕ Этап добавлен');
         }
     }
 };
@@ -696,74 +1178,40 @@ window.toggleWorkStatus = function(id, wi) {
     if (o) {
         o.works[wi].done = !o.works[wi].done;
         saveDataToLocal();
-        saveToSupabase('objects', o);
+        
+        if (!isOnline()) {
+            addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
+        } else {
+            saveToSupabase('objects', o).catch(() => {
+                addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
+            });
+        }
         renderBossObjects();
     }
 };
 
-window.deleteWorkWithConfirm = function(objId, idx) {
-    const obj = getObject(objId);
-    if (!obj) return;
-    const work = obj.works[idx];
-    if (!work) return;
-    if (confirm('Удалить этап "' + work.name + '" ?')) {
-        obj.works.splice(idx, 1);
-        saveDataToLocal();
-        saveToSupabase('objects', obj);
-        renderBossObjects();
-        showToast('🗑 Этап удалён');
-    }
-};
-
-window.moveWorkUp = function(objId, idx) {
-    const obj = getObject(objId);
-    if (!obj) return;
-    const works = obj.works;
-    if (idx <= 0) return;
-    [works[idx - 1], works[idx]] = [works[idx], works[idx - 1]];
-    saveDataToLocal();
-    saveToSupabase('objects', obj);
-    renderBossObjects();
-};
-
-window.moveWorkDown = function(objId, idx) {
-    const obj = getObject(objId);
-    if (!obj) return;
-    const works = obj.works;
-    if (idx >= works.length - 1) return;
-    [works[idx], works[idx + 1]] = [works[idx + 1], works[idx]];
-    saveDataToLocal();
-    saveToSupabase('objects', obj);
-    renderBossObjects();
-};
-
-window.toggleElectrician = function(objId, idx) {
-    const obj = getObject(objId);
-    if (obj) {
-        const work = obj.works[idx];
-        if (work) {
-            work.forElectrician = !work.forElectrician;
+window.deleteWorkPhoto = function(id) {
+    if (confirm('Удалить фото?')) {
+        const report = reports.find(r => r.id === id);
+        if (report) {
+            reports = reports.filter(r => r.id !== id);
             saveDataToLocal();
-            saveToSupabase('objects', obj);
+            
+            if (!isOnline()) {
+                addPendingAction({ type: 'deletePhoto', data: { reportId: id } });
+            } else {
+                deleteFromSupabase('reports', id).catch(() => {
+                    addPendingAction({ type: 'deletePhoto', data: { reportId: id } });
+                });
+            }
             renderBossObjects();
-            showToast(work.forElectrician ? '✅ Назначен электрику' : '❌ Снято');
+            showToast('🗑 Фото удалено');
         }
     }
 };
 
-window.completeObject = function(id) {
-    const o = getObject(id);
-    if (o) {
-        o.completed = !o.completed;
-        saveDataToLocal();
-        saveToSupabase('objects', o);
-        renderBossObjects();
-        showToast(o.completed ? '✅ Объект сдан' : '↩ Возвращён в работу');
-    }
-};
-
 window.deleteObjectPermanently = function(id) {
-    if (confirm('Удалить объект?')) {
+    if (confirm('Удалить объект без возможности восстановления?')) {
         const obj = objects.find(o => o.id === id);
         if (obj) {
             objects = objects.filter(o => o.id !== id);
@@ -774,10 +1222,89 @@ window.deleteObjectPermanently = function(id) {
             checks = checks.filter(c => c.objectId !== id);
             electricianTasks = electricianTasks.filter(t => t.objectId !== id);
             saveDataToLocal();
-            deleteFromSupabase('objects', id);
+            
+            if (!isOnline()) {
+                addPendingAction({ type: 'deleteObject', data: { id: id } });
+            } else {
+                deleteFromSupabase('objects', id).catch(() => {
+                    addPendingAction({ type: 'deleteObject', data: { id: id } });
+                });
+            }
             renderBossObjects();
             showToast('🗑 Объект удалён');
         }
+    }
+};
+
+window.toggleElectrician = function(objId, idx) {
+    const obj = getObject(objId);
+    if (obj) {
+        const work = obj.works[idx];
+        if (work) {
+            work.forElectrician = !work.forElectrician;
+            saveDataToLocal();
+            
+            if (!isOnline()) {
+                addPendingAction({ type: 'updateWork', data: { objectId: objId, work: work } });
+            } else {
+                saveToSupabase('objects', obj).catch(() => {
+                    addPendingAction({ type: 'updateWork', data: { objectId: objId, work: work } });
+                });
+            }
+            renderBossObjects();
+            showToast(work.forElectrician ? '✅ Этап назначен электрику' : '❌ Назначение электрику снято');
+        }
+    }
+};
+
+window.moveWorkUp = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const works = obj.works;
+    if (idx <= 0) return;
+    [works[idx - 1], works[idx]] = [works[idx], works[idx - 1]];
+    saveDataToLocal();
+    if (!isOnline()) {
+        addPendingAction({ type: 'updateObject', data: obj });
+    } else {
+        saveToSupabase('objects', obj).catch(() => {
+            addPendingAction({ type: 'updateObject', data: obj });
+        });
+    }
+    renderBossObjects();
+};
+
+window.moveWorkDown = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const works = obj.works;
+    if (idx >= works.length - 1) return;
+    [works[idx], works[idx + 1]] = [works[idx + 1], works[idx]];
+    saveDataToLocal();
+    if (!isOnline()) {
+        addPendingAction({ type: 'updateObject', data: obj });
+    } else {
+        saveToSupabase('objects', obj).catch(() => {
+            addPendingAction({ type: 'updateObject', data: obj });
+        });
+    }
+    renderBossObjects();
+};
+
+window.completeObject = function(id) {
+    const o = getObject(id);
+    if (o) {
+        o.completed = !o.completed;
+        saveDataToLocal();
+        if (!isOnline()) {
+            addPendingAction({ type: 'updateObject', data: o });
+        } else {
+            saveToSupabase('objects', o).catch(() => {
+                addPendingAction({ type: 'updateObject', data: o });
+            });
+        }
+        renderBossObjects();
+        showToast(o.completed ? '✅ Объект сдан' : '↩ Объект возвращён в работу');
     }
 };
 
@@ -787,8 +1314,28 @@ window.setBossObjectFilter = function(filter) {
     renderBossObjects();
 };
 
+window.deleteWorkWithConfirm = function(objId, idx) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const work = obj.works[idx];
+    if (!work) return;
+    if (confirm('Удалить этап "' + work.name + '" ?')) {
+        obj.works.splice(idx, 1);
+        saveDataToLocal();
+        if (!isOnline()) {
+            addPendingAction({ type: 'deleteWork', data: { objectId: objId, workId: work.id } });
+        } else {
+            saveToSupabase('objects', obj).catch(() => {
+                addPendingAction({ type: 'deleteWork', data: { objectId: objId, workId: work.id } });
+            });
+        }
+        renderBossObjects();
+        showToast('🗑 Этап удалён');
+    }
+};
+
 // ============================================================
-// ФОТО
+// ЗАГРУЗКА ФОТО
 // ============================================================
 window.uploadWorkPhoto = async function(id, wi) {
     const o = getObject(id);
@@ -806,61 +1353,165 @@ window.uploadWorkPhoto = async function(id, wi) {
     inp.onchange = async function(e) {
         const files = e.target.files;
         if (!files.length) { inp.remove(); return; }
-        showToast('⏳ Загрузка фото...');
+        showToast('⏳ Обработка фото...');
 
         let uploadedCount = 0;
 
         for (let f of files) {
             try {
+                console.log('📸 Обработка файла:', f.name);
                 const compressed = await compressImage(f);
-                const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
                 
-                if (publicUrl) {
+                if (!isOnline()) {
+                    const reportId = Date.now() + Math.random() * 1000;
                     const report = {
-                        id: Date.now() + Math.random() * 1000,
+                        id: reportId,
                         objectId: id,
                         workId: work.id,
-                        photos: [publicUrl],
+                        photos: [compressed],
                         text: '',
                         date: new Date(),
                         approved: true
                     };
                     reports.push(report);
                     saveDataToLocal();
-                    await saveToSupabase('reports', report);
+                    addPendingAction({
+                        type: 'uploadPhoto',
+                        data: report
+                    });
+                    showToast('📸 Фото сохранено локально (ожидает интернет)');
                     uploadedCount++;
+                } else {
+                    const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
+                    if (publicUrl) {
+                        const report = {
+                            id: Date.now() + Math.random() * 1000,
+                            objectId: id,
+                            workId: work.id,
+                            photos: [publicUrl],
+                            text: '',
+                            date: new Date(),
+                            approved: true
+                        };
+                        reports.push(report);
+                        await saveToSupabase('reports', report);
+                        uploadedCount++;
+                        showToast('📸 Фото загружено в облако');
+                    }
                 }
             } catch (err) {
-                console.error('❌ Ошибка:', err);
-                showToast('❌ Ошибка загрузки');
+                console.error('❌ Ошибка при загрузке файла:', err);
+                showToast('❌ Ошибка загрузки: ' + f.name);
             }
         }
 
         if (uploadedCount > 0) {
+            saveDataToLocal();
             renderBossObjects();
-            showToast(`📸 Загружено ${uploadedCount} фото`);
+            showToast('📸 Загружено ' + uploadedCount + ' фото' + (!isOnline() ? ' (ожидают интернет)' : ''));
+        } else {
+            showToast('❌ Не удалось загрузить фото');
         }
         inp.remove();
     };
     setTimeout(() => inp.click(), 50);
 };
 
-window.deleteWorkPhoto = function(id) {
-    if (confirm('Удалить фото?')) {
-        const report = reports.find(r => r.id === id);
-        if (report) {
-            reports = reports.filter(r => r.id !== id);
-            saveDataToLocal();
-            deleteFromSupabase('reports', id);
-            renderBossObjects();
-            showToast('🗑 Фото удалено');
+// ============================================================
+// ФУНКЦИИ ДЛЯ УСТАНОВКИ ДАТ ОБЪЕКТА
+// ============================================================
+window.setObjectStartDate = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const date = prompt('Введите дату начала (ДД.ММ.ГГГГ):');
+    if (date && isValidDate(date)) {
+        obj.startDate = date;
+        saveDataToLocal();
+        if (isOnline()) {
+            saveToSupabase('objects', obj);
+        } else {
+            addPendingAction({ type: 'updateObject', data: obj });
         }
+        renderBossObjects();
+        showToast('📅 Дата начала установлена');
+    } else if (date) {
+        showToast('❌ Неверный формат даты');
+    }
+};
+
+window.setObjectEndDate = function(objId) {
+    const obj = getObject(objId);
+    if (!obj) return;
+    const date = prompt('Введите дату планового завершения (ДД.ММ.ГГГГ):');
+    if (date && isValidDate(date)) {
+        obj.plannedEndDate = date;
+        saveDataToLocal();
+        if (isOnline()) {
+            saveToSupabase('objects', obj);
+        } else {
+            addPendingAction({ type: 'updateObject', data: obj });
+        }
+        renderBossObjects();
+        showToast('📅 Дата завершения установлена');
+    } else if (date) {
+        showToast('❌ Неверный формат даты');
     }
 };
 
 // ============================================================
-// ДИЗАЙН-ПРОЕКТЫ
+// ДИЗАЙН-ПРОЕКТЫ (ОТДЕЛЬНАЯ ВКЛАДКА)
 // ============================================================
+function renderBossDesign() {
+    const container = document.getElementById('bossContent');
+    if (!container) return;
+    
+    let html = `<div class="card"><h3>🎨 Дизайн-проекты</h3>`;
+    
+    const projs = designProjects.slice().sort((a, b) => a.id - b.id);
+    if (!projs.length) {
+        html += '<div style="color:#666;">Нет дизайн-проектов</div>';
+    } else {
+        html += projs.map(p => {
+            const obj = getObject(p.objectId);
+            const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
+            const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
+            const files = (p.files || []).map((f, fi) => {
+                const isImg = f.startsWith('data:image/') || f.startsWith('http');
+                const isPdf = f.startsWith('data:application/pdf');
+                return `<span class="file-wrap">${isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:100px;max-height:100px;">` : isPdf ? `<span class="pdf" onclick="window.open('${f}','_blank')">📄</span>` : `<span class="pdf" onclick="window.open('${f}','_blank')">📎</span>`}<button class="del" onclick="deleteDesignFile(${p.id},${fi})" style="background:#a04040;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;">×</button></span>`;
+            }).join(' ') || 'нет';
+            return `<div class="design-block" style="background:#121212;border:1px solid #282828;border-radius:8px;padding:10px;margin:6px 0;">
+                <div class="flex">
+                    <span><b>${escapeHtml(p.title)}</b> <span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span></span>
+                    <span><span class="badge">${obj ? escapeHtml(obj.name) : 'Объект удалён'}</span><button class="btn btn-sm btn-danger" onclick="deleteDesign(${p.id})">🗑</button></span>
+                </div>
+                <div style="font-size:13px;color:#888;">Доступ: ${escapeHtml(roles)}</div>
+                <div><b>Файлы:</b> ${files}</div>
+                <div><b>Комментарии:</b> ${comments || 'нет'}</div>
+                <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn btn-sm" onclick="addDesignComment(${p.id})">💬 Комментарий</button>
+                    <button class="btn btn-sm" onclick="toggleDesignApprove(${p.id})">${p.approvedByClient ? 'Снять утверждение' : 'Утвердить'}</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+    
+    html += `<div style="margin-top:12px;"><button class="btn btn-primary" onclick="selectObjectForDesign()">➕ Новый дизайн-проект</button></div></div>`;
+    container.innerHTML = html;
+}
+
+function selectObjectForDesign() {
+    const available = objects.filter(o => !o.archived);
+    if (!available.length) { showToast('Нет активных объектов'); return; }
+    const list = available.map((o, i) => `${i+1}. ${o.name}`).join('\n');
+    const choice = prompt('Выберите объект (номер):\n' + list);
+    if (!choice) return;
+    const idx = parseInt(choice) - 1;
+    if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
+    const obj = available[idx];
+    addDesignProjectForObject(obj.id);
+}
+
 window.addDesignProjectForObject = function(objId) {
     const obj = getObject(objId);
     if (!obj) return;
@@ -895,7 +1546,13 @@ function createDesignProject(objId, title, files) {
     const project = { id: Date.now(), objectId: objId, title, files, roles: ['boss', 'wolf', 'client', 'electrician'], comments: [], approvedByClient: false };
     designProjects.push(project);
     saveDataToLocal();
-    saveToSupabase('design_projects', project);
+    
+    if (isOnline()) {
+        saveToSupabase('design_projects', project);
+    } else {
+        addPendingAction({ type: 'addDesignProject', data: project });
+    }
+    
     renderBossDesign();
     showToast('📐 Дизайн-проект создан');
 }
@@ -904,7 +1561,13 @@ window.deleteDesign = function(id) {
     if (confirm('Удалить проект?')) {
         designProjects = designProjects.filter(p => p.id !== id);
         saveDataToLocal();
-        deleteFromSupabase('design_projects', id);
+        
+        if (isOnline()) {
+            deleteFromSupabase('design_projects', id);
+        } else {
+            addPendingAction({ type: 'deleteDesign', data: { id: id } });
+        }
+        
         renderBossDesign();
         showToast('🗑 Проект удалён');
     }
@@ -916,7 +1579,13 @@ window.deleteDesignFile = function(pid, fi) {
         if (p) {
             p.files.splice(fi, 1);
             saveDataToLocal();
-            saveToSupabase('design_projects', p);
+            
+            if (isOnline()) {
+                saveToSupabase('design_projects', p);
+            } else {
+                addPendingAction({ type: 'updateDesign', data: p });
+            }
+            
             renderBossDesign();
             showToast('🗑 Файл удалён');
         }
@@ -929,10 +1598,17 @@ window.addDesignComment = function(id) {
     const t = prompt('Комментарий:');
     if (t) {
         if (!p.comments) p.comments = [];
-        p.comments.push({ author: 'Руководитель', text: t, date: new Date() });
+        p.comments.push({ author: currentUser === 'boss' ? 'Руководитель' : getUserLabel(currentUser), text: t, date: new Date() });
         saveDataToLocal();
-        saveToSupabase('design_projects', p);
-        renderBossDesign();
+        
+        if (isOnline()) {
+            saveToSupabase('design_projects', p);
+        } else {
+            addPendingAction({ type: 'updateDesign', data: p });
+        }
+        
+        if (currentUser === 'boss') renderBossDesign();
+        else if (currentUser === 'wolf') renderWolfDesign();
         showToast('💬 Комментарий добавлен');
     }
 };
@@ -942,15 +1618,69 @@ window.toggleDesignApprove = function(id) {
     if (p) {
         p.approvedByClient = !p.approvedByClient;
         saveDataToLocal();
-        saveToSupabase('design_projects', p);
-        renderBossDesign();
+        
+        if (isOnline()) {
+            saveToSupabase('design_projects', p);
+        } else {
+            addPendingAction({ type: 'updateDesign', data: p });
+        }
+        
+        if (currentUser === 'boss') renderBossDesign();
+        else if (currentUser === 'wolf') renderWolfDesign();
         showToast(p.approvedByClient ? '✅ Проект утверждён' : '⏳ Утверждение снято');
     }
 };
 
 // ============================================================
-// РЕКОМЕНДАЦИИ
+// РЕКОМЕНДАЦИИ (ОТДЕЛЬНАЯ ВКЛАДКА)
 // ============================================================
+function renderBossRecommendations() {
+    const container = document.getElementById('bossContent');
+    if (!container) return;
+    
+    let html = `<div class="card"><h3>📋 Рекомендации</h3>`;
+    
+    const recs = recommendations.slice().sort((a, b) => a.id - b.id);
+    if (!recs.length) {
+        html += '<div style="color:#666;">Нет рекомендаций</div>';
+    } else {
+        html += recs.map(r => {
+            const obj = getObject(r.objectId);
+            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
+            const phRec = (r.photos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'photos')">×</button></span>`).join('');
+            const phPur = (r.purchasedPhotos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'purchasedPhotos')">×</button></span>`).join('');
+            return `<div class="rec-block" style="background:#121212;border:1px solid #282828;border-radius:8px;padding:10px;margin:6px 0;">
+                <div class="flex">
+                    <span><b>📋 ${escapeHtml(r.text)}</b> <span class="badge">${status}</span></span>
+                    <span><span class="badge">${obj ? escapeHtml(obj.name) : 'Объект удалён'}</span><button class="btn btn-sm btn-danger" onclick="deleteRecommend(${r.id})">🗑</button></span>
+                </div>
+                <div style="font-size:13px;color:#888;">Срок: ${r.deadline ? fmt(r.deadline) : 'не указан'}</div>
+                <div style="margin:6px 0;display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn btn-sm" onclick="markPurchased(${r.id})">${r.purchased ? 'Отменить покупку' : '✅ Отметить куплено'}</button>
+                    <button class="btn btn-sm" onclick="addRecommendationPhoto(${r.id})">📎 Фото к рекомендации</button>
+                    <button class="btn btn-sm" onclick="addPurchasedPhoto(${r.id})">📸 Фото покупки</button>
+                </div>
+                <div class="rec-photos">${phRec}${phPur}</div>
+            </div>`;
+        }).join('');
+    }
+    
+    html += `<div style="margin-top:12px;"><button class="btn btn-primary" onclick="selectObjectForRecommendation()">➕ Новая рекомендация</button></div></div>`;
+    container.innerHTML = html;
+}
+
+function selectObjectForRecommendation() {
+    const available = objects.filter(o => !o.archived);
+    if (!available.length) { showToast('Нет активных объектов'); return; }
+    const list = available.map((o, i) => `${i+1}. ${o.name}`).join('\n');
+    const choice = prompt('Выберите объект (номер):\n' + list);
+    if (!choice) return;
+    const idx = parseInt(choice) - 1;
+    if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
+    const obj = available[idx];
+    addRecommendationForObject(obj.id);
+}
+
 window.addRecommendationForObject = function(objId) {
     const obj = getObject(objId);
     if (!obj) return;
@@ -962,8 +1692,15 @@ window.addRecommendationForObject = function(objId) {
     const rec = { id: Date.now(), objectId: objId, text: text.trim(), deadline: deadline ? deadline.trim() : null, photos: [], purchased: false, purchasedDate: null, purchasedPhotos: [] };
     recommendations.push(rec);
     saveDataToLocal();
-    saveToSupabase('recommendations', rec);
-    renderBossRecommendations();
+    
+    if (isOnline()) {
+        saveToSupabase('recommendations', rec);
+    } else {
+        addPendingAction({ type: 'addRecommendation', data: rec });
+    }
+    
+    if (currentUser === 'boss') renderBossRecommendations();
+    else if (currentUser === 'wolf') renderWolfRecommendations();
     showToast('📋 Рекомендация добавлена');
 };
 
@@ -971,8 +1708,15 @@ window.deleteRecommend = function(id) {
     if (confirm('Удалить рекомендацию?')) {
         recommendations = recommendations.filter(r => r.id !== id);
         saveDataToLocal();
-        deleteFromSupabase('recommendations', id);
-        renderBossRecommendations();
+        
+        if (isOnline()) {
+            deleteFromSupabase('recommendations', id);
+        } else {
+            addPendingAction({ type: 'deleteRecommendation', data: { id: id } });
+        }
+        
+        if (currentUser === 'boss') renderBossRecommendations();
+        else if (currentUser === 'wolf') renderWolfRecommendations();
         showToast('🗑 Рекомендация удалена');
     }
 };
@@ -984,10 +1728,16 @@ window.markPurchased = function(id) {
         if (r.purchased) r.purchasedDate = new Date().toISOString().slice(0, 10);
         else r.purchasedDate = null;
         saveDataToLocal();
-        saveToSupabase('recommendations', r);
+        
+        if (isOnline()) {
+            saveToSupabase('recommendations', r);
+        } else {
+            addPendingAction({ type: 'updateRecommendation', data: r });
+        }
+        
         if (currentUser === 'boss') renderBossRecommendations();
-        else renderClientRecommend();
-        showToast(r.purchased ? '✅ Отмечено куплено' : '↩ Отмена');
+        else if (currentUser === 'wolf') renderWolfRecommendations();
+        showToast(r.purchased ? '✅ Отмечено куплено' : '↩ Отмена покупки');
     }
 };
 
@@ -1004,16 +1754,32 @@ window.addRecommendationPhoto = async function(id) {
         if (!file) { inp.remove(); return; }
         try {
             const compressed = await compressImage(file);
-            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
-            if (publicUrl) {
+            if (!isOnline()) {
                 if (!r.photos) r.photos = [];
-                r.photos.push(publicUrl);
-                saveDataToLocal();
-                saveToSupabase('recommendations', r);
-                if (currentUser === 'boss') renderBossRecommendations();
-                else renderClientRecommend();
-                showToast('📸 Фото добавлено');
+                r.photos.push(compressed);
+                addPendingAction({
+                    type: 'uploadPhoto',
+                    data: {
+                        id: Date.now() + Math.random() * 1000,
+                        objectId: r.objectId,
+                        workId: Date.now(),
+                        photos: [compressed],
+                        date: new Date(),
+                        approved: true
+                    }
+                });
+                showToast('📸 Фото сохранено локально (ожидает интернет)');
+            } else {
+                const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+                if (publicUrl) {
+                    if (!r.photos) r.photos = [];
+                    r.photos.push(publicUrl);
+                    await saveToSupabase('recommendations', r);
+                }
             }
+            saveDataToLocal();
+            if (currentUser === 'boss') renderBossRecommendations();
+            else if (currentUser === 'wolf') renderWolfRecommendations();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
@@ -1034,16 +1800,32 @@ window.addPurchasedPhoto = async function(id) {
         if (!file) { inp.remove(); return; }
         try {
             const compressed = await compressImage(file);
-            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
-            if (publicUrl) {
+            if (!isOnline()) {
                 if (!r.purchasedPhotos) r.purchasedPhotos = [];
-                r.purchasedPhotos.push(publicUrl);
-                saveDataToLocal();
-                saveToSupabase('recommendations', r);
-                if (currentUser === 'boss') renderBossRecommendations();
-                else renderClientRecommend();
-                showToast('📸 Фото покупки добавлено');
+                r.purchasedPhotos.push(compressed);
+                addPendingAction({
+                    type: 'uploadPhoto',
+                    data: {
+                        id: Date.now() + Math.random() * 1000,
+                        objectId: r.objectId,
+                        workId: Date.now(),
+                        photos: [compressed],
+                        date: new Date(),
+                        approved: true
+                    }
+                });
+                showToast('📸 Фото сохранено локально (ожидает интернет)');
+            } else {
+                const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+                if (publicUrl) {
+                    if (!r.purchasedPhotos) r.purchasedPhotos = [];
+                    r.purchasedPhotos.push(publicUrl);
+                    await saveToSupabase('recommendations', r);
+                }
             }
+            saveDataToLocal();
+            if (currentUser === 'boss') renderBossRecommendations();
+            else if (currentUser === 'wolf') renderWolfRecommendations();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
@@ -1058,148 +1840,88 @@ window.deleteRecommendPhoto = function(id, idx, type) {
             if (type === 'photos') r.photos.splice(idx, 1);
             else if (type === 'purchasedPhotos') r.purchasedPhotos.splice(idx, 1);
             saveDataToLocal();
-            saveToSupabase('recommendations', r);
+            
+            if (isOnline()) {
+                saveToSupabase('recommendations', r);
+            } else {
+                addPendingAction({ type: 'updateRecommendation', data: r });
+            }
+            
             if (currentUser === 'boss') renderBossRecommendations();
-            else renderClientRecommend();
+            else if (currentUser === 'wolf') renderWolfRecommendations();
             showToast('🗑 Фото удалено');
         }
     }
 };
 
 // ============================================================
-// ЧЕКИ
+// ФУНКЦИИ ДЛЯ ВОЛКА (ДИЗАЙН И РЕКОМЕНДАЦИИ)
 // ============================================================
-let checkFilterObjectId = 'all';
-
-window.addCheck = function() {
-    if (currentUser === 'client') { showToast('Клиент не может добавлять чеки'); return; }
-    const available = objects.filter(o => !o.archived);
-    if (!available.length) { showToast('Нет объектов'); return; }
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:1000';
-    modal.innerHTML = `<div style="background:#1a1a1a;padding:20px;border-radius:12px;max-width:400px;width:90%;"><h3 style="color:#e0e0e0;margin-bottom:12px;">Выберите объект</h3><select id="checkObjectSelect" style="width:100%;padding:10px;border-radius:8px;background:#222;color:#e0e0e0;border:1px solid #333;font-size:16px;">${available.map(o => `<option value="${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select><div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;"><button class="btn" onclick="this.closest('div[style]').parentElement.remove()">Отмена</button><button class="btn btn-primary" id="confirmCheckObject">Выбрать</button></div></div>`;
-    document.body.appendChild(modal);
-    modal.querySelector('#confirmCheckObject').onclick = function() {
-        const select = modal.querySelector('#checkObjectSelect');
-        const objId = parseInt(select.value);
-        modal.remove();
-        proceedWithCheck(objId);
-    };
-};
-
-function proceedWithCheck(objId) {
-    const amount = parseFloat(prompt('Введите сумму (руб):') || '0');
-    if (isNaN(amount) || amount <= 0) { showToast('Введите корректную сумму'); return; }
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = 'image/*,application/pdf';
-    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
-    document.body.appendChild(inp);
-    inp.onchange = async function(e) {
-        const file = e.target.files[0];
-        if (!file) { inp.remove(); return; }
-        try {
-            let fileData;
-            let check = { id: Date.now(), objectId: objId, amount, fileData: '', date: new Date(), paid: false, paidDate: null, paidBy: null };
-            
-            if (file.type.startsWith('image/')) {
-                const compressed = await compressImage(file);
-                const publicUrl = await uploadPhotoToStorage(objId, Date.now(), compressed);
-                check.fileData = publicUrl;
-            } else {
-                const reader = new FileReader();
-                fileData = await new Promise(res => { reader.onload = function(ev) { res(ev.target.result); }; reader.readAsDataURL(file); });
-                check.fileData = fileData;
-            }
-            
-            checks.push(check);
-            saveDataToLocal();
-            await saveToSupabase('checks', check);
-            
-            showToast('🧾 Чек загружен');
-            if (currentUser === 'boss') renderBossChecks();
-            else if (currentUser === 'wolf') renderWolfChecks();
-        } catch (err) { console.error('Error:', err);
-            showToast('❌ Ошибка загрузки чека'); }
-        inp.remove();
-    };
-    setTimeout(() => inp.click(), 50);
-}
-
-window.markCheckPaid = function(checkId) {
-    const c = checks.find(ch => ch.id === checkId);
-    if (!c || c.paid) return;
-    c.paid = true;
-    c.paidDate = new Date();
-    c.paidBy = currentUser;
-    saveDataToLocal();
-    saveToSupabase('checks', c);
-    if (currentUser === 'boss') renderBossChecks();
-    else if (currentUser === 'wolf') renderWolfChecks();
-    showToast('✅ Чек оплачен');
-};
-
-window.deleteCheck = function(checkId) {
-    if (confirm('Удалить чек?')) {
-        checks = checks.filter(c => c.id !== checkId);
-        saveDataToLocal();
-        deleteFromSupabase('checks', checkId);
-        if (currentUser === 'boss') renderBossChecks();
-        else if (currentUser === 'wolf') renderWolfChecks();
-        showToast('🗑 Чек удалён');
-    }
-};
-
-function renderBossChecks() {
-    const container = document.getElementById('bossContent');
-    const available = objects.filter(o => !o.archived);
-    let selectHtml = `<select id="checkObjectFilter" onchange="updateCheckFilter(this.value)"><option value="all" ${checkFilterObjectId === 'all' ? 'selected' : ''}>Все объекты</option>${available.map(o => `<option value="${o.id}" ${checkFilterObjectId == o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('')}</select>`;
-    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button>${selectHtml}<div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderBossChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderBossChecksFilter('unpaid')">Неоплаченные</button><button class="btn btn-sm" onclick="renderBossChecksFilter('paid')">Оплаченные</button></div></div><div id="bossChecksList"></div>`;
-    renderChecksList('boss', 'all');
-}
-
-function renderChecksList(role, filter) {
-    const container = document.getElementById(role === 'boss' ? 'bossChecksList' : 'wolfChecksList');
-    if (!container) return;
-    let objFilter = checkFilterObjectId;
-    let list = checks.slice();
-    if (objFilter !== 'all') list = list.filter(c => c.objectId == objFilter);
-    if (filter === 'paid') list = list.filter(c => c.paid);
-    else if (filter === 'unpaid') list = list.filter(c => !c.paid);
-    list.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const totalUnpaid = list.filter(c => !c.paid).reduce((sum, c) => sum + (c.amount || 0), 0);
-    const totalPaid = list.filter(c => c.paid).reduce((sum, c) => sum + (c.amount || 0), 0);
-    let html = `<div class="checks-total"><span>💰 Неоплаченные: ${totalUnpaid.toFixed(2)} ₽</span><span>✅ Оплаченные: ${totalPaid.toFixed(2)} ₽</span></div>`;
-    if (!list.length) { container.innerHTML = html + '<div class="card">Нет чеков</div>'; return; }
-    container.innerHTML = html + list.map(c => {
-        const obj = getObject(c.objectId);
-        const paidStatus = c.paid ? '✅ Оплачен' : '⏳ Не оплачен';
-        return `<div class="check-item ${c.paid ? 'paid' : ''}" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">
-      <div class="flex"><span><b>${obj ? escapeHtml(obj.name) : 'Объект удалён'}</b> — ${c.amount ? c.amount.toFixed(2) + ' ₽' : 'сумма не указана'}</span><span class="badge">${paidStatus}</span></div>
-      <div style="margin:4px 0;">Дата: ${fmtTime(c.date)}</div>
-      ${c.fileData ? `<div><img src="${c.fileData}" class="check-file" onclick="showModal('${c.fileData}')"></div>` : ''}
-      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-        ${!c.paid && role === 'boss' ? `<button class="btn btn-sm btn-primary" onclick="markCheckPaid(${c.id})">✅ Оплатить</button>` : ''}
-        ${role === 'boss' ? `<button class="btn btn-sm btn-danger" onclick="deleteCheck(${c.id})">🗑</button>` : ''}
-      </div>
-    </div>`;
-    }).join('');
-}
-
-window.updateCheckFilter = function(val) { checkFilterObjectId = val;
-    renderBossChecks(); };
-function renderBossChecksFilter(f) { renderChecksList('boss', f); }
-
-function renderWolfChecks() {
+function renderWolfDesign() {
     const container = document.getElementById('wolfContent');
-    const available = objects.filter(o => !o.archived);
-    let selectHtml = `<select id="checkObjectFilter" onchange="updateCheckFilterWolf(this.value)"><option value="all" ${checkFilterObjectId === 'all' ? 'selected' : ''}>Все объекты</option>${available.map(o => `<option value="${o.id}" ${checkFilterObjectId == o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('')}</select>`;
-    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button>${selectHtml}<div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderWolfChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('unpaid')">Неоплаченные</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('paid')">Оплаченные</button></div></div><div id="wolfChecksList"></div>`;
-    renderChecksList('wolf', 'all');
+    if (!container) return;
+    
+    let html = `<div class="card"><h3>🎨 Дизайн-проекты</h3>`;
+    
+    const projs = designProjects.slice().sort((a, b) => a.id - b.id);
+    if (!projs.length) {
+        html += '<div style="color:#666;">Нет дизайн-проектов</div>';
+    } else {
+        html += projs.map(p => {
+            const obj = getObject(p.objectId);
+            const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
+            const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
+            const files = (p.files || []).map(f => {
+                const isImg = f.startsWith('data:image/') || f.startsWith('http');
+                return isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:100px;max-height:100px;">` : `<a href="${f}" target="_blank">📄</a>`;
+            }).join(' ') || 'нет';
+            return `<div class="design-block" style="background:#121212;border:1px solid #282828;border-radius:8px;padding:10px;margin:6px 0;">
+                <div class="flex">
+                    <span><b>${escapeHtml(p.title)}</b> <span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span></span>
+                    <span><span class="badge">${obj ? escapeHtml(obj.name) : 'Объект удалён'}</span></span>
+                </div>
+                <div style="font-size:13px;color:#888;">Доступ: ${escapeHtml(roles)}</div>
+                <div><b>Файлы:</b> ${files}</div>
+                <div><b>Комментарии:</b> ${comments || 'нет'}</div>
+                <div style="margin-top:6px;"><button class="btn btn-sm" onclick="addDesignComment(${p.id})">💬 Комментарий</button></div>
+            </div>`;
+        }).join('');
+    }
+    
+    container.innerHTML = html;
 }
-window.updateCheckFilterWolf = function(val) { checkFilterObjectId = val;
-    renderWolfChecks(); };
-function renderWolfChecksFilter(f) { renderChecksList('wolf', f); }
+
+function renderWolfRecommendations() {
+    const container = document.getElementById('wolfContent');
+    if (!container) return;
+    
+    let html = `<div class="card"><h3>📋 Рекомендации</h3>`;
+    
+    const recs = recommendations.slice().sort((a, b) => a.id - b.id);
+    if (!recs.length) {
+        html += '<div style="color:#666;">Нет рекомендаций</div>';
+    } else {
+        html += recs.map(r => {
+            const obj = getObject(r.objectId);
+            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
+            const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
+            const phPur = (r.purchasedPhotos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
+            return `<div class="rec-block" style="background:#121212;border:1px solid #282828;border-radius:8px;padding:10px;margin:6px 0;">
+                <div class="flex">
+                    <span><b>📋 ${escapeHtml(r.text)}</b> <span class="badge">${status}</span></span>
+                    <span><span class="badge">${obj ? escapeHtml(obj.name) : 'Объект удалён'}</span></span>
+                </div>
+                <div style="font-size:13px;color:#888;">Срок: ${r.deadline ? fmt(r.deadline) : 'не указан'}</div>
+                <div style="margin:6px 0;">
+                    <button class="btn btn-sm" onclick="markPurchased(${r.id})">${r.purchased ? 'Отменить покупку' : '✅ Отметить куплено'}</button>
+                </div>
+                <div class="rec-photos">${phRec}${phPur}</div>
+            </div>`;
+        }).join('');
+    }
+    
+    container.innerHTML = html;
+}
 
 // ============================================================
 // ЗАМЕТКИ
@@ -1274,7 +1996,13 @@ window.addNoteForDate = function(dateKey) {
     const note = { id: Date.now(), author: currentUser, text, date: noteDate };
     notes.push(note);
     saveDataToLocal();
-    saveToSupabase('notes', note);
+    
+    if (isOnline()) {
+        saveToSupabase('notes', note);
+    } else {
+        addPendingAction({ type: 'addNote', data: note });
+    }
+    
     if (currentUser === 'boss') renderBossNotes();
     else if (currentUser === 'wolf') renderWolfNotes();
     showToast('📝 Заметка добавлена');
@@ -1284,18 +2012,200 @@ window.deleteNote = function(id) {
     if (confirm('Удалить заметку?')) {
         notes = notes.filter(n => n.id !== id);
         saveDataToLocal();
-        deleteFromSupabase('notes', id);
+        
+        if (isOnline()) {
+            deleteFromSupabase('notes', id);
+        } else {
+            addPendingAction({ type: 'deleteNote', data: { id: id } });
+        }
+        
         if (currentUser === 'boss') renderBossNotes();
         else renderWolfNotes();
         showToast('🗑 Заметка удалена');
     }
 };
 
-function renderWolfNotes() {
-    const container = document.getElementById('wolfContent');
-    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addNoteForDate()">➕ Запись</button></div><div id="wolfNotesCalendar"></div>`;
-    renderNotesCalendar('wolf');
+// ============================================================
+// ЧЕКИ
+// ============================================================
+let checkFilterObjectId = 'all';
+
+function renderBossChecks() {
+    const container = document.getElementById('bossContent');
+    const available = objects.filter(o => !o.archived);
+    let selectHtml = `<select id="checkObjectFilter" onchange="updateCheckFilter(this.value)"><option value="all" ${checkFilterObjectId === 'all' ? 'selected' : ''}>Все объекты</option>${available.map(o => `<option value="${o.id}" ${checkFilterObjectId == o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('')}</select>`;
+    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button>${selectHtml}<div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderBossChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderBossChecksFilter('unpaid')">Неоплаченные</button><button class="btn btn-sm" onclick="renderBossChecksFilter('paid')">Оплаченные</button></div></div><div id="bossChecksList"></div>`;
+    renderChecksList('boss', 'all');
 }
+
+window.updateCheckFilter = function(val) { checkFilterObjectId = val;
+    renderBossChecks(); };
+
+function renderBossChecksFilter(f) { renderChecksList('boss', f); }
+
+function renderChecksList(role, filter) {
+    const container = document.getElementById(role === 'boss' ? 'bossChecksList' : (role === 'wolf' ? 'wolfChecksList' : 'clientChecksList'));
+    if (!container) return;
+    let objFilter = checkFilterObjectId;
+    if (role === 'client') objFilter = currentObjectId;
+    let list = checks.slice();
+    if (objFilter !== 'all') list = list.filter(c => c.objectId == objFilter);
+    if (filter === 'paid') list = list.filter(c => c.paid);
+    else if (filter === 'unpaid') list = list.filter(c => !c.paid);
+    if (role === 'client') list = list.filter(c => c.objectId === currentObjectId);
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const totalUnpaid = list.filter(c => !c.paid).reduce((sum, c) => sum + (c.amount || 0), 0);
+    const totalPaid = list.filter(c => c.paid).reduce((sum, c) => sum + (c.amount || 0), 0);
+    let html = '';
+    
+    if (role === 'boss') {
+        html += `<div class="checks-total"><span>💰 Неоплаченные: ${totalUnpaid.toFixed(2)} ₽</span><span>✅ Оплаченные: ${totalPaid.toFixed(2)} ₽</span></div>`;
+    } else if (role === 'wolf') {
+        html += `<div class="checks-total"><span>💰 Неоплаченные: ${totalUnpaid.toFixed(2)} ₽</span></div>`;
+    } else if (role === 'client') {
+        html += `<div class="checks-total"><span>💰 Неоплаченные: ${totalUnpaid.toFixed(2)} ₽</span></div>`;
+    }
+    
+    if (!list.length) { container.innerHTML = html + '<div class="card">Нет чеков</div>'; return; }
+    
+    container.innerHTML = html + list.map(c => {
+        const obj = getObject(c.objectId);
+        const paidStatus = c.paid ? '✅ Оплачен' : '⏳ Не оплачен';
+        const paidInfo = c.paid ? ` (${c.paidBy === 'client' ? 'клиентом' : 'руководителем'}, ${fmtTime(c.paidDate)})` : '';
+        const dateDisplay = role === 'client' ? fmtTime(c.date) : fmtTime(c.date);
+        
+        return `<div class="check-item ${c.paid ? 'paid' : ''}" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">
+      <div class="flex"><span><b>${obj ? escapeHtml(obj.name) : 'Объект удалён'}</b> — ${c.amount ? c.amount.toFixed(2) + ' ₽' : 'сумма не указана'}</span><span class="badge">${paidStatus}${paidInfo}</span></div>
+      <div style="margin:4px 0;">Дата: ${dateDisplay}</div>
+      ${c.fileData ? `<div><img src="${c.fileData}" class="check-file" onclick="showModal('${c.fileData}')"></div>` : ''}
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+        ${!c.paid && role === 'boss' ? `<button class="btn btn-sm btn-primary" onclick="markCheckPaid(${c.id})">✅ Отметить оплату</button>` : ''}
+        ${!c.paid && role === 'client' ? `<button class="btn btn-sm btn-primary" onclick="clientMarkCheckPaid(${c.id})">✅ Оплатить</button>` : ''}
+        ${role === 'boss' ? `<button class="btn btn-sm btn-danger" onclick="deleteCheck(${c.id})">🗑</button>` : ''}
+      </div>
+    </div>`;
+    }).join('');
+}
+
+window.addCheck = function() {
+    if (currentUser === 'client') { showToast('Клиент не может добавлять чеки'); return; }
+    const available = objects.filter(o => !o.archived);
+    if (!available.length) { showToast('Нет объектов'); return; }
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:1000';
+    modal.innerHTML = `<div style="background:#1a1a1a;padding:20px;border-radius:12px;max-width:400px;width:90%;"><h3 style="color:#e0e0e0;margin-bottom:12px;">Выберите объект</h3><select id="checkObjectSelect" style="width:100%;padding:10px;border-radius:8px;background:#222;color:#e0e0e0;border:1px solid #333;font-size:16px;">${available.map(o => `<option value="${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select><div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;"><button class="btn" onclick="this.closest('div[style]').parentElement.remove()">Отмена</button><button class="btn btn-primary" id="confirmCheckObject">Выбрать</button></div></div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#confirmCheckObject').onclick = function() {
+        const select = modal.querySelector('#checkObjectSelect');
+        const objId = parseInt(select.value);
+        modal.remove();
+        proceedWithCheck(objId);
+    };
+};
+
+function proceedWithCheck(objId) {
+    const amount = parseFloat(prompt('Введите сумму (руб):') || '0');
+    if (isNaN(amount) || amount <= 0) { showToast('Введите корректную сумму'); return; }
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*,application/pdf';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) { inp.remove(); return; }
+        try {
+            let fileData;
+            let check = { id: Date.now(), objectId: objId, amount, fileData: '', date: new Date(), paid: false, paidDate: null, paidBy: null };
+            
+            if (file.type.startsWith('image/')) {
+                const compressed = await compressImage(file);
+                if (!isOnline()) {
+                    check.fileData = compressed;
+                    addPendingAction({ type: 'addCheck', data: check });
+                    showToast('🧾 Чек сохранён локально (ожидает интернет)');
+                } else {
+                    const publicUrl = await uploadPhotoToStorage(objId, Date.now(), compressed);
+                    check.fileData = publicUrl;
+                }
+            } else {
+                const reader = new FileReader();
+                fileData = await new Promise(res => { reader.onload = function(ev) { res(ev.target.result); }; reader.readAsDataURL(file); });
+                check.fileData = fileData;
+            }
+            
+            checks.push(check);
+            saveDataToLocal();
+            
+            if (isOnline() && check.fileData && !check.fileData.startsWith('data:')) {
+                await saveToSupabase('checks', check);
+            }
+            
+            showToast('🧾 Чек загружен' + (!isOnline() ? ' (ожидает интернет)' : ''));
+            if (currentUser === 'boss') renderBossChecks();
+            else if (currentUser === 'wolf') renderWolfChecks();
+            else if (currentUser === 'client') renderClientChecks();
+        } catch (err) { console.error('Error:', err);
+            showToast('❌ Ошибка загрузки чека'); }
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+}
+
+window.markCheckPaid = function(checkId) {
+    const c = checks.find(ch => ch.id === checkId);
+    if (!c || c.paid) return;
+    c.paid = true;
+    c.paidDate = new Date();
+    c.paidBy = currentUser;
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('checks', c);
+    } else {
+        addPendingAction({ type: 'updateCheck', data: c });
+    }
+    
+    if (currentUser === 'boss') renderBossChecks();
+    else if (currentUser === 'wolf') renderWolfChecks();
+    else if (currentUser === 'client') renderClientChecks();
+    showToast('✅ Чек оплачен');
+};
+
+window.clientMarkCheckPaid = function(checkId) {
+    const c = checks.find(ch => ch.id === checkId);
+    if (!c || c.paid) return;
+    c.paid = true;
+    c.paidDate = new Date();
+    c.paidBy = 'client';
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('checks', c);
+    } else {
+        addPendingAction({ type: 'updateCheck', data: c });
+    }
+    
+    renderClientChecks();
+    showToast('✅ Чек оплачен');
+};
+
+window.deleteCheck = function(checkId) {
+    if (confirm('Удалить чек?')) {
+        checks = checks.filter(c => c.id !== checkId);
+        saveDataToLocal();
+        
+        if (isOnline()) {
+            deleteFromSupabase('checks', checkId);
+        } else {
+            addPendingAction({ type: 'deleteCheck', data: { id: checkId } });
+        }
+        
+        if (currentUser === 'boss') renderBossChecks();
+        else if (currentUser === 'wolf') renderWolfChecks();
+        showToast('🗑 Чек удалён');
+    }
+};
 
 // ============================================================
 // ПАРОЛИ
@@ -1310,9 +2220,16 @@ window.setRolePassword = function(r) {
     if (val) passwords[r] = val;
     else delete passwords[r];
     saveDataToLocal();
-    syncPasswordsToSupabase();
+    
+    if (isOnline()) {
+        syncPasswordsToSupabase();
+        showToast('🔑 Пароль для ' + getUserLabel(r) + ' синхронизирован');
+    } else {
+        addPendingAction({ type: 'updatePassword', data: { role: r, password: passwords[r] } });
+        showToast('🔑 Пароль сохранён локально (ожидает интернет)');
+    }
+    
     renderPasswords();
-    showToast('🔑 Пароль установлен');
 };
 
 window.setObjectPassword = function(objId) {
@@ -1321,7 +2238,7 @@ window.setObjectPassword = function(objId) {
     if (!obj) return;
     if (val) {
         passwords.objects[objId] = val;
-        showToast('🔑 Пароль установлен на "' + val + '"');
+        showToast('🔑 Пароль для "' + obj.name + '" установлен на "' + val + '"');
     } else {
         const newPwd = Math.random().toString(36).substring(2, 8).toUpperCase();
         passwords.objects[objId] = newPwd;
@@ -1329,208 +2246,314 @@ window.setObjectPassword = function(objId) {
         document.getElementById('pass-obj-' + objId).value = newPwd;
     }
     saveDataToLocal();
-    syncPasswordsToSupabase();
+    
+    if (isOnline()) {
+        syncPasswordsToSupabase();
+    } else {
+        addPendingAction({ type: 'updatePassword', data: { objectId: objId, password: passwords.objects[objId] } });
+    }
+    
     renderPasswords();
 };
 
 window.savePasswords = function() {
     saveDataToLocal();
-    syncPasswordsToSupabase();
-    showToast('🔐 Пароли сохранены');
+    if (isOnline()) {
+        syncPasswordsToSupabase();
+        showToast('🔐 Пароли сохранены и синхронизированы');
+    } else {
+        showToast('🔐 Пароли сохранены локально (ожидают интернет)');
+    }
 };
 
 // ============================================================
-// БОСС — РЕНДЕР
+// ЭКСПОРТ / ИМПОРТ (ИКОНКА ⚙️ В ПРАВОМ ВЕРХНЕМ УГЛУ)
 // ============================================================
-function renderBoss() {
-    document.getElementById('app').innerHTML = `
-    <div class="card">
-      <div class="flex">
-        <h2>👔 Руководитель</h2>
-        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
-      </div>
-    </div>
-    <div class="tab-bar">
-      <div class="tab active" data-tab="objects">Объекты</div>
-      <div class="tab" data-tab="design">Дизайн</div>
-      <div class="tab" data-tab="recommendations">Рекомендации</div>
-      <div class="tab" data-tab="notes">Ежедневник</div>
-      <div class="tab" data-tab="purchases">Закупки</div>
-      <div class="tab" data-tab="checks">Чеки</div>
-      <div class="tab" data-tab="passwords">Пароли</div>
-    </div>
-    <div id="bossContent"></div>`;
+function addSettingsButton() {
+    const existing = document.getElementById('settingsBtn');
+    if (existing) return;
     
-    document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
-        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-        this.classList.add('active');
-        switch (this.dataset.tab) {
-            case 'objects':
-                renderBossObjects();
-                break;
-            case 'design':
-                renderBossDesign();
-                break;
-            case 'recommendations':
-                renderBossRecommendations();
-                break;
-            case 'notes':
-                renderBossNotes();
-                break;
-            case 'purchases':
-                renderBossPurchases();
-                break;
-            case 'checks':
-                renderBossChecks();
-                break;
-            case 'passwords':
-                renderPasswords();
-                break;
-        }
-    });
-    renderBossObjects();
-}
-
-function renderBossObjects() {
-    const container = document.getElementById('bossContent');
-    if (!uiState['bossObjectFilter']) uiState['bossObjectFilter'] = 'active';
-    const filter = uiState['bossObjectFilter'];
-    let objectsToShow = [];
-    if (filter === 'active') objectsToShow = objects.filter(o => !o.archived && !o.completed);
-    else if (filter === 'completed') objectsToShow = objects.filter(o => !o.archived && o.completed);
-
-    const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span></div>`;
-    let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
-    
-    let list = objectsToShow.map(obj => {
-        const objKey = 'obj-' + obj.id,
-            objOpen = uiState[objKey] !== undefined ? uiState[objKey] : false;
-        
-        const statusTabs = `<div class="flex" style="margin:8px 0;"><button class="btn btn-sm btn-primary" onclick="setWorkFilter('${obj.id}','all')">Все</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','done')">✅ Выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','undone')">⏳ Не выполненные</button></div>`;
-        if (!uiState['filter-' + obj.id]) uiState['filter-' + obj.id] = 'all';
-        const currentFilter = uiState['filter-' + obj.id] || 'all';
-        let filteredWorks = obj.works;
-        if (currentFilter === 'done') filteredWorks = obj.works.filter(w => w.done === true);
-        else if (currentFilter === 'undone') filteredWorks = obj.works.filter(w => w.done === false);
-        
-        const worksHtml = filteredWorks.map((w, wi) => {
-            const originalIndex = obj.works.indexOf(w);
-            const wKey = 'work-' + obj.id + '-' + wi;
-            const wOpen = uiState[wKey] !== undefined ? uiState[wKey] : false;
-            const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
-            const hasPhoto = photos.length > 0;
-            const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button></span>`).join('');
-            const electricianLabel = w.forElectrician ? '⚡' : '';
-            
-            let daysHtml = '';
-            if (w.deadline && !w.done) {
-                const daysLeft = getDaysRemaining(w.deadline);
-                if (daysLeft !== null) {
-                    daysHtml = `<span style="font-size:12px;color:${daysLeft < 0 ? '#a04040' : '#4caf50'};margin-left:8px;">${daysLeft < 0 ? `⏰ просрочка ${Math.abs(daysLeft)} дн.` : `⏳ осталось ${daysLeft} дн.`}</span>`;
+    const btn = document.createElement('div');
+    btn.id = 'settingsBtn';
+    btn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:1000;cursor:pointer;font-size:24px;color:#888;transition:color 0.2s;';
+    btn.textContent = '⚙️';
+    btn.title = 'Настройки';
+    btn.onmouseover = function() { this.style.color = '#c9a959'; };
+    btn.onmouseout = function() { this.style.color = '#888'; };
+    btn.onclick = function(e) {
+        e.stopPropagation();
+        const menu = document.getElementById('settingsMenu');
+        if (menu) { menu.remove(); return; }
+        const m = document.createElement('div');
+        m.id = 'settingsMenu';
+        m.style.cssText = 'position:fixed;top:50px;right:12px;background:#1a1a1a;border:1px solid #282828;border-radius:8px;padding:8px 0;z-index:1001;min-width:180px;box-shadow:0 4px 20px rgba(0,0,0,0.8);';
+        m.innerHTML = `
+            <div style="padding:6px 16px;font-size:13px;color:#888;border-bottom:1px solid #282828;">Настройки</div>
+            <div onclick="closeSettingsMenu();exportAllData();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseover="this.style.background='#282828'" onmouseout="this.style.background='transparent'">📤 Экспорт данных</div>
+            <div onclick="closeSettingsMenu();importAllData();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseover="this.style.background='#282828'" onmouseout="this.style.background='transparent'">📥 Импорт данных</div>
+            <div onclick="closeSettingsMenu();syncPendingActions();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseover="this.style.background='#282828'" onmouseout="this.style.background='transparent'">🔄 Синхронизировать</div>
+        `;
+        document.body.appendChild(m);
+        setTimeout(() => {
+            document.addEventListener('click', function handler(e) {
+                if (!m.contains(e.target) && e.target !== btn) {
+                    m.remove();
+                    document.removeEventListener('click', handler);
                 }
-            }
-            
-            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}">
-                <div class="work-header" onclick="toggleWork(event, this, '${wKey}')">
-                    <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">
-                        <span class="drag-handle" title="Перетащить">⠿</span>
-                        <span class="work-title">${escapeHtml(w.name)}</span>
-                        ${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}
-                        <span class="work-status-check" onclick="event.stopPropagation();toggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>
-                        <span class="work-electrician-toggle" onclick="event.stopPropagation();toggleElectrician(${obj.id},${originalIndex})" title="Назначить электрику">${electricianLabel || '⚡'}</span>
-                        ${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}
-                        ${daysHtml}
-                        <span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}" title="${hasPhoto ? 'Есть фото' : 'Нет фото'}"></span>
-                        <span class="work-arrow ${wOpen ? 'open' : ''}">▶</span>
-                    </span>
-                    <span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;">
-                        <button class="icon-btn" onclick="event.stopPropagation();uploadWorkPhoto(${obj.id},${originalIndex})" title="Загрузить фото">📸</button>
-                        <button class="icon-btn" onclick="event.stopPropagation();moveWorkUp(${obj.id},${originalIndex})" title="Вверх">⬆</button>
-                        <button class="icon-btn" onclick="event.stopPropagation();moveWorkDown(${obj.id},${originalIndex})" title="Вниз">⬇</button>
-                        <button class="icon-btn danger" onclick="event.stopPropagation();deleteWorkWithConfirm(${obj.id},${originalIndex})" title="Удалить этап">🗑</button>
-                    </span>
-                </div>
-                <div class="work-detail ${wOpen ? 'open' : ''}">
-                    <div style="margin:6px 0;"><b>📸 Фото:</b></div>
-                    <div class="photo-grid">${phHtml || 'Нет фото'}</div>
-                </div>
-            </div>`;
-        }).join('');
-        setTimeout(() => initDragDrop(), 50);
-        
-        let summaryHtml = '';
-        if (obj.startDate) {
-            summaryHtml += `<span>📅 ${fmt(obj.startDate)} → ${obj.plannedEndDate ? fmt(obj.plannedEndDate) : '...'}`;
-            if (obj.plannedEndDate) {
-                const daysLeft = getDaysRemaining(obj.plannedEndDate);
-                if (daysLeft !== null) {
-                    summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#4caf50'};">(${daysLeft < 0 ? 'просрочка ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
-                }
-            }
-        } else {
-            summaryHtml += `<span style="color:#666;">📅 даты не установлены</span>`;
-        }
-        
-        return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"><span class="badge">ID: ${obj.id}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}<button class="btn btn-sm" onclick="event.stopPropagation();addWork(${obj.id})">➕ Этап</button><button class="btn btn-sm" onclick="event.stopPropagation();addClientStatus(${obj.id})">📢 Статус</button><button class="btn btn-sm" onclick="event.stopPropagation();setObjectStartDate(${obj.id})">📅 Начало</button><button class="btn btn-sm" onclick="event.stopPropagation();setObjectEndDate(${obj.id})">📅 Завершение</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div><div style="margin:4px 0;font-size:13px;color:#c9a959;">${summaryHtml}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
-    }).join('');
-
-    container.innerHTML = filterTabs + sel + list;
+            });
+        }, 10);
+    };
+    document.body.appendChild(btn);
 }
 
-function renderBossDesign() {
-    const container = document.getElementById('bossContent');
-    const projs = designProjects.slice().sort((a, b) => a.id - b.id);
-    
-    if (!projs.length) {
-        container.innerHTML = `<div class="card" style="text-align:center;padding:30px;color:#666;">🎨 Нет дизайн-проектов</div>`;
-        return;
-    }
-    
-    container.innerHTML = projs.map(p => {
-        const obj = getObject(p.objectId);
-        const roles = p.roles ? p.roles.map(r => getUserLabel(r)).join(', ') : 'все';
-        const comments = (p.comments || []).map(c => `<div><b>${escapeHtml(c.author)}</b> ${escapeHtml(c.text)} <small style="color:#888;">${fmt(c.date)}</small></div>`).join('');
-        const files = (p.files || []).map((f, fi) => {
-            const isImg = f.startsWith('data:image/') || f.startsWith('http');
-            return `<span class="file-wrap">${isImg ? `<img src="${f}" onclick="showModal('${f}')" style="max-width:80px;max-height:80px;">` : `<a href="${f}" target="_blank">📄</a>`}<button class="del" onclick="deleteDesignFile(${p.id},${fi})" style="background:#a04040;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;">×</button></span>`;
-        }).join(' ') || 'нет';
-        return `<div class="card"><div class="flex"><h3>${escapeHtml(p.title)}</h3><span class="badge">${p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает'}</span><button class="btn btn-sm btn-danger" onclick="deleteDesign(${p.id})">🗑</button></div><div><b>Объект:</b> ${obj ? escapeHtml(obj.name) : '—'}</div><div><b>Доступ:</b> ${escapeHtml(roles)}</div><div><b>Файлы:</b> ${files}</div><div><b>Комментарии:</b> ${comments || 'нет'}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="addDesignComment(${p.id})">💬 Комментарий</button><button class="btn btn-sm" onclick="toggleDesignApprove(${p.id})">${p.approvedByClient ? 'Снять утверждение' : 'Утвердить'}</button></div></div>`;
-    }).join('');
-}
-
-function renderBossRecommendations() {
-    const container = document.getElementById('bossContent');
-    const recs = recommendations.slice().sort((a, b) => a.id - b.id);
-    
-    if (!recs.length) {
-        container.innerHTML = `<div class="card" style="text-align:center;padding:30px;color:#666;">📋 Нет рекомендаций</div>`;
-        return;
-    }
-    
-    container.innerHTML = recs.map(r => {
-        const obj = getObject(r.objectId);
-        const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
-        const phRec = (r.photos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'photos')">×</button></span>`).join('');
-        const phPur = (r.purchasedPhotos || []).map((p, pi) => `<span class="pw"><img src="${p}" onclick="showModal('${p}')"><button class="del" onclick="deleteRecommendPhoto(${r.id},${pi},'purchasedPhotos')">×</button></span>`).join('');
-        return `<div class="card"><div class="flex"><h3>📋 ${escapeHtml(r.text)}</h3><span class="badge">${status}</span><button class="btn btn-sm btn-danger" onclick="deleteRecommend(${r.id})">🗑</button></div><div><b>Объект:</b> ${obj ? escapeHtml(obj.name) : '—'}</div><div><b>Срок:</b> ${r.deadline ? fmt(r.deadline) : 'не указан'}</div><div><b>Фото:</b> ${phRec || 'нет'} ${phPur ? `<span style="margin-left:8px;">📸 покупки: ${phPur}</span>` : ''}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="markPurchased(${r.id})">${r.purchased ? 'Отменить покупку' : '✅ Отметить куплено'}</button><button class="btn btn-sm" onclick="addRecommendationPhoto(${r.id})">📎 Фото</button><button class="btn btn-sm" onclick="addPurchasedPhoto(${r.id})">📸 Фото покупки</button></div></div>`;
-    }).join('');
+function closeSettingsMenu() {
+    const menu = document.getElementById('settingsMenu');
+    if (menu) menu.remove();
 }
 
 // ============================================================
-// ЗАКУПКИ
+// ИНДИКАТОР СИНХРОНИЗАЦИИ (В ПРАВОМ ВЕРХНЕМ УГЛУ)
 // ============================================================
-function renderBossPurchases() {
-    const container = document.getElementById('bossContent');
-    container.innerHTML = `<div id="bossPurchasesList"></div>`;
-    const list = document.getElementById('bossPurchasesList');
+function addSyncIndicator() {
+    const existing = document.getElementById('syncIndicator');
+    if (existing) return;
+    
+    const indicator = document.createElement('div');
+    indicator.id = 'syncIndicator';
+    indicator.style.cssText = 'position:fixed;top:12px;right:60px;z-index:1000;font-size:13px;color:#4caf50;display:flex;align-items:center;gap:6px;';
+    indicator.innerHTML = '🟢 Синхронизация OK';
+    document.body.appendChild(indicator);
+}
+
+function updateSyncIndicator(status) {
+    const indicator = document.getElementById('syncIndicator');
+    if (!indicator) return;
+    if (status === 'ok') {
+        indicator.innerHTML = '🟢 Синхронизация OK';
+        indicator.style.color = '#4caf50';
+    } else if (status === 'syncing') {
+        indicator.innerHTML = '🟡 Синхронизация...';
+        indicator.style.color = '#c9a959';
+    } else if (status === 'error') {
+        indicator.innerHTML = '🔴 Ошибка синхронизации';
+        indicator.style.color = '#a04040';
+    }
+}
+
+// ============================================================
+// ЭКСПОРТ / ИМПОРТ (ФУНКЦИИ)
+// ============================================================
+window.exportAllData = function() {
+    const data = {
+        objects,
+        reports,
+        designProjects,
+        recommendations,
+        checks,
+        purchaseOrders,
+        notes,
+        electricianTasks,
+        passwords
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stroychet_backup_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('📤 Данные экспортированы');
+};
+
+window.importAllData = function() {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.json';
+    inp.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            try {
+                const data = JSON.parse(ev.target.result);
+                if (data.objects) objects = data.objects;
+                if (data.reports) reports = data.reports;
+                if (data.designProjects) designProjects = data.designProjects;
+                if (data.recommendations) recommendations = data.recommendations;
+                if (data.checks) checks = data.checks;
+                if (data.purchaseOrders) purchaseOrders = data.purchaseOrders;
+                if (data.notes) notes = data.notes;
+                if (data.electricianTasks) electricianTasks = data.electricianTasks;
+                if (data.passwords) passwords = data.passwords;
+                saveDataToLocal();
+                render();
+                showToast('✅ Данные успешно импортированы!');
+            } catch (err) {
+                showToast('❌ Ошибка: неверный формат файла');
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    };
+    inp.click();
+};
+
+// ============================================================
+// ЗАКУПКИ (ДЛЯ ВОЛКА)
+// ============================================================
+function renderWolfPurchases() {
+    const container = document.getElementById('wolfContent');
+    container.innerHTML = `<button class="btn btn-primary" onclick="addPurchaseOrder()">➕ Новая заявка</button><div id="wolfOrdersList"></div>`;
+    const list = document.getElementById('wolfOrdersList');
     const orders = purchaseOrders.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
     if (!orders.length) { list.innerHTML = '<div class="card">Нет заявок</div>'; return; }
     list.innerHTML = orders.map(order => {
         const obj = getObject(order.objectId);
-        const items = order.items.map(item => `<div><span>${escapeHtml(item.name)} (${escapeHtml(item.quantity)} шт.)</span> <span class="badge">${item.purchased ? '✅ Куплено' : '⏳ Не куплено'}</span></div>`).join('');
-        return `<div class="card"><div class="flex"><b>Заявка на объект: ${obj ? escapeHtml(obj.name) : '—'}</b><span class="badge">${fmt(order.date)}</span></div><div><b>Товары:</b> ${items}</div><div><b>Фото:</b> ${order.photos ? order.photos.map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('') : 'нет'}</div></div>`;
+        const items = order.items.map((item, idx) => `<div class="flex"><span>${escapeHtml(item.name)} (${escapeHtml(item.quantity)} шт.)</span><span class="badge">${item.purchased ? '✅ Куплено' : '⏳ Не куплено'}</span><button class="btn btn-sm" onclick="wolfTogglePurchasedItem(${order.id},${idx})">Отметить</button><button class="btn btn-sm btn-danger" onclick="wolfDeleteItemFromOrder(${order.id},${idx})">🗑</button></div>`).join('');
+        return `<div class="card"><div class="flex"><b>Заявка на объект: ${obj ? escapeHtml(obj.name) : '—'}</b><span class="badge">${fmt(order.date)}</span><button class="btn btn-sm btn-danger" onclick="wolfDeleteOrder(${order.id})">🗑</button></div><div><b>Товары:</b> ${items}</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"><input type="text" id="wolfNewItemName-${order.id}" placeholder="Наименование" style="width:40%;"><input type="text" id="wolfNewItemQty-${order.id}" placeholder="Кол-во" style="width:20%;"><button class="btn btn-sm" onclick="wolfAddItemToOrder(${order.id})">➕ Добавить</button></div><div><b>Фото накладных:</b> ${order.photos ? order.photos.map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('') : 'нет'}</div><button class="btn btn-sm" onclick="wolfUploadOrderPhoto(${order.id})">📸 Добавить фото</button></div>`;
     }).join('');
 }
+
+window.addPurchaseOrder = function() {
+    const available = objects.filter(o => !o.archived);
+    if (!available.length) { showToast('Нет объектов'); return; }
+    const list = available.map((o, i) => `${i+1}. ${o.name} (${o.code})`).join('\n');
+    const choice = prompt('Выберите объект (номер):\n' + list);
+    if (!choice) return;
+    const idx = parseInt(choice) - 1;
+    if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
+    const obj = available[idx];
+    const order = { id: Date.now(), objectId: obj.id, items: [], photos: [], date: new Date(), status: 'active' };
+    purchaseOrders.push(order);
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('purchase_orders', order);
+    } else {
+        addPendingAction({ type: 'addPurchaseOrder', data: order });
+    }
+    
+    renderWolfPurchases();
+    showToast('📦 Заявка создана');
+};
+
+window.wolfAddItemToOrder = function(orderId) {
+    const order = purchaseOrders.find(o => o.id === orderId);
+    if (!order) return;
+    const name = document.getElementById('wolfNewItemName-' + orderId).value.trim();
+    const qty = document.getElementById('wolfNewItemQty-' + orderId).value.trim();
+    if (!name) { showToast('Введите наименование'); return; }
+    order.items.push({ id: Date.now(), name, quantity: qty || '1', purchased: false });
+    saveDataToLocal();
+    
+    if (isOnline()) {
+        saveToSupabase('purchase_orders', order);
+    } else {
+        addPendingAction({ type: 'updatePurchaseOrder', data: order });
+    }
+    
+    renderWolfPurchases();
+    showToast('➕ Товар добавлен');
+};
+
+window.wolfTogglePurchasedItem = function(orderId, idx) {
+    const order = purchaseOrders.find(o => o.id === orderId);
+    if (order) {
+        order.items[idx].purchased = !order.items[idx].purchased;
+        saveDataToLocal();
+        
+        if (isOnline()) {
+            saveToSupabase('purchase_orders', order);
+        } else {
+            addPendingAction({ type: 'updatePurchaseOrder', data: order });
+        }
+        
+        renderWolfPurchases();
+        showToast(order.items[idx].purchased ? '✅ Отмечено куплено' : '↩ Снято');
+    }
+};
+
+window.wolfDeleteItemFromOrder = function(orderId, idx) {
+    if (confirm('Удалить товар?')) {
+        const order = purchaseOrders.find(o => o.id === orderId);
+        if (order) {
+            order.items.splice(idx, 1);
+            saveDataToLocal();
+            
+            if (isOnline()) {
+                saveToSupabase('purchase_orders', order);
+            } else {
+                addPendingAction({ type: 'updatePurchaseOrder', data: order });
+            }
+            
+            renderWolfPurchases();
+            showToast('🗑 Товар удалён');
+        }
+    }
+};
+
+window.wolfDeleteOrder = function(orderId) {
+    if (confirm('Удалить заявку?')) {
+        purchaseOrders = purchaseOrders.filter(o => o.id !== orderId);
+        saveDataToLocal();
+        
+        if (isOnline()) {
+            deleteFromSupabase('purchase_orders', orderId);
+        } else {
+            addPendingAction({ type: 'deletePurchaseOrder', data: { id: orderId } });
+        }
+        
+        renderWolfPurchases();
+        showToast('🗑 Заявка удалена');
+    }
+};
+
+window.wolfUploadOrderPhoto = async function(orderId) {
+    const order = purchaseOrders.find(o => o.id === orderId);
+    if (!order) return;
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
+    document.body.appendChild(inp);
+    inp.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) { inp.remove(); return; }
+        try {
+            const compressed = await compressImage(file);
+            if (!isOnline()) {
+                if (!order.photos) order.photos = [];
+                order.photos.push(compressed);
+                addPendingAction({
+                    type: 'uploadPhoto',
+                    data: {
+                        id: Date.now() + Math.random() * 1000,
+                        objectId: order.objectId,
+                        workId: Date.now(),
+                        photos: [compressed],
+                        date: new Date(),
+                        approved: true
+                    }
+                });
+                showToast('📸 Фото сохранено локально (ожидает интернет)');
+            } else {
+                const publicUrl = await uploadPhotoToStorage(order.objectId, Date.now(), compressed);
+                if (publicUrl) {
+                    if (!order.photos) order.photos = [];
+                    order.photos.push(publicUrl);
+                    await saveToSupabase('purchase_orders', order);
+                }
+            }
+            saveDataToLocal();
+            renderWolfPurchases();
+        } catch (err) { console.error('Error:', err);
+            showToast('❌ Ошибка загрузки фото'); }
+        inp.remove();
+    };
+    setTimeout(() => inp.click(), 50);
+};
 
 // ============================================================
 // ВОЛК
@@ -1550,6 +2573,7 @@ function renderWolf() {
       <div class="tab" data-tab="notes">Ежедневник</div>
       <div class="tab" data-tab="purchases">Закупки</div>
       <div class="tab" data-tab="checks">Чеки</div>
+      <div class="tab" data-tab="schedule">📊 График</div>
     </div>
     <div id="wolfContent"></div>`;
     
@@ -1561,10 +2585,10 @@ function renderWolf() {
                 renderWolfObjects();
                 break;
             case 'design':
-                renderBossDesign();
+                renderWolfDesign();
                 break;
             case 'recommendations':
-                renderBossRecommendations();
+                renderWolfRecommendations();
                 break;
             case 'notes':
                 renderWolfNotes();
@@ -1574,6 +2598,9 @@ function renderWolf() {
                 break;
             case 'checks':
                 renderWolfChecks();
+                break;
+            case 'schedule':
+                renderSchedule();
                 break;
         }
     });
@@ -1601,7 +2628,7 @@ function renderWolfObjects() {
             const wOpen = uiState[wKey] !== undefined ? uiState[wKey] : false;
             const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
             const hasPhoto = photos.length > 0;
-            const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button></span>`).join('');
+            const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button><span class="status-badge">${r.approved ? '✅ одобр.' : '⏳ модер.'}</span></span>`).join('');
             
             let daysHtml = '';
             if (w.deadline && !w.done) {
@@ -1617,18 +2644,22 @@ function renderWolfObjects() {
         
         let summaryHtml = '';
         if (obj.startDate) {
-            summaryHtml += `<span>📅 ${fmt(obj.startDate)} → ${obj.plannedEndDate ? fmt(obj.plannedEndDate) : '...'}`;
-            if (obj.plannedEndDate) {
-                const daysLeft = getDaysRemaining(obj.plannedEndDate);
-                if (daysLeft !== null) {
-                    summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#4caf50'};">(${daysLeft < 0 ? 'просрочка ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
-                }
-            }
+            summaryHtml += `<div>📅 Начало: ${fmt(obj.startDate)}</div>`;
         } else {
-            summaryHtml += `<span style="color:#666;">📅 даты не установлены</span>`;
+            summaryHtml += `<div>📅 Начало: <span style="color:#666;">не указано</span></div>`;
+        }
+        if (obj.plannedEndDate) {
+            const daysLeft = getDaysRemaining(obj.plannedEndDate);
+            summaryHtml += `<div>🎯 Плановое завершение: ${fmt(obj.plannedEndDate)}`;
+            if (daysLeft !== null) {
+                summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#c9a959'};">(${daysLeft < 0 ? 'Просрочено на ' + Math.abs(daysLeft) : 'осталось ' + daysLeft} дн.)</span>`;
+            }
+            summaryHtml += `</div>`;
+        } else {
+            summaryHtml += `<div>🎯 Плановое завершение: <span style="color:#666;">не указано</span></div>`;
         }
         
-        return `<div class="card" id="wolf-obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"><span class="badge">ID: ${obj.id}</span><span style="color:#c9a959;font-size:13px;">${summaryHtml}</span></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Этапы работ</h4>${statusTabs}<div id="wolf-work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div>${addWorkButton}</div></div>`;
+        return `<div class="card" id="wolf-obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;"><span class="badge">ID: ${obj.id}</span></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div><div style="margin:8px 0;padding:10px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;">${summaryHtml}</div></div><div class="object-detail ${objOpen ? 'open' : ''}"><hr><h4>Этапы работ</h4>${statusTabs}<div id="wolf-work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div>${addWorkButton}</div></div>`;
     }).join('');
     container.innerHTML = sel + list;
     setTimeout(() => initDragDrop(), 50);
@@ -1646,9 +2677,15 @@ window.wolfAddWork = function(id) {
             const newWork = { id: Date.now(), name: n, done: false, deadline: null, quantity: '', unit: '', forElectrician: false, manual: true, status: '' };
             o.works.push(newWork);
             saveDataToLocal();
-            saveToSupabase('objects', o);
+            
+            if (isOnline()) {
+                saveToSupabase('objects', o);
+            } else {
+                addPendingAction({ type: 'addWork', data: { objectId: id, work: newWork } });
+            }
+            
             renderWolfObjects();
-            showToast('➕ Этап добавлен');
+            showToast('➕ Этап добавлен (ручной)');
         }
     }
 };
@@ -1658,7 +2695,13 @@ window.wolfToggleWorkStatus = function(id, wi) {
     if (o) {
         o.works[wi].done = !o.works[wi].done;
         saveDataToLocal();
-        saveToSupabase('objects', o);
+        
+        if (isOnline()) {
+            saveToSupabase('objects', o);
+        } else {
+            addPendingAction({ type: 'updateWork', data: { objectId: id, work: o.works[wi] } });
+        }
+        
         renderWolfObjects();
     }
 };
@@ -1666,13 +2709,25 @@ window.wolfToggleWorkStatus = function(id, wi) {
 window.wolfMoveWorkUp = function(objId, idx) { const obj = getObject(objId); if (!obj) return; const works = obj.works; if (idx <= 0) return;
     [works[idx - 1], works[idx]] = [works[idx], works[idx - 1]];
     saveDataToLocal();
-    saveToSupabase('objects', obj);
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
     renderWolfObjects(); };
 
 window.wolfMoveWorkDown = function(objId, idx) { const obj = getObject(objId); if (!obj) return; const works = obj.works; if (idx >= works.length - 1) return;
     [works[idx], works[idx + 1]] = [works[idx + 1], works[idx]];
     saveDataToLocal();
-    saveToSupabase('objects', obj);
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
     renderWolfObjects(); };
 
 window.wolfUploadWorkPhoto = async function(id, wi) {
@@ -1694,28 +2749,51 @@ window.wolfUploadWorkPhoto = async function(id, wi) {
         for (let f of files) {
             try {
                 const compressed = await compressImage(f);
-                const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
-                if (publicUrl) {
+                if (!isOnline()) {
+                    const reportId = Date.now() + Math.random() * 1000;
                     const report = {
-                        id: Date.now() + Math.random() * 1000,
+                        id: reportId,
                         objectId: id,
                         workId: work.id,
-                        photos: [publicUrl],
+                        photos: [compressed],
                         text: '',
                         date: new Date(),
                         approved: true
                     };
                     reports.push(report);
                     saveDataToLocal();
-                    await saveToSupabase('reports', report);
+                    addPendingAction({
+                        type: 'uploadPhoto',
+                        data: report
+                    });
+                    showToast('📸 Фото сохранено локально (ожидает интернет)');
                     uploadedCount++;
+                } else {
+                    const publicUrl = await uploadPhotoToStorage(id, work.id, compressed);
+                    if (publicUrl) {
+                        const report = {
+                            id: Date.now() + Math.random() * 1000,
+                            objectId: id,
+                            workId: work.id,
+                            photos: [publicUrl],
+                            text: '',
+                            date: new Date(),
+                            approved: true
+                        };
+                        reports.push(report);
+                        await saveToSupabase('reports', report);
+                        uploadedCount++;
+                    }
                 }
             } catch (err) { console.error('Error:', err);
                 showToast('❌ Ошибка загрузки фото'); }
         }
         if (uploadedCount > 0) {
+            saveDataToLocal();
             renderWolfObjects();
-            showToast('📸 Загружено ' + uploadedCount + ' фото');
+            showToast('📸 Загружено ' + uploadedCount + ' фото' + (!isOnline() ? ' (ожидают интернет)' : ''));
+        } else {
+            showToast('❌ Не удалось загрузить фото');
         }
         inp.remove();
     };
@@ -1734,114 +2812,24 @@ window.wolfScrollToObject = function(v) {
     }
 };
 
-// ============================================================
-// ЗАКУПКИ (ВОЛК)
-// ============================================================
-function renderWolfPurchases() {
+function renderWolfNotes() {
     const container = document.getElementById('wolfContent');
-    container.innerHTML = `<button class="btn btn-primary" onclick="addPurchaseOrder()">➕ Новая заявка</button><div id="wolfOrdersList"></div>`;
-    const list = document.getElementById('wolfOrdersList');
-    const orders = purchaseOrders.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-    if (!orders.length) { list.innerHTML = '<div class="card">Нет заявок</div>'; return; }
-    list.innerHTML = orders.map(order => {
-        const obj = getObject(order.objectId);
-        const items = order.items.map((item, idx) => `<div class="flex"><span>${escapeHtml(item.name)} (${escapeHtml(item.quantity)} шт.)</span><span class="badge">${item.purchased ? '✅ Куплено' : '⏳ Не куплено'}</span><button class="btn btn-sm" onclick="wolfTogglePurchasedItem(${order.id},${idx})">Отметить</button><button class="btn btn-sm btn-danger" onclick="wolfDeleteItemFromOrder(${order.id},${idx})">🗑</button></div>`).join('');
-        return `<div class="card"><div class="flex"><b>Заявка на объект: ${obj ? escapeHtml(obj.name) : '—'}</b><span class="badge">${fmt(order.date)}</span><button class="btn btn-sm btn-danger" onclick="wolfDeleteOrder(${order.id})">🗑</button></div><div><b>Товары:</b> ${items}</div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"><input type="text" id="wolfNewItemName-${order.id}" placeholder="Наименование" style="width:40%;"><input type="text" id="wolfNewItemQty-${order.id}" placeholder="Кол-во" style="width:20%;"><button class="btn btn-sm" onclick="wolfAddItemToOrder(${order.id})">➕ Добавить</button></div><div><b>Фото накладных:</b> ${order.photos ? order.photos.map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('') : 'нет'}</div><button class="btn btn-sm" onclick="wolfUploadOrderPhoto(${order.id})">📸 Добавить фото</button></div>`;
-    }).join('');
+    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addNoteForDate()">➕ Запись</button></div><div id="wolfNotesCalendar"></div>`;
+    renderNotesCalendar('wolf');
 }
 
-window.addPurchaseOrder = function() {
+function renderWolfChecks() {
+    const container = document.getElementById('wolfContent');
     const available = objects.filter(o => !o.archived);
-    if (!available.length) { showToast('Нет объектов'); return; }
-    const list = available.map((o, i) => `${i+1}. ${o.name} (${o.code})`).join('\n');
-    const choice = prompt('Выберите объект (номер):\n' + list);
-    if (!choice) return;
-    const idx = parseInt(choice) - 1;
-    if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
-    const obj = available[idx];
-    const order = { id: Date.now(), objectId: obj.id, items: [], photos: [], date: new Date(), status: 'active' };
-    purchaseOrders.push(order);
-    saveDataToLocal();
-    saveToSupabase('purchase_orders', order);
-    renderWolfPurchases();
-    showToast('📦 Заявка создана');
-};
+    let selectHtml = `<select id="checkObjectFilter" onchange="updateCheckFilterWolf(this.value)"><option value="all" ${checkFilterObjectId === 'all' ? 'selected' : ''}>Все объекты</option>${available.map(o => `<option value="${o.id}" ${checkFilterObjectId == o.id ? 'selected' : ''}>${escapeHtml(o.name)}</option>`).join('')}</select>`;
+    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button>${selectHtml}<div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderWolfChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('unpaid')">Неоплаченные</button><button class="btn btn-sm" onclick="renderWolfChecksFilter('paid')">Оплаченные</button></div></div><div id="wolfChecksList"></div>`;
+    renderChecksList('wolf', 'all');
+}
 
-window.wolfAddItemToOrder = function(orderId) {
-    const order = purchaseOrders.find(o => o.id === orderId);
-    if (!order) return;
-    const name = document.getElementById('wolfNewItemName-' + orderId).value.trim();
-    const qty = document.getElementById('wolfNewItemQty-' + orderId).value.trim();
-    if (!name) { showToast('Введите наименование'); return; }
-    order.items.push({ id: Date.now(), name, quantity: qty || '1', purchased: false });
-    saveDataToLocal();
-    saveToSupabase('purchase_orders', order);
-    renderWolfPurchases();
-    showToast('➕ Товар добавлен');
-};
+window.updateCheckFilterWolf = function(val) { checkFilterObjectId = val;
+    renderWolfChecks(); };
 
-window.wolfTogglePurchasedItem = function(orderId, idx) {
-    const order = purchaseOrders.find(o => o.id === orderId);
-    if (order) {
-        order.items[idx].purchased = !order.items[idx].purchased;
-        saveDataToLocal();
-        saveToSupabase('purchase_orders', order);
-        renderWolfPurchases();
-        showToast(order.items[idx].purchased ? '✅ Отмечено куплено' : '↩ Снято');
-    }
-};
-
-window.wolfDeleteItemFromOrder = function(orderId, idx) {
-    if (confirm('Удалить товар?')) {
-        const order = purchaseOrders.find(o => o.id === orderId);
-        if (order) {
-            order.items.splice(idx, 1);
-            saveDataToLocal();
-            saveToSupabase('purchase_orders', order);
-            renderWolfPurchases();
-            showToast('🗑 Товар удалён');
-        }
-    }
-};
-
-window.wolfDeleteOrder = function(orderId) {
-    if (confirm('Удалить заявку?')) {
-        purchaseOrders = purchaseOrders.filter(o => o.id !== orderId);
-        saveDataToLocal();
-        deleteFromSupabase('purchase_orders', orderId);
-        renderWolfPurchases();
-        showToast('🗑 Заявка удалена');
-    }
-};
-
-window.wolfUploadOrderPhoto = async function(orderId) {
-    const order = purchaseOrders.find(o => o.id === orderId);
-    if (!order) return;
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = 'image/*';
-    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
-    document.body.appendChild(inp);
-    inp.onchange = async function(e) {
-        const file = e.target.files[0];
-        if (!file) { inp.remove(); return; }
-        try {
-            const compressed = await compressImage(file);
-            const publicUrl = await uploadPhotoToStorage(order.objectId, Date.now(), compressed);
-            if (publicUrl) {
-                if (!order.photos) order.photos = [];
-                order.photos.push(publicUrl);
-                saveDataToLocal();
-                saveToSupabase('purchase_orders', order);
-                renderWolfPurchases();
-                showToast('📸 Фото добавлено');
-            }
-        } catch (err) { console.error('Error:', err);
-            showToast('❌ Ошибка загрузки фото'); }
-        inp.remove();
-    };
-    setTimeout(() => inp.click(), 50);
-};
+function renderWolfChecksFilter(f) { renderChecksList('wolf', f); }
 
 // ============================================================
 // КЛИЕНТ
@@ -1885,17 +2873,28 @@ function renderClient() {
     renderClientRecommend();
 }
 
+function renderClientChecks() {
+    const container = document.getElementById('clientContent');
+    container.innerHTML = `<div class="flex"><div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderClientChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderClientChecksFilter('unpaid')">Неоплаченные</button></div></div><div id="clientChecksList"></div>`;
+    renderChecksList('client', 'all');
+}
+
+function renderClientChecksFilter(f) { renderChecksList('client', f); }
+
 function renderClientRecommend() {
     const container = document.getElementById('clientContent');
     const obj = getObject(currentObjectId);
     const recs = recommendations.filter(r => r.objectId === obj.id);
-    const sorted = [...recs].sort((a, b) => {
+    
+    // Сортируем: сначала не купленные, потом купленные
+    recs.sort((a, b) => {
         if (a.purchased && !b.purchased) return 1;
         if (!a.purchased && b.purchased) return -1;
         return 0;
     });
-    if (!sorted.length) { container.innerHTML = '<div class="card">Нет рекомендаций</div>'; return; }
-    container.innerHTML = sorted.map(r => {
+    
+    if (!recs.length) { container.innerHTML = '<div class="card">Нет рекомендаций</div>'; return; }
+    container.innerHTML = recs.map(r => {
         const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
         const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
         const phPur = (r.purchasedPhotos || []).map(p => `<img src="${p}" style="width:60px;" onclick="showModal('${p}')">`).join('');
@@ -1910,7 +2909,13 @@ window.clientMarkPurchased = function(id) {
         if (r.purchased) r.purchasedDate = new Date().toISOString().slice(0, 10);
         else r.purchasedDate = null;
         saveDataToLocal();
-        saveToSupabase('recommendations', r);
+        
+        if (isOnline()) {
+            saveToSupabase('recommendations', r);
+        } else {
+            addPendingAction({ type: 'updateRecommendation', data: r });
+        }
+        
         renderClient();
         showToast(r.purchased ? '✅ Отмечено куплено' : '↩ Отмена');
     }
@@ -1929,51 +2934,37 @@ window.clientAddPurchasedPhoto = async function(id) {
         if (!file) { inp.remove(); return; }
         try {
             const compressed = await compressImage(file);
-            const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
-            if (publicUrl) {
+            if (!isOnline()) {
                 if (!r.purchasedPhotos) r.purchasedPhotos = [];
-                r.purchasedPhotos.push(publicUrl);
-                saveDataToLocal();
-                saveToSupabase('recommendations', r);
-                renderClient();
-                showToast('📸 Фото добавлено');
+                r.purchasedPhotos.push(compressed);
+                addPendingAction({
+                    type: 'uploadPhoto',
+                    data: {
+                        id: Date.now() + Math.random() * 1000,
+                        objectId: r.objectId,
+                        workId: Date.now(),
+                        photos: [compressed],
+                        date: new Date(),
+                        approved: true
+                    }
+                });
+                showToast('📸 Фото сохранено локально (ожидает интернет)');
+            } else {
+                const publicUrl = await uploadPhotoToStorage(r.objectId, Date.now(), compressed);
+                if (publicUrl) {
+                    if (!r.purchasedPhotos) r.purchasedPhotos = [];
+                    r.purchasedPhotos.push(publicUrl);
+                    await saveToSupabase('recommendations', r);
+                }
             }
+            saveDataToLocal();
+            renderClient();
         } catch (err) { console.error('Error:', err);
             showToast('❌ Ошибка загрузки фото'); }
         inp.remove();
     };
     setTimeout(() => inp.click(), 50);
 };
-
-function renderClientWorks() {
-    const container = document.getElementById('clientContent');
-    const obj = getObject(currentObjectId);
-    
-    const scheduleTasks = (obj.schedule || []).filter(item => item.showToClient === true);
-    const sortedSchedule = [...scheduleTasks].sort((a, b) => {
-        if (!a.startDate) return 1;
-        if (!b.startDate) return -1;
-        const p1 = a.startDate.split('.');
-        const p2 = b.startDate.split('.');
-        return new Date(+p1[2], +p1[1]-1, +p1[0]) - new Date(+p2[2], +p2[1]-1, +p2[0]);
-    });
-    
-    let html = '';
-    if (obj.clientStatus) {
-        html += `<div style="background:#1a1a1a;border:1px solid #c9a959;border-radius:8px;padding:12px;margin-bottom:12px;"><div style="color:#c9a959;font-size:14px;">📌 ${escapeHtml(obj.clientStatus)}</div></div>`;
-    }
-    if (sortedSchedule.length > 0) {
-        html += `<div class="card"><h3>📌 Ближайшие работы</h3>${sortedSchedule.slice(0, 3).map(item => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;"><span>${item.startDate || 'дата не указана'}</span><span style="color:#c9a959;">${escapeHtml(item.name)}</span></div>`).join('')}</div>`;
-    }
-    html += `<div class="card"><h3>📋 Этапы работ</h3>`;
-    obj.works.forEach(w => {
-        const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
-        const photoHtml = photos.length ? `<div style="margin:6px 0;"><div style="display:flex;flex-wrap:wrap;gap:6px;">${photos.map(r => `<img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #282828;cursor:pointer;">`).join('')}</div></div>` : '';
-        html += `<div style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:8px 0;"><div class="flex"><b>${escapeHtml(w.name)}</b><span class="badge">${w.done ? '✅ выполнено' : '⏳ в работе'}</span></div>${photoHtml}</div>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-}
 
 function renderClientDesign() {
     const container = document.getElementById('clientContent');
@@ -1998,7 +2989,13 @@ window.clientAddDesignComment = function(id) {
         if (!p.comments) p.comments = [];
         p.comments.push({ author: 'Клиент', text: t, date: new Date() });
         saveDataToLocal();
-        saveToSupabase('design_projects', p);
+        
+        if (isOnline()) {
+            saveToSupabase('design_projects', p);
+        } else {
+            addPendingAction({ type: 'updateDesign', data: p });
+        }
+        
         renderClient();
         showToast('💬 Комментарий добавлен');
     }
@@ -2009,52 +3006,93 @@ window.clientApproveDesign = function(id) {
     if (p) {
         p.approvedByClient = !p.approvedByClient;
         saveDataToLocal();
-        saveToSupabase('design_projects', p);
+        
+        if (isOnline()) {
+            saveToSupabase('design_projects', p);
+        } else {
+            addPendingAction({ type: 'updateDesign', data: p });
+        }
+        
         renderClient();
         showToast(p.approvedByClient ? '✅ Проект утверждён' : '⏳ Утверждение снято');
     }
 };
 
-function renderClientChecks() {
+function renderClientWorks() {
     const container = document.getElementById('clientContent');
-    container.innerHTML = `<div class="flex"><div class="flex-center"><span class="badge">Фильтр:</span><button class="btn btn-sm" onclick="renderClientChecksFilter('all')">Все</button><button class="btn btn-sm" onclick="renderClientChecksFilter('unpaid')">Неоплаченные</button></div></div><div id="clientChecksList"></div>`;
-    renderClientChecksList('all');
+    const obj = getObject(currentObjectId);
+    
+    // Получаем ближайшие работы из графика (отмеченные showToClient)
+    let upcomingWorks = [];
+    if (obj.schedule) {
+        const sorted = [...obj.schedule].filter(s => s.showToClient === true);
+        sorted.sort((a, b) => {
+            if (!a.startDate) return 1;
+            if (!b.startDate) return -1;
+            const partsA = a.startDate.split('.');
+            const partsB = b.startDate.split('.');
+            const dateA = new Date(parseInt(partsA[2]), parseInt(partsA[1]) - 1, parseInt(partsA[0]));
+            const dateB = new Date(parseInt(partsB[2]), parseInt(partsB[1]) - 1, parseInt(partsB[0]));
+            return dateA - dateB;
+        });
+        upcomingWorks = sorted.slice(0, 5);
+    }
+    
+    let html = '';
+    
+    // Статус от руководителя
+    if (obj.clientStatus) {
+        html += `
+        <div style="background:#1a1a1a;border:1px solid #c9a959;border-radius:8px;padding:12px;margin-bottom:12px;">
+            <div style="color:#c9a959;font-size:14px;">📌 ${escapeHtml(obj.clientStatus)}</div>
+        </div>`;
+    }
+    
+    html += `
+    <div class="card">
+        <h3>📌 Ближайшие работы</h3>`;
+    
+    if (upcomingWorks.length) {
+        html += upcomingWorks.map(w => `
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1a1a1a;">
+                <span>${w.startDate || '—'}</span>
+                <span style="color:#c9a959;">${escapeHtml(w.name)}</span>
+            </div>
+        `).join('');
+    } else {
+        html += '<div style="color:#666;">Нет запланированных работ</div>';
+    }
+    
+    html += `
+    </div>
+    <div class="card">
+        <h3>📋 Этапы работ</h3>`;
+    
+    obj.works.forEach(w => {
+        const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
+        const photoHtml = photos.length ? `
+            <div style="margin:6px 0;">
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    ${photos.map(r => `
+                        <img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #282828;cursor:pointer;">
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+        
+        html += `
+        <div style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:8px 0;">
+            <div class="flex">
+                <b>${escapeHtml(w.name)}</b>
+                <span class="badge">${w.done ? '✅ выполнено' : '⏳ в работе'}</span>
+            </div>
+            ${photoHtml}
+        </div>`;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
 }
-
-function renderClientChecksFilter(f) { renderClientChecksList(f); }
-
-function renderClientChecksList(filter) {
-    const container = document.getElementById('clientChecksList');
-    if (!container) return;
-    let list = checks.filter(c => c.objectId === currentObjectId);
-    if (filter === 'paid') list = list.filter(c => c.paid);
-    else if (filter === 'unpaid') list = list.filter(c => !c.paid);
-    list.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const totalUnpaid = list.filter(c => !c.paid).reduce((sum, c) => sum + (c.amount || 0), 0);
-    let html = `<div class="checks-total"><span>💰 Неоплаченные: ${totalUnpaid.toFixed(2)} ₽</span></div>`;
-    if (!list.length) { container.innerHTML = html + '<div class="card">Нет чеков</div>'; return; }
-    container.innerHTML = html + list.map(c => {
-        const obj = getObject(c.objectId);
-        return `<div class="check-item ${c.paid ? 'paid' : ''}" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">
-      <div class="flex"><span><b>${obj ? escapeHtml(obj.name) : '—'}</b> — ${c.amount ? c.amount.toFixed(2) + ' ₽' : 'сумма не указана'}</span><span class="badge">${c.paid ? '✅ Оплачен' : '⏳ Не оплачен'}</span></div>
-      <div style="margin:4px 0;">Дата: ${fmtTime(c.date)}</div>
-      ${c.fileData ? `<div><img src="${c.fileData}" class="check-file" onclick="showModal('${c.fileData}')"></div>` : ''}
-      ${!c.paid ? `<button class="btn btn-sm btn-primary" onclick="clientMarkCheckPaid(${c.id})">✅ Оплатить</button>` : ''}
-    </div>`;
-    }).join('');
-}
-
-window.clientMarkCheckPaid = function(checkId) {
-    const c = checks.find(ch => ch.id === checkId);
-    if (!c || c.paid) return;
-    c.paid = true;
-    c.paidDate = new Date();
-    c.paidBy = 'client';
-    saveDataToLocal();
-    saveToSupabase('checks', c);
-    renderClientChecks();
-    showToast('✅ Чек оплачен');
-};
 
 // ============================================================
 // ЭЛЕКТРИК
@@ -2097,7 +3135,9 @@ function renderElectricianObjects() {
     if (!active.length) { container.innerHTML = '<div class="card">Нет назначенных задач</div>'; return; }
     container.innerHTML = active.map(obj => {
         const electricWorks = obj.works.filter(w => w.forElectrician);
-        const worksHtml = electricWorks.map(w => `<div class="work-block" style="cursor:default;"><div class="work-header"><span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity" style="color:#999;font-size:14px;">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''} ${w.done ? '✅' : '⏳'} ${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}</span></div></div>`).join('') || '<span style="color:#666;font-size:14px;">Нет задач</span>';
+        const worksHtml = electricWorks.map(w => {
+            return `<div class="work-block" style="cursor:default;"><div class="work-header"><span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity" style="color:#999;font-size:14px;">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''} ${w.done ? '✅' : '⏳'} ${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}</span></div></div>`;
+        }).join('') || '<span style="color:#666;font-size:14px;">Нет задач</span>';
         const ownTasks = electricianTasks.filter(t => t.objectId === obj.id);
         let ownTasksHtml = ownTasks.length ? ownTasks.map(t => {
             const photosHtml = (t.photos || []).map(p => `<img src="${p}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showModal('${p}')">`).join('');
@@ -2124,7 +3164,8 @@ function renderElectricianDesign() {
 
 function renderElectricianTasks() {
     const container = document.getElementById('electricianContent');
-    container.innerHTML = `<div class="flex"><button class="btn btn-primary" onclick="addElectricianTask()">➕ Новая задача</button></div><div id="electricianTasksList"></div>`;
+    let html = `<div class="flex"><button class="btn btn-primary" onclick="addElectricianTask()">➕ Новая задача</button></div><div id="electricianTasksList"></div>`;
+    container.innerHTML = html;
     renderElectricianTasksList();
 }
 
@@ -2167,8 +3208,23 @@ window.addElectricianTask = function() {
         for (let f of files) {
             try {
                 const compressed = await compressImage(f);
-                const publicUrl = await uploadPhotoToStorage(objId || 'general', Date.now(), compressed);
-                if (publicUrl) photosData.push(publicUrl);
+                if (!isOnline()) {
+                    photosData.push(compressed);
+                    addPendingAction({
+                        type: 'uploadPhoto',
+                        data: {
+                            id: Date.now() + Math.random() * 1000,
+                            objectId: objId || 'general',
+                            workId: Date.now(),
+                            photos: [compressed],
+                            date: new Date(),
+                            approved: true
+                        }
+                    });
+                } else {
+                    const publicUrl = await uploadPhotoToStorage(objId || 'general', Date.now(), compressed);
+                    if (publicUrl) photosData.push(publicUrl);
+                }
             } catch (err) { console.error('Error:', err); }
         }
         saveTask(text, objId, photosData);
@@ -2181,7 +3237,13 @@ function saveTask(text, objId, photos) {
     const task = { id: Date.now(), text, objectId: objId, photos, date: new Date(), done: false };
     electricianTasks.push(task);
     saveDataToLocal();
-    saveToSupabase('electrician_tasks', task);
+    
+    if (isOnline()) {
+        saveToSupabase('electrician_tasks', task);
+    } else {
+        addPendingAction({ type: 'addElectricianTask', data: task });
+    }
+    
     renderElectricianTasks();
     showToast('📝 Задача добавлена');
 }
@@ -2191,7 +3253,13 @@ window.toggleElectricianTaskDone = function(id) {
     if (task) { 
         task.done = !task.done;
         saveDataToLocal();
-        saveToSupabase('electrician_tasks', task);
+        
+        if (isOnline()) {
+            saveToSupabase('electrician_tasks', task);
+        } else {
+            addPendingAction({ type: 'updateElectricianTask', data: task });
+        }
+        
         renderElectricianTasks();
         showToast(task.done ? '✅ Задача выполнена' : '↩ Задача возвращена'); 
     }
@@ -2201,152 +3269,56 @@ window.deleteElectricianTask = function(id) {
     if (confirm('Удалить задачу?')) { 
         electricianTasks = electricianTasks.filter(t => t.id !== id);
         saveDataToLocal();
-        deleteFromSupabase('electrician_tasks', id);
+        
+        if (isOnline()) {
+            deleteFromSupabase('electrician_tasks', id);
+        } else {
+            addPendingAction({ type: 'deleteElectricianTask', data: { id: id } });
+        }
+        
         renderElectricianTasks();
         showToast('🗑 Задача удалена'); 
     }
 };
 
 // ============================================================
-// ЭКСПОРТ / ИМПОРТ
+// ОБЩИЙ ПРОСМОТР
 // ============================================================
-window.exportAllData = function() {
-    const data = {
-        objects, reports, designProjects, recommendations,
-        checks, purchaseOrders, notes, electricianTasks, passwords
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stroychet_backup_${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('📤 Данные экспортированы');
-};
-
-window.importAllData = function() {
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = '.json';
-    inp.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            try {
-                const data = JSON.parse(ev.target.result);
-                if (data.objects) objects = data.objects;
-                if (data.reports) reports = data.reports;
-                if (data.designProjects) designProjects = data.designProjects;
-                if (data.recommendations) recommendations = data.recommendations;
-                if (data.checks) checks = data.checks;
-                if (data.purchaseOrders) purchaseOrders = data.purchaseOrders;
-                if (data.notes) notes = data.notes;
-                if (data.electricianTasks) electricianTasks = data.electricianTasks;
-                if (data.passwords) passwords = data.passwords;
-                saveDataToLocal();
-                render();
-                showToast('✅ Данные импортированы!');
-            } catch (err) {
-                showToast('❌ Ошибка: неверный формат');
-                console.error(err);
-            }
-        };
-        reader.readAsText(file);
-    };
-    inp.click();
-};
-
-// ============================================================
-// ИКОНКИ В УГЛУ
-// ============================================================
-function addGlobalUI() {
-    // Индикатор синхронизации
-    const syncIndicator = document.createElement('div');
-    syncIndicator.id = 'syncIndicator';
-    syncIndicator.style.cssText = `
-        position: fixed;
-        top: 12px;
-        right: 60px;
-        z-index: 999;
-        font-size: 13px;
-        color: #4caf50;
-        background: #121212;
-        padding: 4px 12px;
-        border-radius: 12px;
-        border: 1px solid #282828;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        pointer-events: none;
-    `;
-    syncIndicator.innerHTML = '🟢 Синхр. OK';
-    document.body.appendChild(syncIndicator);
-    
-    // Кнопка настроек
-    const settingsBtn = document.createElement('div');
-    settingsBtn.id = 'settingsBtn';
-    settingsBtn.style.cssText = `
-        position: fixed;
-        top: 12px;
-        right: 12px;
-        z-index: 999;
-        cursor: pointer;
-        font-size: 22px;
-        background: #121212;
-        padding: 4px 8px;
-        border-radius: 8px;
-        border: 1px solid #282828;
-        color: #888;
-        transition: all 0.2s;
-        user-select: none;
-    `;
-    settingsBtn.textContent = '⚙️';
-    settingsBtn.title = 'Настройки';
-    settingsBtn.onmouseenter = function() { this.style.borderColor = '#c9a959'; this.style.color = '#e0e0e0'; };
-    settingsBtn.onmouseleave = function() { this.style.borderColor = '#282828'; this.style.color = '#888'; };
-    settingsBtn.onclick = function(e) {
-        e.stopPropagation();
-        showSettingsMenu();
-    };
-    document.body.appendChild(settingsBtn);
-}
-
-function showSettingsMenu() {
-    const old = document.getElementById('settingsMenu');
-    if (old) { old.remove(); return; }
-    
-    const menu = document.createElement('div');
-    menu.id = 'settingsMenu';
-    menu.style.cssText = `
-        position: fixed;
-        top: 54px;
-        right: 12px;
-        z-index: 999;
-        background: #1a1a1a;
-        border: 1px solid #282828;
-        border-radius: 8px;
-        padding: 8px 0;
-        min-width: 180px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.8);
-    `;
-    menu.innerHTML = `
-        <div style="padding:8px 16px;color:#888;font-size:12px;border-bottom:1px solid #282828;">📁 Настройки</div>
-        <div onclick="exportAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">📤 Экспорт</div>
-        <div onclick="importAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">📥 Импорт</div>
-        <div onclick="syncAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">🔄 Синхронизировать</div>
-    `;
-    document.body.appendChild(menu);
-    
-    document.addEventListener('click', function closeMenu(e) {
-        if (!menu.contains(e.target) && e.target !== document.getElementById('settingsBtn')) {
-            menu.remove();
-            document.removeEventListener('click', closeMenu);
-        }
-    });
+function renderGenericViewer(title) {
+    document.getElementById('app').innerHTML = `
+    <div class="card">
+      <div class="flex">
+        <h2>${title}</h2>
+        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
+      </div>
+    </div>
+    <div id="genericContent"></div>`;
+    const container = document.getElementById('genericContent');
+    const active = objects.filter(o => !o.archived);
+    if (!active.length) { container.innerHTML = '<div class="card">Нет объектов</div>'; return; }
+    container.innerHTML = active.map(obj => {
+        const projs = designProjects.filter(p => p.objectId === obj.id);
+        const recs = recommendations.filter(r => r.objectId === obj.id);
+        const worksHtml = obj.works.map(w => {
+            const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id && r.approved);
+            const phHtml = photos.map(r => `<img src="${r.photos[0]}" style="width:50px;" onclick="showModal('${r.photos[0]}')">`).join('');
+            return `<div class="work-block" style="cursor:default;"><div class="work-header"><span><span class="work-title">${escapeHtml(w.name)}</span>${w.quantity ? ` <span class="work-quantity" style="color:#999;font-size:14px;">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''} ${w.done ? '✅' : '⏳'} ${w.deadline ? `<span class="work-deadline">📅 ${fmt(w.deadline)}</span>` : ''}</span></div><div class="work-detail open"><div><b>Фото:</b> ${phHtml || 'нет'}</div></div></div>`;
+        }).join('');
+        const designHtml = projs.map(p => {
+            const files = (p.files || []).map(f => {
+                const isImg = f.startsWith('data:image/') || f.startsWith('http');
+                return isImg ? `<img src="${f}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="showModal('${f}')">` : `<a href="${f}" target="_blank" style="color:#c9a959;">📄 Файл</a>`;
+            }).join(' ') || 'нет';
+            return `<div class="design-block"><div class="design-header"><span class="design-title">${escapeHtml(p.title)}</span> <span class="badge">${p.approvedByClient ? '✅' : '⏳'}</span></div><div class="design-detail open"><b>Файлы:</b> ${files}</div></div>`;
+        }).join('');
+        const recHtml = recs.map(r => {
+            const status = r.purchased ? '✅ Куплено' : (r.purchasedDate ? '⏳ Ожидается до ' + fmt(r.purchasedDate) : '❌ Не куплено');
+            const phRec = (r.photos || []).map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('');
+            const phPur = (r.purchasedPhotos || []).map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('');
+            return `<div class="rec-block"><div class="rec-header"><span class="rec-title">📋 ${escapeHtml(r.text)}</span> <span class="badge">${status}</span></div><div class="rec-detail open">${phRec}${phPur}</div></div>`;
+        }).join('');
+        return `<div class="card"><div class="flex"><h3>${escapeHtml(obj.name)} (${escapeHtml(obj.code)})</h3><span class="badge">${obj.completed ? 'Сдан' : 'В работе'}</span></div><div>📍 ${escapeHtml(obj.address)}</div><h4>Дизайн-проекты</h4>${designHtml || '<span style="color:#666;">Нет проектов</span>'}<h4>Рекомендации</h4>${recHtml || '<span style="color:#666;">Нет рекомендаций</span>'}<h4>Этапы работ</h4>${worksHtml || '<span style="color:#666;">Нет этапов</span>'}</div>`;
+    }).join('');
 }
 
 // ============================================================
@@ -2414,14 +3386,23 @@ function handleDrop(e) {
     const [removed] = works.splice(fromIndex, 1);
     works.splice(toIndex, 0, removed);
     saveDataToLocal();
-    saveToSupabase('objects', obj);
+    
+    if (isOnline()) {
+        saveToSupabase('objects', obj);
+    } else {
+        addPendingAction({ type: 'updateObject', data: obj });
+    }
+    
     renderBossObjects();
 }
 
 function toggleWork(e, h, k) {
     if (e) e.stopPropagation();
     const block = h.closest('.work-block');
-    if (!block) { console.warn('Work block not found'); return; }
+    if (!block) {
+        console.warn('Work block not found');
+        return;
+    }
     const detail = block.querySelector('.work-detail');
     const arrow = block.querySelector('.work-arrow');
     if (detail) {
@@ -2436,6 +3417,8 @@ function toggleWork(e, h, k) {
             uiState[k] = true;
         }
         saveUiState();
+    } else {
+        console.warn('Work detail not found');
     }
 }
 
@@ -2465,16 +3448,27 @@ function showModal(src) {
 }
 
 // ============================================================
-// ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
+// ФУНКЦИИ ДЛЯ ЗАКУПОК (BOSS)
 // ============================================================
-function getDaysRemaining(endDate) {
-    if (!endDate) return null;
-    const p = endDate.split('.');
-    const end = new Date(+p[2], +p[1] - 1, +p[0]);
-    const now = new Date();
-    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-    return diff;
+function renderBossPurchases() {
+    const container = document.getElementById('bossContent');
+    container.innerHTML = `<div id="bossPurchasesList"></div>`;
+    const list = document.getElementById('bossPurchasesList');
+    const orders = purchaseOrders.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (!orders.length) { list.innerHTML = '<div class="card">Нет заявок на закупку</div>'; return; }
+    list.innerHTML = orders.map(order => {
+        const obj = getObject(order.objectId);
+        const items = order.items.map(item => `<div><span>${escapeHtml(item.name)} (${escapeHtml(item.quantity)} шт.)</span> <span class="badge">${item.purchased ? '✅ Куплено' : '⏳ Не куплено'}</span></div>`).join('');
+        return `<div class="card"><div class="flex"><b>Заявка на объект: ${obj ? escapeHtml(obj.name) : '—'}</b><span class="badge">${fmt(order.date)}</span></div><div><b>Товары:</b> ${items}</div><div><b>Фото:</b> ${order.photos ? order.photos.map(p => `<img src="${p}" style="width:50px;" onclick="showModal('${p}')">`).join('') : 'нет'}</div></div>`;
+    }).join('');
 }
+
+// ============================================================
+// ФУНКЦИИ ДЛЯ CSV
+// ============================================================
+window.uploadCSV = function() {
+    showToast('📊 Функция загрузки CSV в разработке');
+};
 
 window.scrollToObject = function(v) {
     if (!v) return;
@@ -2494,9 +3488,154 @@ window.setWorkFilter = function(objId, filter) {
     renderBossObjects();
 };
 
-window.uploadCSV = function() {
-    showToast('📊 Функция загрузки CSV в разработке');
-};
+// ============================================================
+// БОСС
+// ============================================================
+function renderBoss() {
+    document.getElementById('app').innerHTML = `
+    <div class="card">
+      <div class="flex">
+        <h2>👔 Руководитель</h2>
+        <button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active" data-tab="objects">Объекты</div>
+      <div class="tab" data-tab="design">Дизайн</div>
+      <div class="tab" data-tab="recommendations">Рекомендации</div>
+      <div class="tab" data-tab="notes">Ежедневник</div>
+      <div class="tab" data-tab="purchases">Закупки (отчёт)</div>
+      <div class="tab" data-tab="checks">Чеки</div>
+      <div class="tab" data-tab="passwords">🔐 Пароли</div>
+      <div class="tab" data-tab="schedule">📊 График</div>
+    </div>
+    <div id="bossContent"></div>`;
+    
+    document.querySelectorAll('.tab').forEach(t => t.onclick = function() {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        this.classList.add('active');
+        switch (this.dataset.tab) {
+            case 'objects':
+                renderBossObjects();
+                break;
+            case 'design':
+                renderBossDesign();
+                break;
+            case 'recommendations':
+                renderBossRecommendations();
+                break;
+            case 'notes':
+                renderBossNotes();
+                break;
+            case 'purchases':
+                renderBossPurchases();
+                break;
+            case 'checks':
+                renderBossChecks();
+                break;
+            case 'passwords':
+                renderPasswords();
+                break;
+            case 'schedule':
+                renderSchedule();
+                break;
+        }
+    });
+    renderBossObjects();
+}
+
+function renderBossObjects() {
+    const container = document.getElementById('bossContent');
+    if (!uiState['bossObjectFilter']) uiState['bossObjectFilter'] = 'active';
+    const filter = uiState['bossObjectFilter'];
+    let objectsToShow = [];
+    if (filter === 'active') objectsToShow = objects.filter(o => !o.archived && !o.completed);
+    else if (filter === 'completed') objectsToShow = objects.filter(o => !o.archived && o.completed);
+    else if (filter === 'archived') objectsToShow = objects.filter(o => o.archived);
+
+    const statusHtml = `<div id="pendingStatus" style="padding:8px 12px;margin-bottom:12px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;text-align:center;color:${pendingActions.length === 0 ? '#4caf50' : '#c9a959'};">${pendingActions.length === 0 ? '✅ Все данные синхронизированы' : '⏳ Ожидают синхронизации: ' + pendingActions.length + ' действий'}</div>`;
+
+    const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span></div>`;
+    let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><button class="btn" onclick="uploadCSV()">📊 Загрузить CSV</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
+    
+    let list = objectsToShow.map(obj => {
+        const objKey = 'obj-' + obj.id,
+            objOpen = uiState[objKey] !== undefined ? uiState[objKey] : false;
+        
+        const statusTabs = `<div class="flex" style="margin:8px 0;"><button class="btn btn-sm btn-primary" onclick="setWorkFilter('${obj.id}','all')">Все</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','done')">✅ Выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','undone')">⏳ Не выполненные</button><button class="btn btn-sm" onclick="setWorkFilter('${obj.id}','unpaid')">💰 Неоплаченные (ручные)</button></div>`;
+        if (!uiState['filter-' + obj.id]) uiState['filter-' + obj.id] = 'all';
+        const currentFilter = uiState['filter-' + obj.id] || 'all';
+        let filteredWorks = obj.works;
+        if (currentFilter === 'done') filteredWorks = obj.works.filter(w => w.done === true);
+        else if (currentFilter === 'undone') filteredWorks = obj.works.filter(w => w.done === false);
+        else if (currentFilter === 'unpaid') filteredWorks = obj.works.filter(w => w.manual === true && w.done === false);
+        
+        const worksHtml = filteredWorks.map((w, wi) => {
+            const originalIndex = obj.works.indexOf(w);
+            const wKey = 'work-' + obj.id + '-' + wi;
+            const wOpen = uiState[wKey] !== undefined ? uiState[wKey] : false;
+            const photos = reports.filter(r => r.objectId === obj.id && r.workId === w.id);
+            const hasPhoto = photos.length > 0;
+            const phHtml = photos.map(r => `<span class="pw"><img src="${r.photos[0]}" onclick="showModal('${r.photos[0]}')"><button class="del" onclick="deleteWorkPhoto(${r.id})">×</button><span class="status-badge">${r.approved ? '✅ одобр.' : '⏳ модер.'}</span></span>`).join('');
+            const electricianLabel = w.forElectrician ? '⚡' : '';
+            
+            let daysHtml = '';
+            if (w.deadline && !w.done) {
+                const daysLeft = getDaysRemaining(w.deadline);
+                if (daysLeft !== null) {
+                    daysHtml = `<span style="font-size:12px;color:${daysLeft < 0 ? '#a04040' : '#4caf50'};margin-left:8px;">${daysLeft < 0 ? `⏰ просрочка ${Math.abs(daysLeft)} дн.` : `⏳ осталось ${daysLeft} дн.`}</span>`;
+                }
+            }
+            
+            return `<div class="work-block" draggable="true" data-object-id="${obj.id}" data-work-index="${originalIndex}" data-work-id="${w.id}">
+                <div class="work-header" onclick="toggleWork(event, this, '${wKey}')">
+                    <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">
+                        <span class="drag-handle" title="Перетащить">⠿</span>
+                        <span class="work-title">${escapeHtml(w.name)}</span>
+                        ${w.quantity ? ` <span class="work-quantity">(${escapeHtml(w.quantity)} ${escapeHtml(w.unit)})</span>` : ''}
+                        <span class="work-status-check" onclick="event.stopPropagation();toggleWorkStatus(${obj.id},${originalIndex})">${w.done ? '☑' : '☐'}</span>
+                        <span class="work-electrician-toggle" onclick="event.stopPropagation();toggleElectrician(${obj.id},${originalIndex})" title="Назначить электрику">${electricianLabel || '⚡'}</span>
+                        ${daysHtml}
+                        <span class="photo-indicator ${hasPhoto ? 'has-photo' : ''}" title="${hasPhoto ? 'Есть фото' : 'Нет фото'}"></span>
+                        <span class="work-arrow ${wOpen ? 'open' : ''}">▶</span>
+                    </span>
+                    <span style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;">
+                        <button class="icon-btn" onclick="event.stopPropagation();uploadWorkPhoto(${obj.id},${originalIndex})" title="Загрузить фото">📸</button>
+                        <button class="icon-btn" onclick="event.stopPropagation();moveWorkUp(${obj.id},${originalIndex})" title="Вверх">⬆</button>
+                        <button class="icon-btn" onclick="event.stopPropagation();moveWorkDown(${obj.id},${originalIndex})" title="Вниз">⬇</button>
+                        <button class="icon-btn danger" onclick="event.stopPropagation();deleteWorkWithConfirm(${obj.id},${originalIndex})" title="Удалить этап">🗑</button>
+                    </span>
+                </div>
+                <div class="work-detail ${wOpen ? 'open' : ''}">
+                    <div style="margin:6px 0;"><b>📸 Фото:</b></div>
+                    <div class="photo-grid">${phHtml || 'Нет фото'}</div>
+                </div>
+            </div>`;
+        }).join('');
+        setTimeout(() => initDragDrop(), 50);
+        const addButtons = `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-primary" onclick="addWork(${obj.id})">➕ Этап</button></div>`;
+        let archiveButtons = '';
+        if (obj.archived) {
+            archiveButtons = `<button class="btn btn-sm" onclick="event.stopPropagation();unarchiveObject(${obj.id})">↩ Вернуть из архива</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteObjectPermanently(${obj.id})">🗑 Удалить</button>`;
+        }
+        
+        let summaryHtml = '';
+        if (obj.startDate) {
+            summaryHtml += `<span>📅 ${fmt(obj.startDate)}</span>`;
+        }
+        if (obj.plannedEndDate) {
+            const daysLeft = getDaysRemaining(obj.plannedEndDate);
+            summaryHtml += ` → ${fmt(obj.plannedEndDate)}`;
+            if (daysLeft !== null) {
+                summaryHtml += ` <span style="color:${daysLeft < 0 ? '#a04040' : '#c9a959'};">(осталось ${daysLeft} дн.)</span>`;
+            }
+        }
+        
+        return `<div class="card" id="obj-${obj.id}"><div class="object-header" onclick="toggleObject(this,'${objKey}')"><div class="flex"><h3>${escapeHtml(obj.name)} <span style="font-weight:300;color:#888;">(${escapeHtml(obj.code)})</span><span class="arrow ${objOpen ? 'open' : ''}">▶</span></h3><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"><span class="badge" style="font-size:13px;">${summaryHtml || '📅 даты не указаны'}</span>${!obj.archived ? `<button class="btn btn-sm" onclick="event.stopPropagation();completeObject(${obj.id})">${obj.completed ? 'Вернуть' : 'Сдать'}</button>` : ''}${archiveButtons}<button class="btn btn-sm" onclick="event.stopPropagation();addClientStatus(${obj.id})">📢 Статус клиенту</button></div></div><div style="color:#999;font-size:14px;">📍 ${escapeHtml(obj.address)}</div><div style="margin:8px 0;padding:10px;background:#121212;border-radius:8px;border:1px solid #282828;font-size:14px;"><div style="display:flex;gap:12px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="setObjectStartDate(${obj.id})">📅 Установить начало</button><button class="btn btn-sm" onclick="setObjectEndDate(${obj.id})">📅 Установить завершение</button></div></div></div><div class="object-detail ${objOpen ? 'open' : ''}">${addButtons}<hr><h4>Этапы работ</h4>${statusTabs}<div id="work-list-${obj.id}" class="work-list">${worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>'}</div></div></div>`;
+    }).join('');
+
+    container.innerHTML = statusHtml + filterTabs + sel + list;
+}
 
 // ============================================================
 // РЕНДЕР И ВХОД
@@ -2535,14 +3674,18 @@ function renderLogin() {
 window.login = function(r) {
     if (['designer', 'master', 'purchaser'].includes(r)) {
         if (!passwords[r]) {
-            if (r === 'designer') passwords.designer = DEFAULT_PASSWORD;
-            else if (r === 'master') passwords.master = DEFAULT_PASSWORD;
-            else if (r === 'purchaser') passwords.purchaser = DEFAULT_PASSWORD;
+            if (r === 'designer') passwords.designer = '30986';
+            else if (r === 'master') passwords.master = '30986';
+            else if (r === 'purchaser') passwords.purchaser = '30986';
             saveDataToLocal();
-            syncPasswordsToSupabase();
         }
+        
         const p = prompt(`Введите пароль для роли "${getUserLabel(r)}":`);
-        if (p !== passwords[r]) { alert('Неверный пароль'); return; }
+        if (p !== passwords[r]) {
+            alert('Неверный пароль');
+            return;
+        }
+        
         currentUser = r;
         render();
         return;
@@ -2586,44 +3729,51 @@ function renderPlaceholder() {
 loadPendingActions();
 loadDataFromLocal();
 
-// Сначала показываем интерфейс
+// Добавляем кнопку настроек и индикатор синхронизации
+setTimeout(() => {
+    addSettingsButton();
+    addSyncIndicator();
+}, 500);
+
+// Показываем интерфейс сразу
 render();
 
-// Добавляем иконки в углу
-setTimeout(addGlobalUI, 500);
+// Загружаем данные из Supabase в фоне
+setTimeout(() => {
+    loadAllFromSupabase();
+    updateSyncIndicator('ok');
+}, 100);
 
-// Загружаем данные из Supabase
-setTimeout(async () => {
-    await loadAllFromSupabase();
-}, 200);
-
-// Периодическое обновление индикатора
+// Проверка интернета каждые 30 секунд
 setInterval(() => {
-    const indicator = document.getElementById('syncIndicator');
-    if (indicator) {
-        if (!navigator.onLine) {
-            indicator.innerHTML = '🔴 Офлайн';
-            indicator.style.color = '#a04040';
-        } else if (pendingActions.length > 0) {
-            indicator.innerHTML = `🟡 Синхр. ${pendingActions.length}`;
-            indicator.style.color = '#c9a959';
-        } else {
-            indicator.innerHTML = '🟢 Синхр. OK';
-            indicator.style.color = '#4caf50';
-        }
+    if (isOnline() && pendingActions.length > 0) {
+        updateSyncIndicator('syncing');
+        syncPendingActions().then(() => {
+            updateSyncIndicator('ok');
+        });
     }
-}, 5000);
+}, 30000);
 
 // При восстановлении интернета
 window.addEventListener('online', () => {
     showToast('🌐 Интернет восстановлен');
-    loadAllFromSupabase();
+    updateSyncIndicator('syncing');
+    if (pendingActions.length > 0) {
+        syncPendingActions().then(() => {
+            updateSyncIndicator('ok');
+        });
+    } else {
+        loadAllFromSupabase().then(() => {
+            updateSyncIndicator('ok');
+        });
+    }
 });
 
+// При потере интернета
 window.addEventListener('offline', () => {
-    showToast('⚠️ Интернет отключён');
+    updateSyncIndicator('error');
+    showToast('⚠️ Интернет отключён, изменения будут сохранены локально');
 });
 
-console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН');
-console.log('🔑 Пароль для всех ролей: 30986');
-console.log('🏠 Клиент: пароль от объекта');
+console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
+console.log('🔑 Пароли по умолчанию для всех ролей: 30986');
