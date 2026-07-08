@@ -4,6 +4,7 @@
 
 const SUPABASE_URL = 'https://tcdanvvfxcdravgpdyat.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zStkcf7dAftG50tho5ifOw_F7Ygv_Xz';
+const DEFAULT_PASSWORD = '30986';
 
 // ============================================================
 // ОЧЕРЕДЬ ОТЛОЖЕННЫХ ДЕЙСТВИЙ
@@ -33,11 +34,18 @@ function addPendingAction(action) {
     savePendingActions();
 }
 
-// ============================================================
-// ПАРОЛИ (базовые)
-// ============================================================
-// Все пароли = 30986 (кроме клиента — у него пароль от объекта)
-const DEFAULT_PASSWORD = '30986';
+function updatePendingStatus() {
+    const statusEl = document.getElementById('pendingStatus');
+    if (!statusEl) return;
+    const count = pendingActions.length;
+    if (count === 0) {
+        statusEl.innerHTML = '✅ Все данные синхронизированы';
+        statusEl.style.color = '#4caf50';
+    } else {
+        statusEl.innerHTML = `⏳ Ожидают синхронизации: ${count} действий <button class="btn btn-sm" onclick="syncPendingActions()" style="margin-left:12px;">Синхронизировать сейчас</button>`;
+        statusEl.style.color = '#c9a959';
+    }
+}
 
 // ============================================================
 // ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE
@@ -511,43 +519,12 @@ function showToast(message, duration = 3000) {
 
 function escapeHtml(s) { if (!s) return ''; const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }; return String(s).replace(/[&<>"']/g, c => m[c]); }
 function isValidDate(d) { const r = /^\d{2}\.\d{2}\.\d{4}$/; if (!r.test(d)) return !1; const p = d.split('.'), dt = new Date(+p[2], +p[1] - 1, +p[0]); return dt && dt.getFullYear() == +p[2] && dt.getMonth() == +p[1] - 1 && dt.getDate() == +p[0]; }
-
-// ПРЕОБРАЗОВАНИЕ ДАТЫ ИЗ ДД.ММ.ГГГГ В ГГГГ-ММ-ДД ДЛЯ БАЗЫ ДАННЫХ
-function dateToISO(dateStr) {
-    if (!dateStr) return null;
-    const p = dateStr.split('.');
-    return `${p[2]}-${p[1]}-${p[0]}`;
-}
-
-// ПРЕОБРАЗОВАНИЕ ИЗ ГГГГ-ММ-ДД В ДД.ММ.ГГГГ
-function isoToDate(isoStr) {
-    if (!isoStr) return '';
-    const p = isoStr.split('-');
-    return `${p[2]}.${p[1]}.${p[0]}`;
-}
-
 function saveUiState() { try { localStorage.setItem('uiState', JSON.stringify(uiState)); } catch (e) {} }
 function loadUiState() { try { const s = localStorage.getItem('uiState'); if (s) uiState = JSON.parse(s); } catch (e) {} if (!uiState) uiState = {}; }
 function getObject(id) { return objects.find(o => o.id === id); }
 function getUserLabel(r) { const m = { boss: 'Руководитель', wolf: 'Волк', client: 'Клиент', designer: 'Дизайнер', master: 'Мастер', purchaser: 'Закупщик', electrician: 'Электрик' }; return m[r] || r; }
-
-// ФОРМАТ ДАТЫ: день.месяц.год
-function fmt(d) {
-    if (!d) return '';
-    let dt = new Date(d);
-    if (isNaN(dt.getTime())) return d;
-    const day = String(dt.getDate()).padStart(2, '0');
-    const month = String(dt.getMonth() + 1).padStart(2, '0');
-    const year = dt.getFullYear();
-    return `${day}.${month}.${year}`;
-}
-
-function fmtTime(d) {
-    if (!d) return '';
-    let dt = new Date(d);
-    if (isNaN(dt.getTime())) return d;
-    return dt.toLocaleDateString('ru-RU');
-}
+function fmt(d) { if (!d) return ''; let dt = new Date(d); if (isNaN(dt.getTime())) return d; const day = String(dt.getDate()).padStart(2, '0'); const month = String(dt.getMonth() + 1).padStart(2, '0'); const year = dt.getFullYear(); return `${day}.${month}.${year}`; }
+function fmtTime(d) { if (!d) return ''; let dt = new Date(d); if (isNaN(dt.getTime())) return d; return dt.toLocaleDateString('ru-RU'); }
 
 // ============================================================
 // ОСНОВНЫЕ ПЕРЕМЕННЫЕ
@@ -636,20 +613,11 @@ function loadDataFromLocal() {
             if (w.forElectrician === undefined) w.forElectrician = !1;
             if (w.manual === undefined) w.manual = !1;
             if (w.status === undefined) w.status = '';
-            if (w.deadline && typeof w.deadline === 'string' && w.deadline.includes('-')) {
-                w.deadline = isoToDate(w.deadline);
-            }
         });
         if (o.startDate === undefined) o.startDate = null;
         if (o.plannedEndDate === undefined) o.plannedEndDate = null;
         if (o.clientStatus === undefined) o.clientStatus = '';
         if (o.schedule === undefined) o.schedule = [];
-        if (o.startDate && typeof o.startDate === 'string' && o.startDate.includes('-')) {
-            o.startDate = isoToDate(o.startDate);
-        }
-        if (o.plannedEndDate && typeof o.plannedEndDate === 'string' && o.plannedEndDate.includes('-')) {
-            o.plannedEndDate = isoToDate(o.plannedEndDate);
-        }
     });
     recommendations.forEach(r => { if (!r.photos) r.photos = []; if (!r.purchasedPhotos) r.purchasedPhotos = []; });
     electricianTasks.forEach(t => { if (!t.photos) t.photos = []; if (t.done === undefined) t.done = !1; if (t.objectId === undefined) t.objectId = null; });
@@ -658,19 +626,7 @@ function loadDataFromLocal() {
 }
 
 // ============================================================
-// ФУНКЦИЯ РАСЧЕТА ДНЕЙ ДО ЗАВЕРШЕНИЯ
-// ============================================================
-function getDaysRemaining(endDate) {
-    if (!endDate) return null;
-    const p = endDate.split('.');
-    const end = new Date(+p[2], +p[1] - 1, +p[0]);
-    const now = new Date();
-    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-    return diff;
-}
-
-// ============================================================
-// КАБИНЕТЫ-ОБМАНКИ (ДИЗАЙНЕР, МАСТЕР, ЗАКУПЩИК)
+// КАБИНЕТЫ-ОБМАНКИ
 // ============================================================
 function renderFakeCabinet(role) {
     const labels = {
@@ -692,7 +648,7 @@ function renderFakeCabinet(role) {
 }
 
 // ============================================================
-// СТАТУС ДЛЯ КЛИЕНТА (ДОБАВЛЯЕТ РУКОВОДИТЕЛЬ)
+// СТАТУС ДЛЯ КЛИЕНТА
 // ============================================================
 window.addClientStatus = function(objId) {
     const obj = getObject(objId);
@@ -711,365 +667,6 @@ window.addClientStatus = function(objId) {
         renderBossObjects();
         showToast('✅ Статус для клиента обновлён');
     }
-};
-
-// ============================================================
-// ГРАФИК РАБОТ (ГАНТ-ДИАГРАММА)
-// ============================================================
-function renderSchedule() {
-    const container = document.getElementById('bossContent') || document.getElementById('wolfContent');
-    if (!container) return;
-    
-    // Выбор объекта
-    const objectsList = objects.filter(o => !o.archived);
-    if (objectsList.length === 0) {
-        container.innerHTML = '<div class="card">Нет активных объектов</div>';
-        return;
-    }
-    
-    // Если currentObjectId не выбран или объект в архиве, выбираем первый
-    if (!currentObjectId || !objects.find(o => o.id === currentObjectId && !o.archived)) {
-        currentObjectId = objectsList[0].id;
-    }
-    
-    const obj = getObject(currentObjectId);
-    if (!obj) {
-        container.innerHTML = '<div class="card">Объект не найден</div>';
-        return;
-    }
-    
-    // Инициализируем schedule если нет
-    if (!obj.schedule) obj.schedule = [];
-    
-    // Сортируем по дате начала
-    const sorted = [...obj.schedule].sort((a, b) => {
-        if (!a.startDate) return 1;
-        if (!b.startDate) return -1;
-        const p1 = a.startDate.split('.');
-        const p2 = b.startDate.split('.');
-        return new Date(+p1[2], +p1[1]-1, +p1[0]) - new Date(+p2[2], +p2[1]-1, +p2[0]);
-    });
-    
-    // Определяем диапазон дат для отображения
-    let minDate = null, maxDate = null;
-    for (const item of sorted) {
-        if (item.startDate) {
-            const p = item.startDate.split('.');
-            const d = new Date(+p[2], +p[1]-1, +p[0]);
-            if (!minDate || d < minDate) minDate = d;
-        }
-        if (item.endDate) {
-            const p = item.endDate.split('.');
-            const d = new Date(+p[2], +p[1]-1, +p[0]);
-            if (!maxDate || d > maxDate) maxDate = d;
-        }
-    }
-    
-    // Если нет дат, показываем текущий месяц
-    if (!minDate) {
-        const now = new Date();
-        minDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        maxDate = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-    }
-    
-    // Расширяем диапазон на 7 дней в обе стороны
-    minDate = new Date(minDate);
-    minDate.setDate(minDate.getDate() - 7);
-    maxDate = new Date(maxDate);
-    maxDate.setDate(maxDate.getDate() + 7);
-    
-    // Генерируем заголовки колонок (даты)
-    const days = [];
-    let current = new Date(minDate);
-    while (current <= maxDate) {
-        days.push(new Date(current));
-        current.setDate(current.getDate() + 1);
-    }
-    
-    // Формируем HTML
-    let html = `
-    <div style="margin-bottom:12px;">
-        <select onchange="switchScheduleObject(this.value)" style="background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:6px;padding:8px;width:100%;font-size:14px;">
-            ${objectsList.map(o => `
-                <option value="${o.id}" ${o.id === currentObjectId ? 'selected' : ''}>${escapeHtml(o.name)}</option>
-            `).join('')}
-        </select>
-    </div>
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-            <h3>📊 График работ — ${escapeHtml(obj.name)}</h3>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn btn-sm btn-primary" onclick="addScheduleTask(${obj.id})">➕ Добавить задачу</button>
-                <button class="btn btn-sm" onclick="syncScheduleFromWorks(${obj.id})">🔄 Из этапов</button>
-                <button class="btn btn-sm" onclick="shiftScheduleDates(${obj.id})">📅 Сдвинуть даты</button>
-            </div>
-        </div>
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:600px;">
-                <thead>
-                    <tr>
-                        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #282828;min-width:180px;">Этап</th>
-                        ${days.map(d => `<th style="text-align:center;padding:4px 2px;border-bottom:1px solid #282828;font-weight:300;font-size:11px;min-width:28px;">${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}</th>`).join('')}
-                        <th style="text-align:center;padding:4px 6px;border-bottom:1px solid #282828;min-width:60px;">Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    if (sorted.length === 0) {
-        html += `<tr><td colspan="${days.length + 2}" style="text-align:center;padding:20px;color:#666;">Нет задач в графике. Добавьте из этапов или создайте вручную.</td></tr>`;
-    } else {
-        for (const item of sorted) {
-            const isActive = item.showToClient || false;
-            const startP = item.startDate ? item.startDate.split('.') : null;
-            const endP = item.endDate ? item.endDate.split('.') : null;
-            const startDate = startP ? new Date(+startP[2], +startP[1]-1, +startP[0]) : null;
-            const endDate = endP ? new Date(+endP[2], +endP[1]-1, +endP[0]) : null;
-            
-            html += `<tr style="border-bottom:1px solid #1a1a1a;">`;
-            html += `<td style="padding:6px 8px;">
-                <span onclick="toggleScheduleShowToClient(${obj.id}, ${sorted.indexOf(item)})" style="cursor:pointer;font-size:16px;margin-right:6px;">${isActive ? '✅' : '⬜'}</span>
-                <span style="${isActive ? 'color:#4caf50;font-weight:500;' : ''}">${escapeHtml(item.name)}</span>
-                ${item.fromWork ? ' <span style="font-size:10px;color:#666;">(из этапов)</span>' : ''}
-                ${item.startDate ? `<div style="font-size:10px;color:#888;">${item.startDate} → ${item.endDate || '...'}</div>` : ''}
-            </td>`;
-            
-            for (const d of days) {
-                let color = '#1a1a1a';
-                let text = '';
-                if (startDate && endDate && d >= startDate && d <= endDate) {
-                    const total = (endDate - startDate) / (1000*60*60*24) + 1;
-                    const progress = ((d - startDate) / (1000*60*60*24)) / total;
-                    const r = Math.round(60 + 195 * progress);
-                    const g = Math.round(200 - 120 * progress);
-                    const b = Math.round(80 + 20 * progress);
-                    color = `rgb(${r}, ${g}, ${b})`;
-                    text = '█';
-                } else if (startDate && d.toDateString() === startDate.toDateString()) {
-                    color = '#c9a959';
-                    text = '▶';
-                } else if (endDate && d.toDateString() === endDate.toDateString()) {
-                    color = '#c9a959';
-                    text = '◀';
-                }
-                html += `<td style="text-align:center;padding:2px;font-size:10px;color:${color};background:${color !== '#1a1a1a' ? 'rgba(60,60,60,0.3)' : 'transparent'};">${text}</td>`;
-            }
-            
-            html += `<td style="text-align:center;padding:4px 6px;">
-                <button class="btn btn-sm" onclick="editScheduleTask(${obj.id}, ${sorted.indexOf(item)})" style="font-size:11px;padding:2px 6px;">✏️</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteScheduleTask(${obj.id}, ${sorted.indexOf(item)})" style="font-size:11px;padding:2px 6px;">🗑</button>
-            </td>`;
-            html += `</tr>`;
-        }
-    }
-    
-    html += `
-                </tbody>
-            </table>
-        </div>
-        <div style="margin-top:8px;display:flex;gap:12px;font-size:12px;color:#888;flex-wrap:wrap;">
-            <span>✅ — показывать клиенту</span>
-            <span>⬜ — не показывать</span>
-            <span><span style="color:#c9a959;">▶</span> начало</span>
-            <span><span style="color:#c9a959;">◀</span> завершение</span>
-            <span><span style="color:#4caf50;">█</span> в работе</span>
-        </div>
-    </div>`;
-    
-    container.innerHTML = html;
-}
-
-// Переключение объекта в графике
-window.switchScheduleObject = function(objId) {
-    currentObjectId = parseInt(objId);
-    renderSchedule();
-};
-
-// Добавление задачи в график
-window.addScheduleTask = function(objId) {
-    const obj = getObject(objId);
-    if (!obj) return;
-    
-    const name = prompt('Название задачи:');
-    if (!name) return;
-    
-    const startDate = prompt('Дата начала (ДД.ММ.ГГГГ):');
-    if (!startDate || !isValidDate(startDate)) {
-        if (startDate) showToast('❌ Неверный формат даты');
-        return;
-    }
-    
-    const endDate = prompt('Дата завершения (ДД.ММ.ГГГГ):');
-    if (!endDate || !isValidDate(endDate)) {
-        if (endDate) showToast('❌ Неверный формат даты');
-        return;
-    }
-    
-    if (!obj.schedule) obj.schedule = [];
-    obj.schedule.push({
-        name: name.trim(),
-        startDate: startDate,
-        endDate: endDate,
-        showToClient: false,
-        fromWork: false
-    });
-    
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('objects', obj);
-    else addPendingAction({ type: 'updateObject', data: obj });
-    
-    renderSchedule();
-    showToast('✅ Задача добавлена в график');
-};
-
-// Синхронизация из этапов
-window.syncScheduleFromWorks = function(objId) {
-    const obj = getObject(objId);
-    if (!obj) return;
-    
-    if (!obj.schedule) obj.schedule = [];
-    
-    // Получаем существующие названия задач из графика (из этапов)
-    const existingNames = new Set();
-    for (const item of obj.schedule) {
-        if (item.fromWork) existingNames.add(item.name);
-    }
-    
-    let added = 0;
-    for (const work of obj.works) {
-        if (!existingNames.has(work.name) && work.deadline) {
-            // Срок в формате ДД.ММ.ГГГГ
-            const deadline = work.deadline;
-            // Начало = сегодня или дедлайн - 7 дней
-            const today = new Date();
-            const endP = deadline.split('.');
-            const endDate = new Date(+endP[2], +endP[1]-1, +endP[0]);
-            const startDate = new Date(endDate);
-            startDate.setDate(startDate.getDate() - 7);
-            
-            const startStr = String(startDate.getDate()).padStart(2,'0') + '.' + String(startDate.getMonth()+1).padStart(2,'0') + '.' + startDate.getFullYear();
-            
-            obj.schedule.push({
-                name: work.name,
-                startDate: startStr,
-                endDate: deadline,
-                showToClient: false,
-                fromWork: true
-            });
-            added++;
-        }
-    }
-    
-    if (added === 0) {
-        showToast('⚠️ Нет новых этапов с указанными сроками');
-        return;
-    }
-    
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('objects', obj);
-    else addPendingAction({ type: 'updateObject', data: obj });
-    
-    renderSchedule();
-    showToast(`✅ Добавлено ${added} задач из этапов`);
-};
-
-// Переключение отображения клиенту
-window.toggleScheduleShowToClient = function(objId, idx) {
-    const obj = getObject(objId);
-    if (!obj || !obj.schedule || idx >= obj.schedule.length) return;
-    
-    obj.schedule[idx].showToClient = !obj.schedule[idx].showToClient;
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('objects', obj);
-    else addPendingAction({ type: 'updateObject', data: obj });
-    
-    renderSchedule();
-};
-
-// Редактирование задачи в графике
-window.editScheduleTask = function(objId, idx) {
-    const obj = getObject(objId);
-    if (!obj || !obj.schedule || idx >= obj.schedule.length) return;
-    
-    const item = obj.schedule[idx];
-    const newName = prompt('Название задачи:', item.name);
-    if (newName === null) return;
-    
-    const newStart = prompt('Дата начала (ДД.ММ.ГГГГ):', item.startDate || '');
-    if (newStart === null) return;
-    if (newStart && !isValidDate(newStart)) {
-        showToast('❌ Неверный формат даты');
-        return;
-    }
-    
-    const newEnd = prompt('Дата завершения (ДД.ММ.ГГГГ):', item.endDate || '');
-    if (newEnd === null) return;
-    if (newEnd && !isValidDate(newEnd)) {
-        showToast('❌ Неверный формат даты');
-        return;
-    }
-    
-    item.name = newName.trim() || item.name;
-    item.startDate = newStart || item.startDate;
-    item.endDate = newEnd || item.endDate;
-    
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('objects', obj);
-    else addPendingAction({ type: 'updateObject', data: obj });
-    
-    renderSchedule();
-    showToast('✅ Задача обновлена');
-};
-
-// Удаление задачи из графика
-window.deleteScheduleTask = function(objId, idx) {
-    const obj = getObject(objId);
-    if (!obj || !obj.schedule || idx >= obj.schedule.length) return;
-    if (!confirm('Удалить задачу из графика?')) return;
-    
-    obj.schedule.splice(idx, 1);
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('objects', obj);
-    else addPendingAction({ type: 'updateObject', data: obj });
-    
-    renderSchedule();
-    showToast('🗑 Задача удалена');
-};
-
-// Сдвиг всех дат
-window.shiftScheduleDates = function(objId) {
-    const obj = getObject(objId);
-    if (!obj || !obj.schedule || obj.schedule.length === 0) {
-        showToast('⚠️ Нет задач для сдвига');
-        return;
-    }
-    
-    const days = prompt('Сдвинуть все даты на сколько дней? (положительное число — вперёд, отрицательное — назад)');
-    if (days === null) return;
-    const shift = parseInt(days);
-    if (isNaN(shift)) { showToast('❌ Введите число'); return; }
-    
-    for (const item of obj.schedule) {
-        if (item.startDate) {
-            const p = item.startDate.split('.');
-            const d = new Date(+p[2], +p[1]-1, +p[0]);
-            d.setDate(d.getDate() + shift);
-            item.startDate = String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
-        }
-        if (item.endDate) {
-            const p = item.endDate.split('.');
-            const d = new Date(+p[2], +p[1]-1, +p[0]);
-            d.setDate(d.getDate() + shift);
-            item.endDate = String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
-        }
-    }
-    
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('objects', obj);
-    else addPendingAction({ type: 'updateObject', data: obj });
-    
-    renderSchedule();
-    showToast(`✅ Даты сдвинуты на ${shift} дней`);
 };
 
 // ============================================================
@@ -1392,7 +989,7 @@ window.setObjectStartDate = function(objId) {
         renderBossObjects();
         showToast('📅 Дата начала установлена');
     } else if (date) {
-        showToast('❌ Неверный формат даты (ДД.ММ.ГГГГ)');
+        showToast('❌ Неверный формат даты');
     }
 };
 
@@ -1411,7 +1008,7 @@ window.setObjectEndDate = function(objId) {
         renderBossObjects();
         showToast('📅 Дата завершения установлена');
     } else if (date) {
-        showToast('❌ Неверный формат даты (ДД.ММ.ГГГГ)');
+        showToast('❌ Неверный формат даты');
     }
 };
 
@@ -1544,7 +1141,7 @@ window.addRecommendationForObject = function(objId) {
     const text = prompt('Текст рекомендации:');
     if (text === null || text.trim() === '') return;
     const deadline = prompt('Срок (ДД.ММ.ГГГГ) или оставьте пустым:');
-    if (deadline !== null && deadline.trim() !== '' && !isValidDate(deadline.trim())) { showToast('Неверный формат даты (ДД.ММ.ГГГГ)'); return; }
+    if (deadline !== null && deadline.trim() !== '' && !isValidDate(deadline.trim())) { showToast('Неверный формат даты'); return; }
     
     const rec = { id: Date.now(), objectId: objId, text: text.trim(), deadline: deadline ? deadline.trim() : null, photos: [], purchased: !1, purchasedDate: null, purchasedPhotos: [] };
     recommendations.push(rec);
@@ -2053,7 +1650,7 @@ window.savePasswords = function() {
 };
 
 // ============================================================
-// БОСС — ВКЛАДКИ
+// БОСС
 // ============================================================
 function renderBoss() {
     document.getElementById('app').innerHTML = `
@@ -2071,7 +1668,6 @@ function renderBoss() {
       <div class="tab" data-tab="purchases">Закупки</div>
       <div class="tab" data-tab="checks">Чеки</div>
       <div class="tab" data-tab="passwords">Пароли</div>
-      <div class="tab" data-tab="schedule">📊 График</div>
     </div>
     <div id="bossContent"></div>`;
     
@@ -2100,17 +1696,11 @@ function renderBoss() {
             case 'passwords':
                 renderPasswords();
                 break;
-            case 'schedule':
-                renderSchedule();
-                break;
         }
     });
     renderBossObjects();
 }
 
-// ============================================================
-// БОСС — ОБЪЕКТЫ
-// ============================================================
 function renderBossObjects() {
     const container = document.getElementById('bossContent');
     if (!uiState['bossObjectFilter']) uiState['bossObjectFilter'] = 'active';
@@ -2118,7 +1708,6 @@ function renderBossObjects() {
     let objectsToShow = [];
     if (filter === 'active') objectsToShow = objects.filter(o => !o.archived && !o.completed);
     else if (filter === 'completed') objectsToShow = objects.filter(o => !o.archived && o.completed);
-    else if (filter === 'archived') objectsToShow = objects.filter(o => o.archived);
 
     const filterTabs = `<div class="obj-filter-tabs"><span class="tab ${filter === 'active' ? 'active' : ''}" onclick="setBossObjectFilter('active')">Активные</span><span class="tab ${filter === 'completed' ? 'active' : ''}" onclick="setBossObjectFilter('completed')">Сданные</span></div>`;
     let sel = `<div class="flex" style="margin-bottom:16px;"><button class="btn btn-primary" onclick="addObject()">➕ Новый объект</button><select class="object-selector" id="objectSelector" onchange="scrollToObject(this.value)"><option value="">— Перейти к объекту —</option>${objects.map(o => `<option value="obj-${o.id}">${escapeHtml(o.name)} (${escapeHtml(o.code)})</option>`).join('')}</select></div>`;
@@ -2198,9 +1787,6 @@ function renderBossObjects() {
     container.innerHTML = filterTabs + sel + list;
 }
 
-// ============================================================
-// БОСС — ДИЗАЙН
-// ============================================================
 function renderBossDesign() {
     const container = document.getElementById('bossContent');
     const projs = designProjects.slice().sort((a, b) => a.id - b.id);
@@ -2222,9 +1808,6 @@ function renderBossDesign() {
     }).join('');
 }
 
-// ============================================================
-// БОСС — РЕКОМЕНДАЦИИ
-// ============================================================
 function renderBossRecommendations() {
     const container = document.getElementById('bossContent');
     const recs = recommendations.slice().sort((a, b) => a.id - b.id);
@@ -2244,7 +1827,7 @@ function renderBossRecommendations() {
 }
 
 // ============================================================
-// ЭКСПОРТ / ИМПОРТ (ИКОНКА В УГЛУ)
+// ЭКСПОРТ / ИМПОРТ
 // ============================================================
 window.exportAllData = function() {
     const data = {
@@ -2476,7 +2059,6 @@ function renderWolf() {
       <div class="tab" data-tab="notes">Ежедневник</div>
       <div class="tab" data-tab="purchases">Закупки</div>
       <div class="tab" data-tab="checks">Чеки</div>
-      <div class="tab" data-tab="schedule">📊 График</div>
     </div>
     <div id="wolfContent"></div>`;
     
@@ -2501,9 +2083,6 @@ function renderWolf() {
                 break;
             case 'checks':
                 renderWolfChecks();
-                break;
-            case 'schedule':
-                renderSchedule();
                 break;
         }
     });
@@ -2921,7 +2500,7 @@ function renderClientWorks() {
     const container = document.getElementById('clientContent');
     const obj = getObject(currentObjectId);
     
-    // Получаем ближайшие работы из графика (отмеченные showToClient = true)
+    // Ближайшие работы из графика (отмеченные showToClient = true)
     const scheduleTasks = (obj.schedule || []).filter(item => item.showToClient === true);
     const sortedSchedule = [...scheduleTasks].sort((a, b) => {
         if (!a.startDate) return 1;
@@ -3381,6 +2960,95 @@ window.setWorkFilter = function(objId, filter) {
 };
 
 // ============================================================
+// ИКОНКИ В УГЛУ (синхронизация и настройки)
+// ============================================================
+function addGlobalUI() {
+    // Индикатор синхронизации
+    const syncIndicator = document.createElement('div');
+    syncIndicator.id = 'syncIndicator';
+    syncIndicator.style.cssText = `
+        position: fixed;
+        top: 12px;
+        right: 60px;
+        z-index: 999;
+        font-size: 13px;
+        color: #4caf50;
+        background: #121212;
+        padding: 4px 12px;
+        border-radius: 12px;
+        border: 1px solid #282828;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        pointer-events: none;
+    `;
+    syncIndicator.innerHTML = '🟢 Синхр. OK';
+    document.body.appendChild(syncIndicator);
+    
+    // Кнопка настроек
+    const settingsBtn = document.createElement('div');
+    settingsBtn.id = 'settingsBtn';
+    settingsBtn.style.cssText = `
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 999;
+        cursor: pointer;
+        font-size: 22px;
+        background: #121212;
+        padding: 4px 8px;
+        border-radius: 8px;
+        border: 1px solid #282828;
+        color: #888;
+        transition: all 0.2s;
+        user-select: none;
+    `;
+    settingsBtn.textContent = '⚙️';
+    settingsBtn.title = 'Настройки';
+    settingsBtn.onmouseenter = function() { this.style.borderColor = '#c9a959'; this.style.color = '#e0e0e0'; };
+    settingsBtn.onmouseleave = function() { this.style.borderColor = '#282828'; this.style.color = '#888'; };
+    settingsBtn.onclick = function(e) {
+        e.stopPropagation();
+        showSettingsMenu();
+    };
+    document.body.appendChild(settingsBtn);
+}
+
+function showSettingsMenu() {
+    const old = document.getElementById('settingsMenu');
+    if (old) { old.remove(); return; }
+    
+    const menu = document.createElement('div');
+    menu.id = 'settingsMenu';
+    menu.style.cssText = `
+        position: fixed;
+        top: 54px;
+        right: 12px;
+        z-index: 999;
+        background: #1a1a1a;
+        border: 1px solid #282828;
+        border-radius: 8px;
+        padding: 8px 0;
+        min-width: 180px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+    `;
+    menu.innerHTML = `
+        <div style="padding:8px 16px;color:#888;font-size:12px;border-bottom:1px solid #282828;">📁 Настройки</div>
+        <div onclick="exportAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">📤 Экспорт данных</div>
+        <div onclick="importAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">📥 Импорт данных</div>
+        <div onclick="syncPendingActions();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">🔄 Синхронизировать</div>
+    `;
+    document.body.appendChild(menu);
+    
+    document.addEventListener('click', function closeMenu(e) {
+        if (!menu.contains(e.target) && e.target !== document.getElementById('settingsBtn')) {
+            menu.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    });
+}
+
+// ============================================================
 // РЕНДЕР И ВХОД
 // ============================================================
 function render() {
@@ -3467,104 +3135,6 @@ function renderPlaceholder() {
 }
 
 // ============================================================
-// ИКОНКА СИНХРОНИЗАЦИИ И ЭКСПОРТА В УГЛУ
-// ============================================================
-function addGlobalUI() {
-    // Иконка синхронизации
-    const syncIndicator = document.createElement('div');
-    syncIndicator.id = 'syncIndicator';
-    syncIndicator.style.cssText = `
-        position: fixed;
-        top: 12px;
-        right: 60px;
-        z-index: 999;
-        font-size: 13px;
-        color: #4caf50;
-        background: #121212;
-        padding: 4px 12px;
-        border-radius: 12px;
-        border: 1px solid #282828;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        pointer-events: none;
-    `;
-    syncIndicator.innerHTML = '🟢 Синхр. OK';
-    document.body.appendChild(syncIndicator);
-    
-    // Иконка настроек (экспорт/импорт)
-    const settingsBtn = document.createElement('div');
-    settingsBtn.style.cssText = `
-        position: fixed;
-        top: 12px;
-        right: 12px;
-        z-index: 999;
-        cursor: pointer;
-        font-size: 22px;
-        background: #121212;
-        padding: 4px 8px;
-        border-radius: 8px;
-        border: 1px solid #282828;
-        color: #888;
-        transition: all 0.2s;
-        user-select: none;
-    `;
-    settingsBtn.textContent = '⚙️';
-    settingsBtn.title = 'Настройки (экспорт/импорт)';
-    settingsBtn.onmouseenter = function() { this.style.borderColor = '#c9a959'; this.style.color = '#e0e0e0'; };
-    settingsBtn.onmouseleave = function() { this.style.borderColor = '#282828'; this.style.color = '#888'; };
-    settingsBtn.onclick = function(e) {
-        e.stopPropagation();
-        showSettingsMenu();
-    };
-    document.body.appendChild(settingsBtn);
-}
-
-function showSettingsMenu() {
-    const old = document.getElementById('settingsMenu');
-    if (old) { old.remove(); return; }
-    
-    const menu = document.createElement('div');
-    menu.id = 'settingsMenu';
-    menu.style.cssText = `
-        position: fixed;
-        top: 54px;
-        right: 12px;
-        z-index: 999;
-        background: #1a1a1a;
-        border: 1px solid #282828;
-        border-radius: 8px;
-        padding: 8px 0;
-        min-width: 180px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.8);
-    `;
-    menu.innerHTML = `
-        <div style="padding:8px 16px;color:#888;font-size:12px;border-bottom:1px solid #282828;">📁 Настройки</div>
-        <div onclick="exportAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">📤 Экспорт данных</div>
-        <div onclick="importAllData();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">📥 Импорт данных</div>
-        <div onclick="syncPendingActions();this.closest('#settingsMenu').remove();" style="padding:8px 16px;cursor:pointer;color:#e0e0e0;font-size:14px;transition:background 0.2s;" onmouseenter="this.style.background='#282828'" onmouseleave="this.style.background='transparent'">🔄 Синхронизировать</div>
-    `;
-    document.body.appendChild(menu);
-    
-    document.addEventListener('click', function closeMenu(e) {
-        if (!menu.contains(e.target) && e.target !== settingsBtn) {
-            menu.remove();
-            document.removeEventListener('click', closeMenu);
-        }
-    });
-}
-
-// Сохраняем ссылку на кнопку настроек для закрытия меню
-let settingsBtn = null;
-
-// Переопределяем добавление UI после рендера
-const originalRender = render;
-render = function() {
-    originalRender();
-    setTimeout(addGlobalUI, 100);
-};
-
-// ============================================================
 // ЗАПУСК
 // ============================================================
 loadPendingActions();
@@ -3572,6 +3142,9 @@ loadDataFromLocal();
 
 // Показываем интерфейс сразу
 render();
+
+// Добавляем иконки в углу
+setTimeout(addGlobalUI, 500);
 
 // Загружаем данные из Supabase в фоне
 setTimeout(() => {
@@ -3583,12 +3156,15 @@ setInterval(() => {
     if (isOnline() && pendingActions.length > 0) {
         syncPendingActions();
     }
-    // Обновляем индикатор синхронизации
+    // Обновляем индикатор
     const indicator = document.getElementById('syncIndicator');
     if (indicator) {
         if (pendingActions.length > 0) {
-            indicator.innerHTML = '🟡 Синхр. ' + pendingActions.length;
+            indicator.innerHTML = `🟡 Синхр. ${pendingActions.length}`;
             indicator.style.color = '#c9a959';
+        } else if (!navigator.onLine) {
+            indicator.innerHTML = '🔴 Офлайн';
+            indicator.style.color = '#a04040';
         } else {
             indicator.innerHTML = '🟢 Синхр. OK';
             indicator.style.color = '#4caf50';
@@ -3609,19 +3185,8 @@ window.addEventListener('online', () => {
 // При потере интернета
 window.addEventListener('offline', () => {
     showToast('⚠️ Интернет отключён, изменения будут сохранены локально');
-    const indicator = document.getElementById('syncIndicator');
-    if (indicator) {
-        indicator.innerHTML = '🔴 Офлайн';
-        indicator.style.color = '#a04040';
-    }
 });
 
-console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
-console.log('🔑 Пароли (базовые): 30986 для всех ролей');
-console.log('👔 Руководитель: 30986');
-console.log('🐺 Волк: 30986');
-console.log('🎨 Дизайнер: 30986');
-console.log('🔧 Мастер: 30986');
-console.log('📦 Закупщик: 30986');
-console.log('⚡ Электрик: 30986');
+console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН!');
+console.log('🔑 Базовый пароль для всех ролей: 30986');
 console.log('🏠 Клиент: пароль от объекта (по умолчанию demo123)');
