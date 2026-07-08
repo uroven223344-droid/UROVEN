@@ -537,7 +537,7 @@ let checks = [];
 let purchaseOrders = [];
 let notes = [];
 let electricianTasks = [];
-let passwords = { boss: 'boss123', wolf: '', client: '', master: '', designer: 'design123', purchaser: 'purchase123', electrician: '', objects: {} };
+let passwords = { boss: '30986', wolf: '30986', client: '30986', master: '30986', designer: '30986', purchaser: '30986', electrician: '30986', objects: {} };
 let currentUser = null;
 let currentObjectId = null;
 let uiState = {};
@@ -567,7 +567,7 @@ function loadDataFromLocal() {
             purchaseOrders = d.purchaseOrders || [];
             notes = d.notes || [];
             electricianTasks = d.electricianTasks || [];
-            passwords = d.passwords || { boss: 'boss123', wolf: '', client: '', master: '', designer: 'design123', purchaser: 'purchase123', electrician: '', objects: {} };
+            passwords = d.passwords || { boss: '30986', wolf: '30986', client: '30986', master: '30986', designer: '30986', purchaser: '30986', electrician: '30986', objects: {} };
         }
     } catch (e) {}
     if (!objects.length) {
@@ -3204,9 +3204,9 @@ window.login = function(r) {
     // Для кабинетов-обманок
     if (['designer', 'master', 'purchaser'].includes(r)) {
         if (!passwords[r]) {
-            if (r === 'designer') passwords.designer = 'design123';
-            else if (r === 'master') passwords.master = 'master123';
-            else if (r === 'purchaser') passwords.purchaser = 'purchase123';
+            if (r === 'designer') passwords.designer = '30986';
+            else if (r === 'master') passwords.master = '30986';
+            else if (r === 'purchaser') passwords.purchaser = '30986';
             saveDataToLocal();
         }
         
@@ -3291,8 +3291,4 @@ window.addEventListener('offline', () => {
 });
 
 console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН С ПОЛНОЙ СИНХРОНИЗАЦИЕЙ!');
-console.log('🔑 Пароли:');
-console.log('👔 Руководитель: boss123');
-console.log('🎨 Дизайнер: design123');
-console.log('🔧 Мастер: master123');
-console.log('📦 Закупщик: purchase123');
+console.log('🔑 Пароль для всех ролей: 30986');
