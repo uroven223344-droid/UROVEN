@@ -1107,7 +1107,105 @@ window.wolfScrollToObject = function(v) {
         renderWolfObjects();
     }
 };
+// ============================================================
+// СИНХРОНИЗАЦИЯ С SUPABASE
+// ============================================================
 
+async function saveToSupabase(table, data) {
+    if (!isOnline()) return false;
+    try {
+        // Проверяем, есть ли запись
+        const checkResp = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${data.id}`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        const existing = await checkResp.json();
+        
+        if (existing.length > 0) {
+            // Обновляем
+            await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${data.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY
+                },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Создаём
+            await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY
+                },
+                body: JSON.stringify(data)
+            });
+        }
+        return true;
+    } catch(e) {
+        console.error('❌ Ошибка сохранения в Supabase:', e);
+        return false;
+    }
+}
+
+async function syncPasswordsToSupabase() {
+    if (!isOnline()) return;
+    try {
+        // Сохраняем пароли ролей
+        for (const [role, pwd] of Object.entries(passwords)) {
+            if (role === 'objects') continue;
+            if (!pwd) continue;
+            await saveToSupabase('passwords', { id: Date.now() + Math.random() * 1000, role, password: pwd });
+        }
+        // Сохраняем пароли объектов
+        for (const [objId, pwd] of Object.entries(passwords.objects)) {
+            if (!pwd) continue;
+            await saveToSupabase('passwords', { id: Date.now() + Math.random() * 1000, object_id: parseInt(objId), password: pwd });
+        }
+        console.log('✅ Пароли синхронизированы');
+    } catch(e) {
+        console.error('❌ Ошибка синхронизации паролей:', e);
+    }
+}
+
+async function loadFromSupabase() {
+    if (!isOnline()) return;
+    try {
+        // Загружаем объекты
+        const resp = await fetch(`${SUPABASE_URL}/rest/v1/objects?select=*`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.length > 0) {
+                for (const item of data) {
+                    const existing = objects.find(o => o.id === item.id);
+                    if (!existing) objects.push(item);
+                    else Object.assign(existing, item);
+                }
+                saveDataToLocal();
+                console.log('✅ Загружено объектов:', data.length);
+            }
+        }
+        // Загружаем пароли
+        const pwdResp = await fetch(`${SUPABASE_URL}/rest/v1/passwords?select=*`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (pwdResp.ok) {
+            const data = await pwdResp.json();
+            for (const item of data) {
+                if (item.role) passwords[item.role] = item.password;
+                else if (item.object_id) passwords.objects[item.object_id] = item.password;
+            }
+            saveDataToLocal();
+            console.log('✅ Загружены пароли');
+        }
+    } catch(e) {
+        console.error('❌ Ошибка загрузки из Supabase:', e);
+    }
+}
 // ============================================================
 // ЗАПУСК
 // ============================================================
