@@ -1,5 +1,5 @@
 // ============================================================
-// СТРОЙУЧЁТ — ФИНАЛЬНАЯ ВЕРСИЯ (ТОЛЬКО ПРАВКИ ВЕРХНЕГО УГЛА)
+// СТРОЙУЧЁТ — ФИНАЛЬНАЯ ВЕРСИЯ (BAR CHART + КРАСИВОЕ ОФОРМЛЕНИЕ)
 // ============================================================
 
 console.log('🚀 СтройУчёт загружается...');
@@ -373,7 +373,7 @@ function renderBoss() {
       <div class="tab" data-tab="purchases">Закупки</div>
       <div class="tab" data-tab="checks">Чеки</div>
       <div class="tab" data-tab="passwords">🔐 Пароли</div>
-      <div class="tab" data-tab="schedule">📋 График</div>
+      <div class="tab" data-tab="schedule">📊 График</div>
     </div>
     <div id="bossContent"></div>`;
     var tabs = document.querySelectorAll('.tab');
@@ -675,7 +675,7 @@ function renderWolf() {
       <div class="tab" data-tab="notes">Ежедневник</div>
       <div class="tab" data-tab="purchases">Закупки</div>
       <div class="tab" data-tab="checks">Чеки</div>
-      <div class="tab" data-tab="schedule">📋 График</div>
+      <div class="tab" data-tab="schedule">📊 График</div>
     </div>
     <div id="wolfContent"></div>`;
     var tabs = document.querySelectorAll('.tab');
@@ -876,42 +876,51 @@ function renderWolfObjects() {
             notesHtml = '';
         }
 
-        list += '<div class="card" id="wolf-obj-' + obj.id + '">' +
-            '<div class="object-header" onclick="toggleObject(this,\'' + objKey + '\')">' +
-            '<div class="flex"><h3>' + escapeHtml(obj.name) + ' <span style="font-weight:300;color:#888;">(' + escapeHtml(obj.code) + ')</span><span class="arrow ' + (objOpen ? 'open' : '') + '">▶</span></h3>' +
+        list += '<div class="card" id="wolf-obj-' + obj.id + '" style="background:linear-gradient(145deg, #161616 0%, #0d0d0d 100%);border:1px solid #222;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 4px 30px rgba(0,0,0,0.3);">' +
+            '<div class="object-header" onclick="toggleObject(this,\'' + objKey + '\')" style="cursor:pointer;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">' +
+            '<div>' +
+            '<h3 style="margin:0;color:#e8e8e8;font-size:18px;">' + escapeHtml(obj.name) + ' <span style="font-weight:300;color:#888;font-size:14px;">(' + escapeHtml(obj.code) + ')</span><span class="arrow ' + (objOpen ? 'open' : '') + '" style="display:inline-block;margin-left:8px;font-size:14px;color:#666;transition:transform 0.3s;">▶</span></h3>' +
+            '<div style="color:#999;font-size:14px;margin-top:2px;">📍 ' + escapeHtml(obj.address) + '</div>' +
+            '</div>' +
             '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
-            '<span class="badge" style="font-size:11px;background:#1a1a1a;color:#888;padding:2px 8px;border-radius:4px;">ID: ' + obj.id + '</span>' +
-            '<span style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555;">' +
+            '<span style="background:#1a1a1a;color:#888;padding:4px 12px;border-radius:20px;font-size:11px;border:1px solid #282828;">ID: ' + obj.id + '</span>' +
+            '<span style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555;background:#0d0d0d;padding:4px 10px;border-radius:20px;border:1px solid #1a1a1a;">' +
             '<span style="color:' + (obj.startDate ? '#e0e0e0' : '#555') + ';">' + (obj.startDate ? fmt(obj.startDate) : '📅') + '</span>' +
             '<span style="color:#444;">→</span>' +
             '<span style="color:' + (obj.plannedEndDate ? '#e0e0e0' : '#555') + ';">' + (obj.plannedEndDate ? fmt(obj.plannedEndDate) : '📅') + '</span>' +
             (obj.plannedEndDate ? '<span style="color:' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '#a04040' : '#4caf50') + ';font-size:10px;">' + (getDaysRemaining(obj.plannedEndDate) < 0 ? '⚠️' : '✅') + '</span>' : '') +
             '</span>' +
-            '</div></div>' +
-            '<div style="color:#999;font-size:14px;">📍 ' + escapeHtml(obj.address) + '</div>' +
+            '</div>' +
+            '</div>' +
             notesHtml +
             '</div>' +
-            '<div class="object-detail ' + (objOpen ? 'open' : '') + '">' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;padding:4px 0;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a;">' +
-            '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<div class="object-detail ' + (objOpen ? 'open' : '') + '" style="display:' + (objOpen ? 'block' : 'none') + ';padding-top:12px;border-top:1px solid #1a1a1a;margin-top:8px;">' +
+            '<div style="display:flex;flex-wrap:wrap;gap:12px;margin:6px 0;padding:8px 0;border-bottom:1px solid #1a1a1a;">' +
+            '<div style="display:flex;align-items:center;gap:8px;background:#0d0d0d;padding:4px 12px;border-radius:20px;border:1px solid #1a1a1a;">' +
             '<span style="color:#888;font-size:13px;">🎨 Дизайн (' + projs.length + ')</span>' +
             '<span onclick="toggleDesignBlockHeader(this,\'' + designKey + '\')" style="cursor:pointer;color:#555;font-size:12px;transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'#555\'">' + (designOpen ? '🔽' : '▶') + '</span>' +
             '</div>' +
-            '<div style="display:flex;align-items:center;gap:6px;border-left:1px solid #1a1a1a;padding-left:8px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;background:#0d0d0d;padding:4px 12px;border-radius:20px;border:1px solid #1a1a1a;">' +
             '<span style="color:#888;font-size:13px;">📋 Рекомендации (' + recs.length + ')</span>' +
             '<span onclick="toggleRecBlockHeader(this,\'' + recKey + '\')" style="cursor:pointer;color:#555;font-size:12px;transition:color 0.2s;" onmouseover="this.style.color=\'#c9a959\'" onmouseout="this.style.color=\'#555\'">' + (recOpen ? '🔽' : '▶') + '</span>' +
-            '<button class="btn btn-sm" onclick="wolfAddRecommendation(' + obj.id + ')" style="padding:2px 8px;font-size:11px;">➕</button>' +
+            '<button class="btn btn-sm" onclick="wolfAddRecommendation(' + obj.id + ')" style="padding:2px 10px;font-size:11px;background:#c9a959;color:#0d0d0d;border:none;border-radius:12px;cursor:pointer;">➕</button>' +
             '</div>' +
             '</div>' +
-            '<div class="design-detail-container ' + (designOpen ? 'open' : '') + '" style="display:' + (designOpen ? 'block' : 'none') + ';padding:4px 8px;background:#0d0d0d;border-radius:4px;margin-bottom:4px;">' +
+            '<div class="design-detail-container ' + (designOpen ? 'open' : '') + '" style="display:' + (designOpen ? 'block' : 'none') + ';padding:8px;background:#0d0d0d;border-radius:8px;margin-bottom:8px;border:1px solid #1a1a1a;">' +
             designBlocks +
             '</div>' +
-            '<div class="rec-detail-container ' + (recOpen ? 'open' : '') + '" style="display:' + (recOpen ? 'block' : 'none') + ';padding:4px 8px;background:#0d0d0d;border-radius:4px;margin-bottom:4px;">' +
+            '<div class="rec-detail-container ' + (recOpen ? 'open' : '') + '" style="display:' + (recOpen ? 'block' : 'none') + ';padding:8px;background:#0d0d0d;border-radius:8px;margin-bottom:8px;border:1px solid #1a1a1a;">' +
             recBlocks +
             '</div>' +
-            '<hr><h4>Этапы работ</h4>' +
+            '<hr style="border-color:#1a1a1a;margin:12px 0;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+            '<span style="font-size:18px;background:linear-gradient(135deg, #c9a959, #a8893a);border-radius:6px;padding:4px 8px;color:#0d0d0d;">📋</span>' +
+            '<span style="font-size:15px;font-weight:500;color:#e8e8e8;">Этапы работ</span>' +
+            '<span style="margin-left:auto;font-size:12px;color:#666;background:#1a1a1a;padding:2px 12px;border-radius:12px;">' + obj.works.length + ' этапов</span>' +
+            '</div>' +
             statusTabs +
-            '<div id="wolf-work-list-' + obj.id + '" class="work-list">' + (worksHtml || '<span style="color:#666;font-size:14px;">Нет этапов</span>') + '</div>' +
+            '<div id="wolf-work-list-' + obj.id + '" class="work-list" style="margin-top:8px;">' + (worksHtml || '<div style="text-align:center;padding:20px;color:#666;font-size:14px;">Нет этапов</div>') + '</div>' +
             addWorkButton +
             '</div>' +
             '</div>';
@@ -2196,6 +2205,9 @@ window.toggleDesignApprove = function(id) {
     showToast(p.approvedByClient ? '✅ Проект утверждён' : '⏳ Утверждение снято');
 };
 
+// ============================================================
+// ГРАФИК — BAR CHART (СТОЛБЧАТАЯ ДИАГРАММА)
+// ============================================================
 function renderSchedule() {
     var container = document.getElementById('bossContent') || document.getElementById('wolfContent');
     if (!container) return;
@@ -2219,7 +2231,8 @@ function renderSchedule() {
             currentObjectId = objectsList[0].id;
         }
         
-        var selectHtml = '<div style="margin-bottom:12px;"><select id="scheduleObjectSelect" onchange="switchScheduleObject(this.value)" style="background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:6px;padding:8px;width:100%;font-size:14px;">';
+        var selectHtml = '<div style="margin-bottom:16px;">' +
+            '<select id="scheduleObjectSelect" onchange="switchScheduleObject(this.value)" style="background:linear-gradient(145deg, #161616, #0d0d0d);color:#e0e0e0;border:1px solid #282828;border-radius:10px;padding:10px 14px;width:100%;font-size:14px;appearance:none;cursor:pointer;">';
         for (var i = 0; i < objectsList.length; i++) {
             var o = objectsList[i];
             selectHtml += '<option value="' + o.id + '" ' + (o.id === currentObjectId ? 'selected' : '') + '>' + escapeHtml(o.name) + '</option>';
@@ -2240,11 +2253,9 @@ function renderSchedule() {
     }
     
     var worksWithDates = [];
-    var hasDates = false;
     for (var i = 0; i < obj.works.length; i++) {
         var w = obj.works[i];
         if (w.deadline) {
-            hasDates = true;
             worksWithDates.push({
                 name: w.name,
                 deadline: w.deadline,
@@ -2261,52 +2272,63 @@ function renderSchedule() {
     
     var today = new Date();
     var startDate = new Date(today);
-    startDate.setDate(today.getDate() - 7);
-    
+    startDate.setDate(today.getDate() - 3);
     var endDate = new Date(today);
-    endDate.setDate(today.getDate() + 60);
+    endDate.setDate(today.getDate() + 45);
     
     if (worksWithDates.length > 0) {
         var firstDate = worksWithDates[0].deadline.split('.');
         var first = new Date(+firstDate[2], +firstDate[1] - 1, +firstDate[0]);
         var lastDate = worksWithDates[worksWithDates.length - 1].deadline.split('.');
         var last = new Date(+lastDate[2], +lastDate[1] - 1, +lastDate[0]);
-        
         if (first < startDate) startDate = new Date(first);
         if (last > endDate) endDate = new Date(last);
-        
-        startDate.setDate(startDate.getDate() - 7);
-        endDate.setDate(endDate.getDate() + 7);
+        startDate.setDate(startDate.getDate() - 5);
+        endDate.setDate(endDate.getDate() + 5);
     }
     
     var totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-    if (totalDays < 30) totalDays = 30;
+    if (totalDays < 21) totalDays = 21;
     
-    var html = '<div class="card">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">' +
-        '<h3 style="margin:0;">📋 Календарный график — ' + escapeHtml(obj.name) + '</h3>' +
+    var html = '<div style="background:linear-gradient(145deg, #161616 0%, #0d0d0d 100%);border-radius:16px;padding:20px;border:1px solid #222;box-shadow:0 4px 30px rgba(0,0,0,0.3);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span style="font-size:22px;background:linear-gradient(135deg, #c9a959, #a8893a);border-radius:8px;padding:4px 10px;color:#0d0d0d;">📊</span>' +
+        '<h3 style="margin:0;color:#e8e8e8;font-size:17px;">График работ — ' + escapeHtml(obj.name) + '</h3>' +
+        '</div>' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
-        '<button class="btn btn-sm btn-primary" onclick="addScheduleItem(' + obj.id + ')">➕ Добавить этап</button>' +
-        '<button class="btn btn-sm" onclick="zoomSchedule(-1)">🔍-</button>' +
-        '<button class="btn btn-sm" onclick="zoomSchedule(1)">🔍+</button>' +
+        '<button class="btn btn-sm btn-primary" onclick="addScheduleItem(' + obj.id + ')" style="background:linear-gradient(135deg, #c9a959, #a8893a);color:#0d0d0d;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;">➕ Добавить этап</button>' +
         '</div>' +
         '</div>';
     
-    html += '<div style="display:flex;gap:16px;margin-bottom:12px;font-size:12px;flex-wrap:wrap;">' +
-        '<span><span style="display:inline-block;width:20px;height:4px;background:#c9a959;border-radius:2px;margin-right:4px;"></span> Выполнено</span>' +
-        '<span><span style="display:inline-block;width:20px;height:4px;background:#4caf50;border-radius:2px;margin-right:4px;"></span> В работе</span>' +
-        '<span><span style="display:inline-block;width:20px;height:4px;background:#a04040;border-radius:2px;margin-right:4px;"></span> Просрочено</span>' +
-        '<span style="color:#888;">⏳ ' + (obj.plannedEndDate ? getDaysRemaining(obj.plannedEndDate) + ' дней до завершения' : '') + '</span>' +
+    html += '<div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px;flex-wrap:wrap;padding:8px 12px;background:#0d0d0d;border-radius:8px;border:1px solid #1a1a1a;">' +
+        '<span><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(135deg, #c9a959, #b8963a);border-radius:4px;margin-right:6px;vertical-align:middle;"></span> Выполнено</span>' +
+        '<span><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(135deg, #4caf50, #388e3c);border-radius:4px;margin-right:6px;vertical-align:middle;"></span> В работе</span>' +
+        '<span><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(135deg, #e53935, #b71c1c);border-radius:4px;margin-right:6px;vertical-align:middle;"></span> Просрочено</span>' +
+        (obj.plannedEndDate ? '<span style="color:#666;">⏳ ' + getDaysRemaining(obj.plannedEndDate) + ' дней до завершения</span>' : '') +
         '</div>';
     
-    html += '<div style="overflow-x:auto;position:relative;padding-bottom:10px;">';
-    html += '<div style="min-width:' + (totalDays * 32 + 200) + 'px;position:relative;">';
+    if (worksWithDates.length === 0) {
+        html += '<div style="text-align:center;padding:40px 20px;color:#666;">' +
+            '<div style="font-size:40px;margin-bottom:10px;">📭</div>' +
+            'Нет этапов с установленными датами<br>' +
+            '<span style="font-size:12px;color:#444;">Добавьте этап и укажите дату в карточке объекта</span>' +
+            '</div>';
+        html += '</div>';
+        container.innerHTML += html;
+        return;
+    }
     
-    html += '<div style="display:flex;border-bottom:1px solid #282828;padding:4px 0;position:sticky;top:0;background:#0d0d0d;z-index:5;">';
-    html += '<div style="min-width:180px;flex-shrink:0;font-size:12px;color:#888;padding-left:8px;">Этап</div>';
+    html += '<div style="overflow-x:auto;padding-bottom:8px;">';
+    html += '<div style="min-width:700px;">';
+    
+    html += '<div style="display:flex;border-bottom:2px solid #282828;padding:4px 0;margin-bottom:4px;">';
+    html += '<div style="min-width:140px;flex-shrink:0;font-size:11px;color:#888;font-weight:500;padding-left:4px;">ЭТАП</div>';
+    html += '<div style="flex:1;display:flex;position:relative;height:24px;">';
     
     var currentMonth = -1;
     var monthWidth = 0;
+    var monthPositions = [];
     var monthNames = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
     
     for (var d = 0; d <= totalDays; d++) {
@@ -2317,80 +2339,106 @@ function renderSchedule() {
         
         if (month !== currentMonth) {
             if (currentMonth !== -1) {
-                html += '<div style="flex:0 0 ' + monthWidth + 'px;text-align:center;font-size:11px;color:#888;border-left:1px solid #1a1a1a;">' + monthNames[currentMonth] + '</div>';
+                monthPositions.push({ month: currentMonth, width: monthWidth, label: monthNames[currentMonth] });
             }
             currentMonth = month;
             monthWidth = 0;
         }
-        monthWidth += 32;
+        monthWidth += (100 / totalDays);
     }
     if (currentMonth !== -1) {
-        html += '<div style="flex:0 0 ' + monthWidth + 'px;text-align:center;font-size:11px;color:#888;border-left:1px solid #1a1a1a;">' + monthNames[currentMonth] + '</div>';
+        monthPositions.push({ month: currentMonth, width: monthWidth, label: monthNames[currentMonth] });
     }
-    html += '</div>';
     
-    html += '<div style="display:flex;border-bottom:1px solid #1a1a1a;padding:2px 0;">';
-    html += '<div style="min-width:180px;flex-shrink:0;"></div>';
-    for (var d = 0; d <= totalDays; d++) {
+    var posLeft = 0;
+    for (var i = 0; i < monthPositions.length; i++) {
+        var mp = monthPositions[i];
+        html += '<div style="position:absolute;left:' + posLeft + '%;font-size:10px;color:#666;font-weight:500;border-left:1px solid #1a1a1a;padding-left:4px;">' + mp.label + '</div>';
+        posLeft += mp.width;
+    }
+    html += '</div></div>';
+    
+    var maxBarWidth = 85;
+    for (var i = 0; i < worksWithDates.length; i++) {
+        var w = worksWithDates[i];
+        var deadlineParts = w.deadline.split('.');
+        var deadlineDate = new Date(+deadlineParts[2], +deadlineParts[1] - 1, +deadlineParts[0]);
+        
+        var daysFromStart = Math.ceil((deadlineDate - startDate) / (1000 * 60 * 60 * 24));
+        var percentPos = (daysFromStart / totalDays) * 100;
+        if (percentPos < 0) percentPos = 0;
+        if (percentPos > 100) percentPos = 100;
+        
+        var barWidth = Math.min(maxBarWidth, 6 + (worksWithDates.length - i) * 0.5);
+        var barLeft = percentPos - barWidth / 2;
+        if (barLeft < 0) barLeft = 0;
+        if (barLeft + barWidth > 100) barLeft = 100 - barWidth;
+        
+        var color = '#4caf50';
+        var colorGrad = 'linear-gradient(135deg, #4caf50, #388e3c)';
+        if (w.done) {
+            color = '#c9a959';
+            colorGrad = 'linear-gradient(135deg, #c9a959, #b8963a)';
+        } else if (deadlineDate < today) {
+            color = '#e53935';
+            colorGrad = 'linear-gradient(135deg, #e53935, #b71c1c)';
+        }
+        
+        var daysLeft = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+        var label = '';
+        if (w.done) label = '✅';
+        else if (daysLeft < 0) label = '⚠️ ' + Math.abs(daysLeft);
+        else label = daysLeft + ' дн.';
+        
+        var isUrgent = (!w.done && daysLeft < 3 && daysLeft >= 0);
+        
+        html += '<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #0d0d0d;">';
+        html += '<div style="min-width:140px;flex-shrink:0;font-size:13px;color:#e0e0e0;padding-right:8px;display:flex;align-items:center;gap:6px;">' +
+            '<span style="' + (isUrgent ? 'color:#e53935;font-weight:600;' : '') + '">' + escapeHtml(w.name) + '</span>' +
+            '<span style="font-size:10px;color:#555;">' + w.deadline + '</span>' +
+            '</div>';
+        
+        html += '<div style="flex:1;position:relative;height:32px;background:#0d0d0d;border-radius:6px;overflow:visible;">';
+        
+        html += '<div style="position:absolute;bottom:2px;left:' + barLeft + '%;width:' + barWidth + '%;height:28px;background:' + colorGrad + ';border-radius:6px;opacity:0.9;transition:all 0.3s;box-shadow:0 2px 12px ' + color + '40;' + 
+            (w.done ? 'border:1px solid #c9a95940;' : '') + 
+            '" onmouseover="this.style.opacity=\'1\';this.style.transform=\'scaleY(1.05)\';this.style.transformOrigin=\'bottom\'" onmouseout="this.style.opacity=\'0.9\';this.style.transform=\'scaleY(1)\'">' +
+            '</div>';
+        
+        html += '<div style="position:absolute;bottom:4px;left:' + (barLeft + 4) + '%;font-size:8px;color:#0d0d0d;font-weight:600;white-space:nowrap;text-shadow:0 0 4px rgba(255,255,255,0.2);">' + label + '</div>';
+        
+        html += '<div style="position:absolute;top:-4px;left:' + percentPos + '%;width:12px;height:12px;background:' + color + ';border-radius:50%;border:2px solid #0d0d0d;box-shadow:0 0 12px ' + color + '60;transform:translateX(-50%);"></div>';
+        
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    html += '<div style="display:flex;border-top:1px solid #1a1a1a;padding:4px 0 0 0;margin-top:4px;">';
+    html += '<div style="min-width:140px;flex-shrink:0;"></div>';
+    html += '<div style="flex:1;display:flex;position:relative;height:16px;">';
+    
+    var step = Math.max(1, Math.floor(totalDays / 20));
+    for (var d = 0; d <= totalDays; d += step) {
         var date = new Date(startDate);
         date.setDate(date.getDate() + d);
-        var day = date.getDate();
+        var pos = (d / totalDays) * 100;
         var isWeekend = (date.getDay() === 0 || date.getDay() === 6);
-        html += '<div style="flex:0 0 32px;text-align:center;font-size:9px;color:' + (isWeekend ? '#555' : '#666') + ';border-left:1px solid ' + (isWeekend ? '#1a1a1a' : '#111') + ';">' + day + '</div>';
+        html += '<div style="position:absolute;left:' + pos + '%;font-size:7px;color:' + (isWeekend ? '#333' : '#555') + ';transform:translateX(-50%);border-left:1px solid ' + (isWeekend ? '#1a1a1a' : '#0d0d0d') + ';padding-left:2px;">' + date.getDate() + '</div>';
     }
-    html += '</div>';
-    
-    if (worksWithDates.length === 0) {
-        html += '<div style="padding:30px;text-align:center;color:#666;">Нет этапов с установленными датами</div>';
-    } else {
-        for (var i = 0; i < worksWithDates.length; i++) {
-            var w = worksWithDates[i];
-            var deadlineParts = w.deadline.split('.');
-            var deadlineDate = new Date(+deadlineParts[2], +deadlineParts[1] - 1, +deadlineParts[0]);
-            
-            var daysFromStart = Math.ceil((deadlineDate - startDate) / (1000 * 60 * 60 * 24));
-            var posLeft = daysFromStart * 32;
-            
-            var color = '#4caf50';
-            if (w.done) color = '#c9a959';
-            else if (deadlineDate < today) color = '#a04040';
-            
-            var daysLeft = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
-            var label = '';
-            if (w.done) label = '✅';
-            else if (daysLeft < 0) label = '⚠️ ' + Math.abs(daysLeft) + ' дн.';
-            else label = daysLeft + ' дн.';
-            
-            html += '<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #0d0d0d;">';
-            html += '<div style="min-width:180px;flex-shrink:0;font-size:13px;color:#e0e0e0;padding-left:8px;display:flex;align-items:center;gap:6px;">' +
-                '<span>' + escapeHtml(w.name) + '</span>' +
-                '<span style="font-size:11px;color:#888;">' + w.deadline + '</span>' +
-                '</div>';
-            
-            html += '<div style="flex:1;position:relative;height:28px;border-left:1px solid #1a1a1a;">';
-            html += '<div style="position:absolute;left:' + posLeft + 'px;top:4px;height:20px;background:' + color + ';border-radius:4px;min-width:4px;opacity:0.8;' + 
-                (posLeft < 0 ? 'left:0;' : '') + 'width:8px;"></div>';
-            
-            html += '<div style="position:absolute;left:' + posLeft + 'px;top:-2px;width:12px;height:12px;background:' + color + ';border-radius:50%;border:2px solid #0d0d0d;' + 
-                (posLeft < 0 ? 'left:0;' : '') + '"></div>';
-            
-            html += '<div style="position:absolute;left:' + (posLeft + 16) + 'px;top:4px;font-size:9px;color:' + color + ';white-space:nowrap;">' + label + '</div>';
-            
-            html += '</div>';
-            html += '</div>';
-        }
-    }
+    html += '</div></div>';
     
     html += '</div></div>';
     
-    html += '<div style="margin-top:12px;padding:12px;background:#0d0d0d;border-radius:6px;border:1px solid #1a1a1a;">' +
+    html += '<div style="margin-top:16px;padding:14px;background:#0d0d0d;border-radius:10px;border:1px solid #1a1a1a;">' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
-        '<input type="text" id="newScheduleWorkName" placeholder="Название этапа" style="flex:2;min-width:150px;padding:8px;background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:4px;">' +
-        '<input type="text" id="newScheduleWorkDate" placeholder="ДД.ММ.ГГГГ" style="flex:1;min-width:120px;padding:8px;background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:4px;">' +
-        '<button class="btn btn-primary" onclick="addScheduleWorkWithDate(' + obj.id + ')">➕ Добавить</button>' +
+        '<span style="color:#888;font-size:13px;">➕ Быстрое добавление:</span>' +
+        '<input type="text" id="newScheduleWorkName" placeholder="Название этапа" style="flex:2;min-width:140px;padding:8px 12px;background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:6px;font-size:13px;">' +
+        '<input type="text" id="newScheduleWorkDate" placeholder="ДД.ММ.ГГГГ" style="flex:0.8;min-width:100px;padding:8px 12px;background:#161616;color:#e0e0e0;border:1px solid #282828;border-radius:6px;font-size:13px;">' +
+        '<button class="btn btn-primary" onclick="addScheduleWorkWithDate(' + obj.id + ')" style="background:linear-gradient(135deg, #c9a959, #a8893a);color:#0d0d0d;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;">➕ Добавить</button>' +
         '</div>' +
         '</div>';
     
+    html += '</div>';
     container.innerHTML += html;
 }
 
@@ -2489,1330 +2537,6 @@ window.switchScheduleObject = function(objId) {
     currentObjectId = parseInt(objId);
     renderSchedule();
 };
-
-function renderBossNotes() {
-    var container = document.getElementById('bossContent');
-    if (!container) return;
-    container.innerHTML = '<div class="flex" style="margin-bottom:12px;"><button class="btn btn-primary" onclick="addNoteForDate()">➕ Запись</button></div><div id="bossNotesCalendar"></div>';
-    renderNotesCalendar('boss');
-}
-
-function renderWolfNotes() {
-    var container = document.getElementById('wolfContent');
-    if (!container) return;
-    container.innerHTML = '<div class="flex" style="margin-bottom:12px;"><button class="btn btn-primary" onclick="addNoteForDate()">➕ Запись</button></div><div id="wolfNotesCalendar"></div>';
-    renderNotesCalendar('wolf');
-}
-
-function renderNotesCalendar(role) {
-    var container = document.getElementById(role === 'boss' ? 'bossNotesCalendar' : 'wolfNotesCalendar');
-    if (!container) return;
-    
-    var now = new Date();
-    var year = now.getFullYear();
-    var month = now.getMonth() + calendarOffset;
-    var firstDayOfMonth = new Date(year, month, 1);
-    var daysInMonth = new Date(year, month + 1, 0).getDate();
-    var startDay = firstDayOfMonth.getDay();
-    var today = new Date();
-    
-    var notesByDate = {};
-    for (var i = 0; i < notes.length; i++) {
-        var n = notes[i];
-        if (n.date && n.author === role) {
-            var d = new Date(n.date);
-            var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-            if (!notesByDate[key]) notesByDate[key] = [];
-            notesByDate[key].push(n);
-        }
-    }
-    
-    var monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    var html = '<div class="card">' +
-        '<div class="month-nav">' +
-        '<button class="nav-btn" onclick="changeMonth(-1)">‹</button>' +
-        '<span>' + monthNames[month] + ' ' + year + '</span>' +
-        '<button class="nav-btn" onclick="changeMonth(1)">›</button>' +
-        '</div>' +
-        '<div class="calendar">';
-    
-    var weekDays = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
-    for (var i = 0; i < weekDays.length; i++) {
-        html += '<div style="text-align:center;color:#555;font-size:11px;padding:4px 0;">' + weekDays[i] + '</div>';
-    }
-    
-    var startOffset = (startDay === 0) ? 6 : startDay - 1;
-    for (var i = 0; i < startOffset; i++) {
-        html += '<div class="day other-month"></div>';
-    }
-    
-    for (var d = 1; d <= daysInMonth; d++) {
-        var dt = new Date(year, month, d);
-        var key = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
-        var hasNotes = notesByDate[key] && notesByDate[key].length > 0;
-        var isToday = (d === today.getDate() && month === today.getMonth() && year === today.getFullYear());
-        var dayClass = (isToday ? 'today' : '') + (hasNotes ? ' has-tasks' : '');
-        html += '<div class="day ' + dayClass + '" onclick="showNotesForDay(\'' + key + '\',\'' + role + '\')">' +
-            '<span class="day-number">' + d + '</span>' +
-            (hasNotes ? '<span class="indicator">●</span>' : '') +
-            '</div>';
-    }
-    
-    html += '</div></div><div id="' + role + 'NotesDayDetail"></div>';
-    container.innerHTML = html;
-}
-
-function changeMonth(delta) {
-    calendarOffset += delta;
-    saveUiState();
-    if (currentUser === 'boss') renderBossNotes();
-    else if (currentUser === 'wolf') renderWolfNotes();
-}
-
-function showNotesForDay(key, role) {
-    var container = document.getElementById(role + 'NotesDayDetail');
-    if (!container) return;
-    
-    var dayNotes = [];
-    for (var i = 0; i < notes.length; i++) {
-        var n = notes[i];
-        if (!n.date || n.author !== role) continue;
-        var d = new Date(n.date);
-        var noteKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        if (noteKey === key) dayNotes.push(n);
-    }
-    
-    var dateObj = new Date(key.split('-')[0], key.split('-')[1] - 1, key.split('-')[2]);
-    var html = '<div class="card"><h4>Записи на ' + dateObj.toLocaleDateString('ru-RU') + '</h4>';
-    
-    if (dayNotes.length === 0) {
-        html += '<div style="color:#666;padding:8px 0;">Нет записей</div>';
-    } else {
-        for (var i = 0; i < dayNotes.length; i++) {
-            var n = dayNotes[i];
-            html += '<div class="flex" style="padding:6px 0;border-bottom:1px solid #1a1a1a;">' +
-                '<span>' + escapeHtml(n.text) + '</span>' +
-                '<span><span class="badge">' + (n.author === 'boss' ? 'Руководитель' : 'Волк') + '</span>' +
-                '<button class="btn btn-sm btn-danger" onclick="deleteNote(' + n.id + ')">🗑</button></span>' +
-                '</div>';
-        }
-    }
-    
-    html += '<div style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="addNoteForDate(\'' + key + '\')">➕ Добавить запись на этот день</button></div>';
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-window.addNoteForDate = function(dateKey) {
-    var dateStr = dateKey;
-    if (!dateStr) {
-        var now = new Date();
-        dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    }
-    var text = prompt('Текст заметки:');
-    if (!text) return;
-    var parts = dateStr.split('-');
-    var noteDate = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-    var note = { id: Date.now() + Math.random() * 1000, author: currentUser, text: text.trim(), date: noteDate };
-    notes.push(note);
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('notes', note);
-    if (currentUser === 'boss') renderBossNotes();
-    else if (currentUser === 'wolf') renderWolfNotes();
-    showToast('📝 Заметка добавлена');
-};
-
-window.deleteNote = function(id) {
-    if (!confirm('Удалить заметку?')) return;
-    for (var i = 0; i < notes.length; i++) {
-        if (notes[i].id === id) {
-            notes.splice(i, 1);
-            break;
-        }
-    }
-    saveDataToLocal();
-    if (isOnline()) {
-        fetch(SUPABASE_URL + '/rest/v1/notes?id=eq.' + id, {
-            method: 'DELETE',
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        });
-    }
-    if (currentUser === 'boss') renderBossNotes();
-    else if (currentUser === 'wolf') renderWolfNotes();
-    showToast('🗑 Заметка удалена');
-};
-
-function renderBossChecks() {
-    var container = document.getElementById('bossContent');
-    if (!container) return;
-    
-    var list = [];
-    for (var i = 0; i < checks.length; i++) {
-        list.push(checks[i]);
-    }
-    list.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
-    
-    var totalUnpaid = 0, totalPaid = 0;
-    for (var i = 0; i < list.length; i++) {
-        if (!list[i].paid) totalUnpaid += (list[i].amount || 0);
-        else totalPaid += (list[i].amount || 0);
-    }
-    
-    var html = '<div style="margin:12px 0;"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button></div>';
-    
-    if (list.length === 0) {
-        html += '<div class="card">Нет чеков</div>';
-        container.innerHTML = html;
-        return;
-    }
-    
-    html += '<div class="checks-total"><span>💰 Неоплаченные: ' + totalUnpaid.toFixed(2) + ' ₽</span><span>✅ Оплаченные: ' + totalPaid.toFixed(2) + ' ₽</span></div>';
-    
-    for (var i = 0; i < list.length; i++) {
-        var c = list[i];
-        var obj = getObject(c.objectId);
-        html += '<div class="check-item ' + (c.paid ? 'paid' : '') + '" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">' +
-            '<div class="flex"><span><b>' + (obj ? escapeHtml(obj.name) : 'Объект удалён') + '</b> — ' + (c.amount ? c.amount.toFixed(2) + ' ₽' : 'сумма не указана') + '</span><span class="badge">' + (c.paid ? '✅ Оплачен' : '⏳ Не оплачен') + '</span></div>' +
-            '<div style="margin:4px 0;">Дата: ' + fmtTime(c.date) + '</div>' +
-            (c.fileData ? '<div><img src="' + c.fileData + '" class="check-file" onclick="showModal(\'' + c.fileData + '\')" style="max-width:100%;max-height:200px;border-radius:6px;cursor:pointer;"></div>' : '') +
-            '<div style="margin-top:6px;">' +
-            (!c.paid ? '<button class="btn btn-sm btn-primary" onclick="markCheckPaid(' + c.id + ')">✅ Оплатить</button>' : '') +
-            '<button class="btn btn-sm btn-danger" onclick="deleteCheck(' + c.id + ')">🗑</button>' +
-            '</div></div>';
-    }
-    container.innerHTML = html;
-}
-
-function renderWolfChecks() {
-    var container = document.getElementById('wolfContent');
-    if (!container) return;
-    
-    var list = [];
-    for (var i = 0; i < checks.length; i++) {
-        list.push(checks[i]);
-    }
-    list.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
-    
-    var totalUnpaid = 0;
-    for (var i = 0; i < list.length; i++) {
-        if (!list[i].paid) totalUnpaid += (list[i].amount || 0);
-    }
-    
-    var html = '<div style="margin:12px 0;"><button class="btn btn-primary" onclick="addCheck()">➕ Загрузить чек</button></div>';
-    
-    if (list.length === 0) {
-        html += '<div class="card">Нет чеков</div>';
-        container.innerHTML = html;
-        return;
-    }
-    
-    html += '<div class="checks-total"><span>💰 Неоплаченные: ' + totalUnpaid.toFixed(2) + ' ₽</span></div>';
-    
-    for (var i = 0; i < list.length; i++) {
-        var c = list[i];
-        var obj = getObject(c.objectId);
-        html += '<div class="check-item ' + (c.paid ? 'paid' : '') + '" style="border:1px solid #2a2a2a;border-radius:8px;padding:10px;margin:6px 0;">' +
-            '<div class="flex"><span><b>' + (obj ? escapeHtml(obj.name) : 'Объект удалён') + '</b> — ' + (c.amount ? c.amount.toFixed(2) + ' ₽' : 'сумма не указана') + '</span><span class="badge">' + (c.paid ? '✅ Оплачен' : '⏳ Не оплачен') + '</span></div>' +
-            '<div style="margin:4px 0;">Дата: ' + fmtTime(c.date) + '</div>' +
-            (c.fileData ? '<div><img src="' + c.fileData + '" class="check-file" onclick="showModal(\'' + c.fileData + '\')" style="max-width:100%;max-height:200px;border-radius:6px;cursor:pointer;"></div>' : '') +
-            '<div style="margin-top:6px;">' +
-            (!c.paid ? '<button class="btn btn-sm btn-primary" onclick="markCheckPaid(' + c.id + ')">✅ Оплатить</button>' : '') +
-            '</div></div>';
-    }
-    container.innerHTML = html;
-}
-
-window.addCheck = function() {
-    var available = [];
-    for (var i = 0; i < objects.length; i++) {
-        if (!objects[i].archived) available.push(objects[i]);
-    }
-    if (available.length === 0) { showToast('Нет объектов'); return; }
-    
-    var list = '';
-    for (var i = 0; i < available.length; i++) {
-        list += (i+1) + '. ' + available[i].name + ' (' + available[i].code + ')\n';
-    }
-    var choice = prompt('Выберите объект (номер):\n' + list);
-    if (!choice) return;
-    var idx = parseInt(choice) - 1;
-    if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
-    var objId = available[idx].id;
-    
-    var amount = parseFloat(prompt('Сумма (руб):') || '0');
-    if (isNaN(amount) || amount <= 0) { showToast('Введите корректную сумму'); return; }
-    
-    var inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = 'image/*,application/pdf';
-    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
-    document.body.appendChild(inp);
-    inp.onchange = function(e) {
-        var file = e.target.files[0];
-        if (!file) { inp.remove(); return; }
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-            var check = {
-                id: Date.now() + Math.random() * 1000,
-                objectId: objId,
-                amount: amount,
-                fileData: ev.target.result,
-                date: new Date(),
-                paid: false,
-                paidDate: null,
-                paidBy: null
-            };
-            checks.push(check);
-            saveDataToLocal();
-            if (isOnline()) saveToSupabase('checks', check);
-            if (currentUser === 'boss') renderBossChecks();
-            else if (currentUser === 'wolf') renderWolfChecks();
-            showToast('🧾 Чек загружен');
-            inp.remove();
-        };
-        reader.readAsDataURL(file);
-    };
-    setTimeout(function() { inp.click(); }, 50);
-};
-
-window.markCheckPaid = function(checkId) {
-    var c = null;
-    for (var i = 0; i < checks.length; i++) {
-        if (checks[i].id === checkId) { c = checks[i]; break; }
-    }
-    if (!c || c.paid) return;
-    c.paid = true;
-    c.paidDate = new Date();
-    c.paidBy = currentUser;
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('checks', c);
-    if (currentUser === 'boss') renderBossChecks();
-    else if (currentUser === 'wolf') renderWolfChecks();
-    showToast('✅ Чек оплачен');
-};
-
-window.deleteCheck = function(checkId) {
-    if (!confirm('Удалить чек?')) return;
-    for (var i = 0; i < checks.length; i++) {
-        if (checks[i].id === checkId) {
-            checks.splice(i, 1);
-            break;
-        }
-    }
-    saveDataToLocal();
-    if (isOnline()) {
-        fetch(SUPABASE_URL + '/rest/v1/checks?id=eq.' + checkId, {
-            method: 'DELETE',
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        });
-    }
-    if (currentUser === 'boss') renderBossChecks();
-    else if (currentUser === 'wolf') renderWolfChecks();
-    showToast('🗑 Чек удалён');
-};
-
-function renderBossPurchases() {
-    var container = document.getElementById('bossContent');
-    if (!container) return;
-    
-    var orders = [];
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        orders.push(purchaseOrders[i]);
-    }
-    orders.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
-    
-    if (orders.length === 0) {
-        container.innerHTML = '<div class="card">Нет заявок на закупку</div>';
-        return;
-    }
-    
-    var html = '';
-    for (var i = 0; i < orders.length; i++) {
-        var order = orders[i];
-        var obj = getObject(order.objectId);
-        var itemsHtml = '';
-        for (var j = 0; j < order.items.length; j++) {
-            var item = order.items[j];
-            itemsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a1a1a;">' +
-                '<span>' + escapeHtml(item.name) + ' (' + escapeHtml(item.quantity) + ' шт.)</span>' +
-                '<span class="badge">' + (item.purchased ? '✅ Куплено' : '⏳ Не куплено') + '</span>' +
-                '</div>';
-        }
-        html += '<div class="card">' +
-            '<div class="flex"><b>Заявка на объект: ' + (obj ? escapeHtml(obj.name) : 'Объект удалён') + '</b><span class="badge">' + fmt(order.date) + '</span></div>' +
-            '<div style="margin-top:6px;"><b>Товары:</b></div>' +
-            itemsHtml +
-            (order.photos && order.photos.length > 0 ? '<div style="margin-top:6px;"><b>Фото:</b> ' + order.photos.map(function(p) { return '<img src="' + p + '" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="showModal(\'' + p + '\')">'; }).join('') + '</div>' : '') +
-            '</div>';
-    }
-    container.innerHTML = html;
-}
-
-function renderWolfPurchases() {
-    var container = document.getElementById('wolfContent');
-    if (!container) return;
-    
-    var orders = [];
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        orders.push(purchaseOrders[i]);
-    }
-    orders.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
-    
-    var html = '<div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;">';
-    html += '<button class="btn btn-primary" onclick="addPurchaseOrder()">➕ Новая заявка</button>';
-    html += '</div>';
-    
-    if (orders.length === 0) {
-        html += '<div class="card">Нет заявок. Создайте первую заявку на материалы.</div>';
-        container.innerHTML = html;
-        return;
-    }
-    
-    for (var i = 0; i < orders.length; i++) {
-        var order = orders[i];
-        var obj = getObject(order.objectId);
-        var itemsHtml = '';
-        var allPurchased = true;
-        
-        for (var j = 0; j < order.items.length; j++) {
-            var item = order.items[j];
-            if (!item.purchased) allPurchased = false;
-            itemsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a1a1a;">' +
-                '<span>' + escapeHtml(item.name) + ' — <b>' + escapeHtml(item.quantity) + '</b> шт.</span>' +
-                '<span style="display:flex;gap:4px;align-items:center;">' +
-                '<span class="badge" style="background:' + (item.purchased ? '#4caf50' : '#c9a959') + ';color:#0d0d0d;">' + (item.purchased ? '✅ Куплено' : '⏳ Не куплено') + '</span>' +
-                '<button class="btn btn-sm" onclick="wolfTogglePurchasedItem(' + order.id + ',' + j + ')" style="padding:2px 8px;font-size:11px;background:' + (item.purchased ? '#282828' : '#c9a959') + ';color:' + (item.purchased ? '#e0e0e0' : '#0d0d0d') + ';border-color:' + (item.purchased ? '#3a3a3a' : '#c9a959') + ';">' + (item.purchased ? '↩' : '✅') + '</button>' +
-                '<button class="btn btn-sm btn-danger" onclick="wolfDeleteItemFromOrder(' + order.id + ',' + j + ')" style="padding:2px 6px;font-size:11px;">×</button>' +
-                '</span>' +
-                '</div>';
-        }
-        
-        var statusColor = allPurchased ? '#4caf50' : '#c9a959';
-        var statusText = allPurchased ? '✅ Все куплено' : '⏳ Есть некупленные';
-        
-        html += '<div class="card" style="border-left:3px solid ' + statusColor + ';">' +
-            '<div class="flex">' +
-            '<div><b>📦 Заявка на объект: ' + (obj ? escapeHtml(obj.name) : 'Объект удалён') + '</b></div>' +
-            '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
-            '<span class="badge" style="background:' + statusColor + ';color:#0d0d0d;">' + statusText + '</span>' +
-            '<span class="badge">' + fmt(order.date) + '</span>' +
-            '<button class="btn btn-sm btn-danger" onclick="wolfDeleteOrder(' + order.id + ')" title="Удалить заявку">🗑</button>' +
-            '</div>' +
-            '</div>' +
-            '<div style="margin-top:6px;"><b>Товары (' + order.items.length + '):</b></div>' +
-            itemsHtml +
-            '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
-            '<input type="text" id="wolfNewItemName-' + order.id + '" placeholder="Наименование" style="flex:2;min-width:120px;padding:6px;background:#0d0d0d;color:#e0e0e0;border:1px solid #282828;border-radius:4px;">' +
-            '<input type="text" id="wolfNewItemQty-' + order.id + '" placeholder="Кол-во" style="width:80px;padding:6px;background:#0d0d0d;color:#e0e0e0;border:1px solid #282828;border-radius:4px;">' +
-            '<button class="btn btn-sm" onclick="wolfAddItemToOrder(' + order.id + ')">➕ Добавить</button>' +
-            '</div>' +
-            (order.photos && order.photos.length > 0 ? '<div style="margin-top:6px;"><b>Фото накладных:</b> ' + order.photos.map(function(p) { return '<img src="' + p + '" style="width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;" onclick="showModal(\'' + p + '\')">'; }).join('') + '</div>' : '') +
-            '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
-            '<button class="btn btn-sm" onclick="editOrderComment(' + order.id + ')" style="padding:2px 8px;font-size:11px;">✏️ Комментарий</button>' +
-            '<button class="btn btn-sm" onclick="wolfUploadOrderPhoto(' + order.id + ')">📸 Добавить фото</button>' +
-            '<button class="btn btn-sm btn-primary" onclick="exportOrderToWhatsApp(' + order.id + ')">📱 Отправить в WhatsApp</button>' +
-            '</div>' +
-            '</div>';
-    }
-    container.innerHTML = html;
-}
-
-window.editOrderComment = function(orderId) {
-    var order = null;
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
-    }
-    if (!order) {
-        showToast('❌ Заявка не найдена');
-        return;
-    }
-    
-    var newComment = prompt('Редактировать комментарий к заявке:', order.comment || '');
-    if (newComment !== null) {
-        order.comment = newComment.trim();
-        saveDataToLocal();
-        if (isOnline()) saveToSupabase('purchase_orders', order);
-        renderWolfPurchases();
-        showToast('✅ Комментарий обновлён');
-    }
-};
-
-window.addPurchaseOrder = function() {
-    var available = [];
-    for (var i = 0; i < objects.length; i++) {
-        if (!objects[i].archived) available.push(objects[i]);
-    }
-    if (available.length === 0) { showToast('Нет объектов'); return; }
-    
-    var list = '';
-    for (var i = 0; i < available.length; i++) {
-        list += (i+1) + '. ' + available[i].name + ' (' + available[i].code + ')\n';
-    }
-    var choice = prompt('Выберите объект (номер):\n' + list);
-    if (!choice) return;
-    var idx = parseInt(choice) - 1;
-    if (idx < 0 || idx >= available.length) { showToast('Неверный номер'); return; }
-    var obj = available[idx];
-    
-    var comment = prompt('Комментарий к заявке (магазин, контакты, примечания):');
-    
-    var order = {
-        id: Date.now() + Math.random() * 1000,
-        objectId: obj.id,
-        items: [],
-        photos: [],
-        date: new Date(),
-        status: 'active',
-        comment: comment || ''
-    };
-    purchaseOrders.push(order);
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('purchase_orders', order);
-    renderWolfPurchases();
-    showToast('📦 Заявка создана');
-};
-
-window.wolfAddItemToOrder = function(orderId) {
-    var order = null;
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
-    }
-    if (!order) return;
-    
-    var name = document.getElementById('wolfNewItemName-' + orderId).value.trim();
-    var qty = document.getElementById('wolfNewItemQty-' + orderId).value.trim();
-    if (!name) { showToast('Введите наименование'); return; }
-    if (!qty) { showToast('Введите количество'); return; }
-    
-    order.items.push({
-        id: Date.now() + Math.random() * 1000,
-        name: name,
-        quantity: qty,
-        purchased: false
-    });
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('purchase_orders', order);
-    renderWolfPurchases();
-    showToast('➕ Товар добавлен');
-};
-
-window.wolfTogglePurchasedItem = function(orderId, idx) {
-    var order = null;
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
-    }
-    if (!order) return;
-    order.items[idx].purchased = !order.items[idx].purchased;
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('purchase_orders', order);
-    renderWolfPurchases();
-    showToast(order.items[idx].purchased ? '✅ Отмечено куплено' : '↩ Снято');
-};
-
-window.wolfDeleteItemFromOrder = function(orderId, idx) {
-    if (!confirm('Удалить товар?')) return;
-    var order = null;
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
-    }
-    if (!order) return;
-    order.items.splice(idx, 1);
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('purchase_orders', order);
-    renderWolfPurchases();
-    showToast('🗑 Товар удалён');
-};
-
-window.wolfDeleteOrder = function(orderId) {
-    if (!confirm('Удалить заявку?')) return;
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        if (purchaseOrders[i].id === orderId) {
-            purchaseOrders.splice(i, 1);
-            break;
-        }
-    }
-    saveDataToLocal();
-    if (isOnline()) {
-        fetch(SUPABASE_URL + '/rest/v1/purchase_orders?id=eq.' + orderId, {
-            method: 'DELETE',
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        });
-    }
-    renderWolfPurchases();
-    showToast('🗑 Заявка удалена');
-};
-
-window.wolfUploadOrderPhoto = function(orderId) {
-    var order = null;
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
-    }
-    if (!order) return;
-    
-    var inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = 'image/*';
-    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
-    document.body.appendChild(inp);
-    inp.onchange = function(e) {
-        var file = e.target.files[0];
-        if (!file) { inp.remove(); return; }
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-            if (!order.photos) order.photos = [];
-            order.photos.push(ev.target.result);
-            saveDataToLocal();
-            if (isOnline()) saveToSupabase('purchase_orders', order);
-            renderWolfPurchases();
-            showToast('📸 Фото добавлено');
-            inp.remove();
-        };
-        reader.readAsDataURL(file);
-    };
-    setTimeout(function() { inp.click(); }, 50);
-};
-
-window.exportOrderToWhatsApp = function(orderId) {
-    var order = null;
-    for (var i = 0; i < purchaseOrders.length; i++) {
-        if (purchaseOrders[i].id === orderId) { order = purchaseOrders[i]; break; }
-    }
-    if (!order) {
-        showToast('❌ Заявка не найдена');
-        return;
-    }
-    
-    var obj = getObject(order.objectId);
-    if (!obj) {
-        showToast('❌ Объект не найден');
-        return;
-    }
-    
-    if (order.items.length === 0) {
-        showToast('❌ Заявка пуста. Добавьте товары.');
-        return;
-    }
-    
-    var text = '📦 ЗАЯВКА НА МАТЕРИАЛЫ\n';
-    text += '─────────────────────\n';
-    text += '🏠 Объект: ' + obj.name + '\n';
-    text += '📅 Дата: ' + new Date().toLocaleDateString('ru-RU') + '\n';
-    if (order.comment) {
-        text += '📝 Комментарий: ' + order.comment + '\n';
-    }
-    text += '─────────────────────\n\n';
-    text += '📋 СПИСОК ТОВАРОВ:\n';
-    
-    var totalItems = 0;
-    for (var i = 0; i < order.items.length; i++) {
-        var item = order.items[i];
-        var status = item.purchased ? '✅' : '⏳';
-        text += '  ' + status + ' ' + item.name + ' — ' + item.quantity + ' шт.\n';
-        totalItems++;
-    }
-    
-    text += '\n─────────────────────\n';
-    text += '📊 Итого позиций: ' + totalItems + '\n';
-    text += '─────────────────────\n';
-    text += '📱 Создано в СтройУчёт\n';
-    text += '🕒 ' + new Date().toLocaleString();
-    
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(function() {
-            var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
-            if (phoneNumber && phoneNumber.trim()) {
-                var encodedText = encodeURIComponent(text);
-                var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
-                window.open(whatsappUrl, '_blank');
-                showToast('✅ Заявка скопирована и открыта в WhatsApp');
-            } else {
-                showToast('✅ Заявка скопирована в буфер');
-            }
-        }).catch(function() {
-            var encodedText = encodeURIComponent(text);
-            var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
-            if (phoneNumber && phoneNumber.trim()) {
-                var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
-                window.open(whatsappUrl, '_blank');
-                showToast('📋 Заявка открыта в WhatsApp');
-            } else {
-                prompt('Скопируйте текст заявки:', text);
-                showToast('📋 Заявка готова');
-            }
-        });
-    } else {
-        var encodedText = encodeURIComponent(text);
-        var phoneNumber = prompt('Введите номер телефона магазина (без +):', '');
-        if (phoneNumber && phoneNumber.trim()) {
-            var whatsappUrl = 'https://wa.me/' + phoneNumber.trim() + '?text=' + encodedText;
-            window.open(whatsappUrl, '_blank');
-            showToast('📋 Заявка открыта в WhatsApp');
-        } else {
-            prompt('Скопируйте текст заявки:', text);
-            showToast('📋 Заявка готова');
-        }
-    }
-};
-
-window.wolfAddWork = function(id) {
-    var n = prompt('Название этапа');
-    if (!n) return;
-    var o = getObject(id);
-    if (!o) return;
-    var newWork = { id: Date.now() + Math.random() * 1000, name: n, done: false, deadline: null, quantity: '', unit: '', forElectrician: false, manual: true, status: '', paid: false, contractor: null, contractorStatus: 'unassigned' };
-    o.works.push(newWork);
-    saveDataToLocal();
-    if (isOnline()) {
-        saveToSupabase('objects', o);
-    } else {
-        addPendingAction({ type: 'addWork', data: { objectId: id, work: newWork } });
-    }
-    renderWolfObjects();
-    showToast('➕ Этап добавлен (ручной)');
-};
-
-function renderPasswords() {
-    var container = document.getElementById('bossContent');
-    if (!container) return;
-    var html = '<div class="card"><h3>Пароли для ролей</h3><p style="color:#888;font-size:13px;">Если пароль пустой — вход без пароля.</p>';
-    var roles = ['boss', 'wolf', 'client', 'master', 'designer', 'purchaser', 'electrician'];
-    for (var i = 0; i < roles.length; i++) {
-        var r = roles[i];
-        html += '<div class="flex"><span>' + getUserLabel(r) + '</span><span><input type="text" id="pass-' + r + '" placeholder="Новый пароль" value="' + (passwords[r] || '') + '" style="width:200px;"><button class="btn btn-sm btn-primary" onclick="setRolePassword(\'' + r + '\')">Установить</button></span></div>';
-    }
-    html += '</div><div class="card"><h3>Пароли объектов</h3><p style="color:#888;font-size:13px;">Клиенты и мастера входят по паролю объекта.</p>';
-    for (var i = 0; i < objects.length; i++) {
-        var o = objects[i];
-        html += '<div class="flex"><span>' + escapeHtml(o.name) + ' (код: ' + escapeHtml(o.code) + ')</span><span><input type="text" id="pass-obj-' + o.id + '" placeholder="Пароль для входа" value="' + (passwords.objects[o.id] || '') + '" style="width:200px;"><button class="btn btn-sm btn-primary" onclick="setObjectPassword(' + o.id + ')">Установить</button></span></div>';
-    }
-    html += '</div><div class="card"><button class="btn btn-sm" onclick="savePasswords()">Сохранить пароли</button></div>';
-    container.innerHTML = html;
-}
-
-window.setRolePassword = function(r) {
-    var val = document.getElementById('pass-' + r).value.trim();
-    if (val) passwords[r] = val;
-    else delete passwords[r];
-    saveDataToLocal();
-    if (isOnline()) {
-        syncToSupabase();
-        showToast('🔑 Пароль для ' + getUserLabel(r) + ' синхронизирован');
-    } else {
-        addPendingAction({ type: 'updatePassword', data: { role: r, password: passwords[r] } });
-        showToast('🔑 Пароль сохранён локально (ожидает интернет)');
-    }
-    renderPasswords();
-};
-
-window.setObjectPassword = function(objId) {
-    var val = document.getElementById('pass-obj-' + objId).value.trim();
-    var obj = getObject(objId);
-    if (!obj) return;
-    if (val) {
-        passwords.objects[objId] = val;
-        showToast('🔑 Пароль для "' + obj.name + '" установлен на "' + val + '"');
-    } else {
-        var newPwd = Math.random().toString(36).substring(2, 8).toUpperCase();
-        passwords.objects[objId] = newPwd;
-        showToast('🔑 Пароль сброшен на: ' + newPwd);
-        document.getElementById('pass-obj-' + objId).value = newPwd;
-    }
-    saveDataToLocal();
-    if (isOnline()) {
-        fetch(SUPABASE_URL + '/rest/v1/passwords?object_id=eq.' + objId, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.length > 0) {
-                return fetch(SUPABASE_URL + '/rest/v1/passwords?object_id=eq.' + objId, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': 'Bearer ' + SUPABASE_KEY
-                    },
-                    body: JSON.stringify({ password: passwords.objects[objId] })
-                });
-            } else {
-                return fetch(SUPABASE_URL + '/rest/v1/passwords', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': 'Bearer ' + SUPABASE_KEY
-                    },
-                    body: JSON.stringify({ object_id: parseInt(objId), password: passwords.objects[objId] })
-                });
-            }
-        })
-        .then(function() { console.log('✅ Пароль синхронизирован'); })
-        .catch(function(e) { console.log('⚠️ Ошибка синхронизации:', e); });
-    } else {
-        addPendingAction({ type: 'updatePassword', data: { objectId: objId, password: passwords.objects[objId] } });
-    }
-    renderPasswords();
-};
-
-window.savePasswords = function() {
-    saveDataToLocal();
-    if (isOnline()) {
-        syncToSupabase();
-        showToast('🔐 Пароли сохранены и синхронизированы');
-    } else {
-        showToast('🔐 Пароли сохранены локально (ожидают интернет)');
-    }
-};
-
-window.uploadCSV = function() {
-    var inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = '.csv';
-    inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none';
-    document.body.appendChild(inp);
-    inp.onchange = function(e) {
-        var file = e.target.files[0];
-        if (!file) { inp.remove(); return; }
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-            try {
-                var text = ev.target.result;
-                var lines = text.split('\n').filter(function(line) { return line.trim() !== ''; });
-                if (lines.length < 2) {
-                    showToast('❌ CSV должен содержать заголовки и данные');
-                    inp.remove();
-                    return;
-                }
-                var headers = lines[0].split(',').map(function(h) { return h.trim().replace(/^"|"$/g, ''); });
-                var nameIdx = -1;
-                for (var i = 0; i < headers.length; i++) {
-                    var h = headers[i].toLowerCase();
-                    if (h.includes('назв') || h.includes('имя') || h.includes('name')) nameIdx = i;
-                }
-                if (nameIdx === -1) {
-                    showToast('❌ Не найден столбец с названием объекта');
-                    inp.remove();
-                    return;
-                }
-                var added = 0;
-                for (var i = 1; i < lines.length; i++) {
-                    var values = lines[i].split(',').map(function(v) { return v.trim().replace(/^"|"$/g, ''); });
-                    if (values.length <= nameIdx) continue;
-                    var name = values[nameIdx] || 'Без названия';
-                    var id = Date.now() + i;
-                    var newObj = {
-                        id: id,
-                        code: Math.random().toString(36).substring(2, 8).toUpperCase(),
-                        name: name,
-                        address: 'Адрес не указан',
-                        works: [],
-                        completed: false,
-                        archived: false,
-                        startDate: null,
-                        plannedEndDate: null,
-                        schedule: [],
-                        notes: '',
-                        contractors: []
-                    };
-                    objects.push(newObj);
-                    var pwd = Math.random().toString(36).substring(2, 8).toUpperCase();
-                    passwords.objects[id] = pwd;
-                    added++;
-                }
-                saveDataToLocal();
-                if (isOnline()) {
-                    for (var i = 0; i < objects.length; i++) {
-                        saveToSupabase('objects', objects[i]);
-                    }
-                }
-                renderBossObjects();
-                showToast('✅ Загружено ' + added + ' объектов из CSV');
-            } catch(err) {
-                showToast('❌ Ошибка: ' + err.message);
-                console.error(err);
-            }
-            inp.remove();
-        };
-        reader.readAsText(file);
-    };
-    setTimeout(function() { inp.click(); }, 50);
-};
-
-window.exportAllData = function() {
-    var data = {
-        objects: objects,
-        reports: reports,
-        designProjects: designProjects,
-        recommendations: recommendations,
-        checks: checks,
-        purchaseOrders: purchaseOrders,
-        notes: notes,
-        electricianTasks: electricianTasks,
-        passwords: passwords
-    };
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'stroychet_backup_' + new Date().toISOString().slice(0,10) + '.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('📤 Данные экспортированы');
-};
-
-window.importAllData = function() {
-    var inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = '.json';
-    inp.onchange = function(e) {
-        var file = e.target.files[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-            try {
-                var data = JSON.parse(ev.target.result);
-                if (data.objects) objects = data.objects;
-                if (data.reports) reports = data.reports;
-                if (data.designProjects) designProjects = data.designProjects;
-                if (data.recommendations) recommendations = data.recommendations;
-                if (data.checks) checks = data.checks;
-                if (data.purchaseOrders) purchaseOrders = data.purchaseOrders;
-                if (data.notes) notes = data.notes;
-                if (data.electricianTasks) electricianTasks = data.electricianTasks;
-                if (data.passwords) passwords = data.passwords;
-                saveDataToLocal();
-                render();
-                showToast('✅ Данные успешно импортированы!');
-            } catch(err) {
-                showToast('❌ Ошибка: неверный формат файла');
-                console.error(err);
-            }
-        };
-        reader.readAsText(file);
-    };
-    inp.click();
-};
-
-window.scrollToObject = function(v) {
-    if (!v) return;
-    var el = document.getElementById(v);
-    if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        var key = v.replace('obj-', '');
-        uiState['obj-' + key] = true;
-        saveUiState();
-        renderBossObjects();
-    }
-};
-
-window.wolfScrollToObject = function(v) {
-    if (!v) return;
-    var el = document.getElementById(v);
-    if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        var key = v.replace('wolf-', '');
-        uiState['wolf-' + key] = true;
-        saveUiState();
-        renderWolfObjects();
-    }
-};
-
-function initDragDrop() {
-    var blocks = document.querySelectorAll('.work-block');
-    for (var i = 0; i < blocks.length; i++) {
-        var b = blocks[i];
-        b.addEventListener('dragstart', function(e) {
-            e.dataTransfer.setData('text/plain', JSON.stringify({ objectId: parseInt(this.dataset.objectId), workIndex: parseInt(this.dataset.workIndex) }));
-            this.classList.add('dragging');
-        });
-        b.addEventListener('dragend', function() { this.classList.remove('dragging'); });
-        b.addEventListener('dragover', function(e) { e.preventDefault(); });
-        b.addEventListener('drop', function(e) {
-            e.preventDefault();
-            var data = JSON.parse(e.dataTransfer.getData('text/plain'));
-            var obj = getObject(data.objectId);
-            if (!obj) return;
-            var toIndex = parseInt(this.dataset.workIndex);
-            var works = obj.works;
-            var removed = works.splice(data.workIndex, 1);
-            works.splice(toIndex, 0, removed[0]);
-            saveDataToLocal();
-            if (isOnline()) saveToSupabase('objects', obj);
-            renderBossObjects();
-        });
-    }
-}
-
-function toggleWork(e, h, k) {
-    if (e) e.stopPropagation();
-    var block = h.closest('.work-block');
-    if (!block) return;
-    var detail = block.querySelector('.work-detail');
-    var arrow = block.querySelector('.work-arrow');
-    if (!detail) return;
-    var isOpen = detail.classList.contains('open');
-    if (isOpen) {
-        detail.classList.remove('open');
-        if (arrow) arrow.classList.remove('open');
-        uiState[k] = false;
-    } else {
-        detail.classList.add('open');
-        if (arrow) arrow.classList.add('open');
-        uiState[k] = true;
-    }
-    saveUiState();
-}
-
-function toggleObject(h, k) {
-    var d = h.parentElement.querySelector('.object-detail');
-    var a = h.querySelector('.arrow');
-    if (!d) return;
-    var isOpen = d.classList.contains('open');
-    if (isOpen) {
-        d.classList.remove('open');
-        if (a) a.classList.remove('open');
-        uiState[k] = false;
-    } else {
-        d.classList.add('open');
-        if (a) a.classList.add('open');
-        uiState[k] = true;
-    }
-    saveUiState();
-}
-
-function toggleDesignBlock(h, k) {
-    var d = h.parentElement.querySelector('.design-detail');
-    var a = h.querySelector('.design-arrow');
-    if (!d) return;
-    var isOpen = d.classList.contains('open');
-    if (isOpen) {
-        d.classList.remove('open');
-        if (a) a.classList.remove('open');
-        uiState[k] = false;
-    } else {
-        d.classList.add('open');
-        if (a) a.classList.add('open');
-        uiState[k] = true;
-    }
-    saveUiState();
-}
-
-function toggleRecBlock(h, k) {
-    var d = h.parentElement.querySelector('.rec-detail');
-    var a = h.querySelector('.rec-arrow');
-    if (!d) return;
-    var isOpen = d.classList.contains('open');
-    if (isOpen) {
-        d.classList.remove('open');
-        if (a) a.classList.remove('open');
-        uiState[k] = false;
-    } else {
-        d.classList.add('open');
-        if (a) a.classList.add('open');
-        uiState[k] = true;
-    }
-    saveUiState();
-}
-
-function toggleDesignBlockHeader(h, k) {
-    var c = h.parentElement.querySelector('.design-detail-container');
-    var a = h.querySelector('.design-arrow');
-    if (!c) return;
-    var isOpen = c.classList.contains('open');
-    if (isOpen) {
-        c.classList.remove('open');
-        c.style.display = 'none';
-        if (a) a.classList.remove('open');
-        uiState[k] = false;
-    } else {
-        c.classList.add('open');
-        c.style.display = 'block';
-        if (a) a.classList.add('open');
-        uiState[k] = true;
-    }
-    saveUiState();
-}
-
-function toggleRecBlockHeader(h, k) {
-    var c = h.parentElement.querySelector('.rec-detail-container');
-    var a = h.querySelector('.rec-arrow');
-    if (!c) return;
-    var isOpen = c.classList.contains('open');
-    if (isOpen) {
-        c.classList.remove('open');
-        c.style.display = 'none';
-        if (a) a.classList.remove('open');
-        uiState[k] = false;
-    } else {
-        c.classList.add('open');
-        c.style.display = 'block';
-        if (a) a.classList.add('open');
-        uiState[k] = true;
-    }
-    saveUiState();
-}
-
-function showModal(src) {
-    var m = document.getElementById('modal');
-    if (!m) {
-        m = document.createElement('div');
-        m.id = 'modal';
-        m.className = 'modal';
-        m.onclick = function(e) { if (e.target === m) m.remove(); };
-        document.body.appendChild(m);
-    }
-    m.innerHTML = '<img src="' + src + '">';
-    m.style.display = 'flex';
-}
-
-function renderElectrician() {
-    document.getElementById('app').innerHTML = `
-    <div class="card"><div class="flex"><h2>⚡ Электрик</h2><button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button></div></div>
-    <div class="tab-bar">
-      <div class="tab active" data-tab="objects">Объекты</div>
-      <div class="tab" data-tab="design">Дизайн</div>
-      <div class="tab" data-tab="tasks">📋 Задачи</div>
-    </div>
-    <div id="electricianContent"></div>`;
-    
-    var tabs = document.querySelectorAll('.tab');
-    for (var i = 0; i < tabs.length; i++) {
-        tabs[i].onclick = function() {
-            for (var j = 0; j < tabs.length; j++) { tabs[j].classList.remove('active'); }
-            this.classList.add('active');
-            var tab = this.dataset.tab;
-            if (tab === 'objects') renderElectricianObjects();
-            else if (tab === 'design') renderElectricianDesign();
-            else if (tab === 'tasks') renderElectricianTasks();
-        };
-    }
-    renderElectricianObjects();
-}
-
-function renderElectricianObjects() {
-    var container = document.getElementById('electricianContent');
-    if (!container) return;
-    
-    var active = [];
-    for (var i = 0; i < objects.length; i++) {
-        var hasElectricianWork = false;
-        for (var j = 0; j < objects[i].works.length; j++) {
-            if (objects[i].works[j].forElectrician) { hasElectricianWork = true; break; }
-        }
-        if (!objects[i].archived && hasElectricianWork) active.push(objects[i]);
-    }
-    
-    if (active.length === 0) {
-        container.innerHTML = '<div class="card">Нет назначенных задач</div>';
-        return;
-    }
-    
-    var html = '';
-    for (var i = 0; i < active.length; i++) {
-        var obj = active[i];
-        var electricWorks = [];
-        for (var j = 0; j < obj.works.length; j++) {
-            if (obj.works[j].forElectrician) electricWorks.push(obj.works[j]);
-        }
-        
-        var worksHtml = '';
-        for (var j = 0; j < electricWorks.length; j++) {
-            var w = electricWorks[j];
-            var status = w.done ? '✅' : '⏳';
-            var deadline = w.deadline ? ' 📅 ' + fmt(w.deadline) : '';
-            worksHtml += '<div style="padding:6px 0;border-bottom:1px solid #1a1a1a;display:flex;justify-content:space-between;align-items:center;">' +
-                '<span style="font-size:14px;color:#e0e0e0;">' + escapeHtml(w.name) + '</span>' +
-                '<span style="font-size:13px;color:' + (w.done ? '#4caf50' : '#c9a959') + ';">' + status + deadline + '</span>' +
-                '</div>';
-        }
-        
-        html += '<div class="card">' +
-            '<div class="flex"><h3>' + escapeHtml(obj.name) + ' <span style="font-weight:300;color:#888;">(' + escapeHtml(obj.code) + ')</span></h3><span class="badge">ID: ' + obj.id + '</span></div>' +
-            '<div style="color:#999;font-size:14px;">📍 ' + escapeHtml(obj.address) + '</div>' +
-            '<div style="margin-top:6px;"><b>Мои задачи:</b></div>' +
-            worksHtml +
-            '</div>';
-    }
-    container.innerHTML = html;
-}
-
-function renderElectricianDesign() {
-    var container = document.getElementById('electricianContent');
-    if (!container) return;
-    
-    var projs = [];
-    for (var i = 0; i < designProjects.length; i++) {
-        var p = designProjects[i];
-        if (p.roles && p.roles.includes('electrician')) {
-            projs.push(p);
-        }
-    }
-    
-    if (projs.length === 0) {
-        container.innerHTML = '<div class="card">Нет доступных дизайн-проектов</div>';
-        return;
-    }
-    
-    var html = '';
-    for (var i = 0; i < projs.length; i++) {
-        var p = projs[i];
-        var obj = getObject(p.objectId);
-        var files = '';
-        if (p.files) {
-            for (var j = 0; j < p.files.length; j++) {
-                var f = p.files[j];
-                var isImg = f.startsWith('data:image/') || f.startsWith('http');
-                files += isImg ? '<img src="' + f + '" onclick="showModal(\'' + f + '\')" style="width:50px;height:50px;object-fit:cover;border-radius:4px;border:1px solid #282828;cursor:pointer;">' : '<a href="' + f + '" target="_blank" style="color:#c9a959;">📄</a>';
-            }
-        }
-        if (!files) files = 'нет';
-        
-        var comments = '';
-        if (p.comments) {
-            for (var j = 0; j < p.comments.length; j++) {
-                var c = p.comments[j];
-                comments += '<div style="padding:2px 0;font-size:13px;color:#888;">' + escapeHtml(c.author) + ': ' + escapeHtml(c.text) + ' <span style="color:#555;font-size:11px;">' + fmt(c.date) + '</span></div>';
-            }
-        }
-        if (!comments) comments = 'нет';
-        
-        html += '<div class="card">' +
-            '<div class="flex"><h3>' + escapeHtml(p.title) + '</h3><span class="badge">' + (p.approvedByClient ? '✅ Утверждён' : '⏳ Ожидает') + '</span></div>' +
-            '<div style="color:#999;font-size:13px;">Объект: ' + (obj ? escapeHtml(obj.name) : '—') + '</div>' +
-            '<div style="margin-top:4px;"><b>Файлы:</b> ' + files + '</div>' +
-            '<div style="margin-top:4px;"><b>Комментарии:</b> ' + comments + '</div>' +
-            '</div>';
-    }
-    container.innerHTML = html;
-}
-
-function renderElectricianTasks() {
-    var container = document.getElementById('electricianContent');
-    if (!container) return;
-    
-    var html = '<div style="margin:12px 0;"><button class="btn btn-primary" onclick="addElectricianTask()">➕ Новая задача</button></div><div id="electricianTasksList"></div>';
-    container.innerHTML = html;
-    renderElectricianTasksList();
-}
-
-function renderElectricianTasksList() {
-    var container = document.getElementById('electricianTasksList');
-    if (!container) return;
-    
-    var tasks = [];
-    for (var i = 0; i < electricianTasks.length; i++) {
-        tasks.push(electricianTasks[i]);
-    }
-    tasks.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
-    
-    if (tasks.length === 0) {
-        container.innerHTML = '<div class="card">Нет созданных задач</div>';
-        return;
-    }
-    
-    var html = '';
-    for (var i = 0; i < tasks.length; i++) {
-        var t = tasks[i];
-        var obj = t.objectId ? getObject(t.objectId) : null;
-        var photosHtml = '';
-        if (t.photos) {
-            for (var j = 0; j < t.photos.length; j++) {
-                photosHtml += '<img src="' + t.photos[j] + '" onclick="showModal(\'' + t.photos[j] + '\')" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid #282828;cursor:pointer;">';
-            }
-        }
-        
-        html += '<div class="card">' +
-            '<div class="flex">' +
-            '<span><b>' + escapeHtml(t.text) + '</b> ' + (obj ? '<span style="color:#888;font-size:13px;">(объект: ' + escapeHtml(obj.name) + ')</span>' : '') + '</span>' +
-            '<span style="display:flex;gap:4px;align-items:center;">' +
-            '<span class="badge" style="background:' + (t.done ? '#4caf50' : '#c9a959') + ';color:#0d0d0d;">' + (t.done ? '✅ выполнено' : '⏳ в работе') + '</span>' +
-            '<button class="btn btn-sm" onclick="toggleElectricianTaskDone(' + t.id + ')" style="padding:2px 8px;font-size:11px;">' + (t.done ? '↩' : '✅') + '</button>' +
-            '<button class="btn btn-sm btn-danger" onclick="deleteElectricianTask(' + t.id + ')" style="padding:2px 6px;font-size:11px;">×</button>' +
-            '</span>' +
-            '</div>' +
-            '<div style="font-size:12px;color:#888;margin-top:2px;">' + fmtTime(t.date) + '</div>' +
-            (photosHtml ? '<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">' + photosHtml + '</div>' : '') +
-            '</div>';
-    }
-    container.innerHTML = html;
-}
-
-window.addElectricianTask = function() {
-    var text = prompt('Текст задачи:');
-    if (!text) return;
-    
-    var objId = null;
-    var available = [];
-    for (var i = 0; i < objects.length; i++) {
-        if (!objects[i].archived) available.push(objects[i]);
-    }
-    if (available.length > 0) {
-        var list = '';
-        for (var i = 0; i < available.length; i++) {
-            list += (i+1) + '. ' + available[i].name + '\n';
-        }
-        var choice = prompt('Выберите объект (номер) или 0 для без объекта:\n' + list);
-        if (choice !== null) {
-            var idx = parseInt(choice) - 1;
-            if (idx >= 0 && idx < available.length) objId = available[idx].id;
-        }
-    }
-    
-    var task = { id: Date.now() + Math.random() * 1000, text: text.trim(), objectId: objId, photos: [], date: new Date(), done: false };
-    electricianTasks.push(task);
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('electrician_tasks', task);
-    renderElectricianTasks();
-    showToast('📝 Задача добавлена');
-};
-
-window.toggleElectricianTaskDone = function(id) {
-    var task = null;
-    for (var i = 0; i < electricianTasks.length; i++) {
-        if (electricianTasks[i].id === id) { task = electricianTasks[i]; break; }
-    }
-    if (!task) return;
-    task.done = !task.done;
-    saveDataToLocal();
-    if (isOnline()) saveToSupabase('electrician_tasks', task);
-    renderElectricianTasks();
-    showToast(task.done ? '✅ Задача выполнена' : '↩ Задача возвращена');
-};
-
-window.deleteElectricianTask = function(id) {
-    if (!confirm('Удалить задачу?')) return;
-    for (var i = 0; i < electricianTasks.length; i++) {
-        if (electricianTasks[i].id === id) {
-            electricianTasks.splice(i, 1);
-            break;
-        }
-    }
-    saveDataToLocal();
-    if (isOnline()) {
-        fetch(SUPABASE_URL + '/rest/v1/electrician_tasks?id=eq.' + id, {
-            method: 'DELETE',
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        });
-    }
-    renderElectricianTasks();
-    showToast('🗑 Задача удалена');
-};
-
-function renderPlaceholder() {
-    document.getElementById('app').innerHTML = '<div class="card"><div class="flex"><h2>' + getUserLabel(currentUser) + '</h2><button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button></div><div style="padding:30px;text-align:center;color:#888;">Страница в разработке</div></div>';
-}
-
-function render() {
-    if (!currentUser) { renderLogin(); return; }
-    if (['designer', 'master', 'purchaser'].includes(currentUser)) { renderFakeCabinet(currentUser); return; }
-    if (currentUser === 'boss') { renderBoss(); return; }
-    if (currentUser === 'wolf') { renderWolf(); return; }
-    if (currentUser === 'client') { renderClient(); return; }
-    if (currentUser === 'electrician') { renderElectrician(); return; }
-    renderPlaceholder();
-}
 
 // ============================================================
 // ЗАПУСК
