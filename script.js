@@ -2539,6 +2539,23 @@ window.switchScheduleObject = function(objId) {
 };
 
 // ============================================================
+// РЕНДЕР И ЗАПУСК
+// ============================================================
+function renderPlaceholder() {
+    document.getElementById('app').innerHTML = '<div class="card"><div class="flex"><h2>' + getUserLabel(currentUser) + '</h2><button class="btn btn-sm" onclick="currentUser=null;render()">Выйти</button></div><div style="padding:30px;text-align:center;color:#888;">Страница в разработке</div></div>';
+}
+
+function render() {
+    if (!currentUser) { renderLogin(); return; }
+    if (['designer', 'master', 'purchaser'].includes(currentUser)) { renderFakeCabinet(currentUser); return; }
+    if (currentUser === 'boss') { renderBoss(); return; }
+    if (currentUser === 'wolf') { renderWolf(); return; }
+    if (currentUser === 'client') { renderClient(); return; }
+    if (currentUser === 'electrician') { renderElectrician(); return; }
+    renderPlaceholder();
+}
+
+// ============================================================
 // ЗАПУСК
 // ============================================================
 loadPendingActions();
