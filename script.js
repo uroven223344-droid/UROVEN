@@ -1,5 +1,5 @@
 // ============================================================
-// СТРОЙУЧЁТ — ФИНАЛЬНАЯ ВЕРСИЯ (ИСПРАВЛЕН ВХОД)
+// СТРОЙУЧЁТ — ФИНАЛЬНАЯ ВЕРСИЯ (ТОЛЬКО ПРАВКИ ВЕРХНЕГО УГЛА)
 // ============================================================
 
 console.log('🚀 СтройУчёт загружается...');
@@ -65,7 +65,7 @@ var calendarOffset = 0;
 // ============================================================
 function escapeHtml(s) { if (!s) return ''; var m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }; return String(s).replace(/[&<>"']/g, function(c) { return m[c]; }); }
 function getUserLabel(r) { var m = { boss: 'Руководитель', wolf: 'Волк', client: 'Клиент', designer: 'Дизайнер', master: 'Мастер', purchaser: 'Закупщик', electrician: 'Электрик' }; return m[r] || r; }
-function getObject(id) { for (var i = 0; i < objects.length; i++) { if (objects[i].id == id) return objects[i]; } return null; }
+function getObject(id) { for (var i = 0; i < objects.length; i++) { if (objects[i].id === id) return objects[i]; } return null; }
 function fmt(d) { if (!d) return ''; var dt = new Date(d); if (isNaN(dt.getTime())) return d; return dt.toLocaleDateString(); }
 function fmtTime(d) { if (!d) return ''; var dt = new Date(d); if (isNaN(dt.getTime())) return d; return dt.toLocaleString(); }
 function isValidDate(d) { var r = /^\d{2}\.\d{2}\.\d{4}$/; if (!r.test(d)) return false; var p = d.split('.'); var dt = new Date(+p[2], +p[1] - 1, +p[0]); return dt && dt.getFullYear() == +p[2] && dt.getMonth() == +p[1] - 1 && dt.getDate() == +p[0]; }
@@ -186,12 +186,13 @@ function loadDataFromLocal() {
 }
 
 // ============================================================
-// СИНХРОНИЗАЦИЯ С SUPABASE
+// СИНХРОНИЗАЦИЯ С SUPABASE (ПОЛНАЯ)
 // ============================================================
 async function syncToSupabase() {
     if (isSyncing || !isOnline()) return;
     isSyncing = true;
     try {
+        // ОБЪЕКТЫ
         for (var i = 0; i < objects.length; i++) {
             var obj = objects[i];
             var checkResp = await fetch(SUPABASE_URL + '/rest/v1/objects?id=eq.' + obj.id, {
@@ -212,6 +213,8 @@ async function syncToSupabase() {
                 });
             }
         }
+        
+        // ПАРОЛИ (роли)
         for (var role in passwords) {
             if (role === 'objects') continue;
             if (passwords[role]) {
@@ -234,6 +237,8 @@ async function syncToSupabase() {
                 }
             }
         }
+        
+        // ПАРОЛИ ОБЪЕКТОВ
         for (var objId in passwords.objects) {
             if (passwords.objects[objId]) {
                 var checkResp = await fetch(SUPABASE_URL + '/rest/v1/passwords?object_id=eq.' + objId, {
@@ -255,14 +260,176 @@ async function syncToSupabase() {
                 }
             }
         }
-        console.log('✅ Синхронизация выполнена');
-    } catch(e) { console.error('❌ Ошибка синхронизации:', e); }
+        
+        // РЕКОМЕНДАЦИИ
+        for (var i = 0; i < recommendations.length; i++) {
+            var rec = recommendations[i];
+            var checkResp = await fetch(SUPABASE_URL + '/rest/v1/recommendations?id=eq.' + rec.id, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+            var existing = await checkResp.json();
+            if (existing.length > 0) {
+                await fetch(SUPABASE_URL + '/rest/v1/recommendations?id=eq.' + rec.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(rec)
+                });
+            } else {
+                await fetch(SUPABASE_URL + '/rest/v1/recommendations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(rec)
+                });
+            }
+        }
+        
+        // ДИЗАЙН-ПРОЕКТЫ
+        for (var i = 0; i < designProjects.length; i++) {
+            var proj = designProjects[i];
+            var checkResp = await fetch(SUPABASE_URL + '/rest/v1/design_projects?id=eq.' + proj.id, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+            var existing = await checkResp.json();
+            if (existing.length > 0) {
+                await fetch(SUPABASE_URL + '/rest/v1/design_projects?id=eq.' + proj.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(proj)
+                });
+            } else {
+                await fetch(SUPABASE_URL + '/rest/v1/design_projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(proj)
+                });
+            }
+        }
+        
+        // ЧЕКИ
+        for (var i = 0; i < checks.length; i++) {
+            var check = checks[i];
+            var checkResp = await fetch(SUPABASE_URL + '/rest/v1/checks?id=eq.' + check.id, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+            var existing = await checkResp.json();
+            if (existing.length > 0) {
+                await fetch(SUPABASE_URL + '/rest/v1/checks?id=eq.' + check.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(check)
+                });
+            } else {
+                await fetch(SUPABASE_URL + '/rest/v1/checks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(check)
+                });
+            }
+        }
+        
+        // ЗАЯВКИ
+        for (var i = 0; i < purchaseOrders.length; i++) {
+            var order = purchaseOrders[i];
+            var checkResp = await fetch(SUPABASE_URL + '/rest/v1/purchase_orders?id=eq.' + order.id, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+            var existing = await checkResp.json();
+            if (existing.length > 0) {
+                await fetch(SUPABASE_URL + '/rest/v1/purchase_orders?id=eq.' + order.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(order)
+                });
+            } else {
+                await fetch(SUPABASE_URL + '/rest/v1/purchase_orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(order)
+                });
+            }
+        }
+        
+        // ЗАМЕТКИ
+        for (var i = 0; i < notes.length; i++) {
+            var note = notes[i];
+            var checkResp = await fetch(SUPABASE_URL + '/rest/v1/notes?id=eq.' + note.id, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+            var existing = await checkResp.json();
+            if (existing.length > 0) {
+                await fetch(SUPABASE_URL + '/rest/v1/notes?id=eq.' + note.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(note)
+                });
+            } else {
+                await fetch(SUPABASE_URL + '/rest/v1/notes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(note)
+                });
+            }
+        }
+        
+        // ЗАДАЧИ ЭЛЕКТРИКА
+        for (var i = 0; i < electricianTasks.length; i++) {
+            var task = electricianTasks[i];
+            var checkResp = await fetch(SUPABASE_URL + '/rest/v1/electrician_tasks?id=eq.' + task.id, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+            var existing = await checkResp.json();
+            if (existing.length > 0) {
+                await fetch(SUPABASE_URL + '/rest/v1/electrician_tasks?id=eq.' + task.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(task)
+                });
+            } else {
+                await fetch(SUPABASE_URL + '/rest/v1/electrician_tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(task)
+                });
+            }
+        }
+        
+        // ОТЧЕТЫ (ФОТО)
+        for (var i = 0; i < reports.length; i++) {
+            var report = reports[i];
+            var checkResp = await fetch(SUPABASE_URL + '/rest/v1/reports?id=eq.' + report.id, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+            var existing = await checkResp.json();
+            if (existing.length > 0) {
+                await fetch(SUPABASE_URL + '/rest/v1/reports?id=eq.' + report.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(report)
+                });
+            } else {
+                await fetch(SUPABASE_URL + '/rest/v1/reports', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+                    body: JSON.stringify(report)
+                });
+            }
+        }
+        
+        console.log('✅ ПОЛНАЯ СИНХРОНИЗАЦИЯ ВЫПОЛНЕНА');
+        pendingActions = [];
+        savePendingActions();
+    } catch(e) {
+        console.error('❌ Ошибка синхронизации:', e);
+    }
     isSyncing = false;
 }
 
 async function loadFromSupabase() {
     if (!isOnline()) return;
     try {
+        console.log('🔄 ПОЛНАЯ ЗАГРУЗКА ИЗ SUPABASE...');
+        
+        // ОБЪЕКТЫ
         var resp = await fetch(SUPABASE_URL + '/rest/v1/objects?select=*', {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
         });
@@ -282,11 +449,92 @@ async function loadFromSupabase() {
                         }
                     }
                 }
-                saveDataToLocal();
-                console.log('✅ Загружено ' + data.length + ' объектов');
+                console.log('✅ Загружено объектов: ' + data.length);
             }
         }
-    } catch(e) { console.error('❌ Ошибка загрузки из Supabase:', e); }
+        
+        // ПАРОЛИ
+        var passResp = await fetch(SUPABASE_URL + '/rest/v1/passwords?select=*', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (passResp.ok) {
+            var passData = await passResp.json();
+            for (var i = 0; i < passData.length; i++) {
+                var p = passData[i];
+                if (p.role) passwords[p.role] = p.password;
+                if (p.object_id) passwords.objects[p.object_id] = p.password;
+            }
+            console.log('✅ Загружено паролей: ' + passData.length);
+        }
+        
+        // РЕКОМЕНДАЦИИ
+        var recResp = await fetch(SUPABASE_URL + '/rest/v1/recommendations?select=*', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (recResp.ok) {
+            var recData = await recResp.json();
+            if (recData.length > 0) { recommendations = recData; console.log('✅ Рекомендаций: ' + recData.length); }
+        }
+        
+        // ДИЗАЙН-ПРОЕКТЫ
+        var designResp = await fetch(SUPABASE_URL + '/rest/v1/design_projects?select=*', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (designResp.ok) {
+            var designData = await designResp.json();
+            if (designData.length > 0) { designProjects = designData; console.log('✅ Дизайн-проектов: ' + designData.length); }
+        }
+        
+        // ЧЕКИ
+        var checkResp = await fetch(SUPABASE_URL + '/rest/v1/checks?select=*', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (checkResp.ok) {
+            var checkData = await checkResp.json();
+            if (checkData.length > 0) { checks = checkData; console.log('✅ Чеков: ' + checkData.length); }
+        }
+        
+        // ЗАЯВКИ
+        var orderResp = await fetch(SUPABASE_URL + '/rest/v1/purchase_orders?select=*', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (orderResp.ok) {
+            var orderData = await orderResp.json();
+            if (orderData.length > 0) { purchaseOrders = orderData; console.log('✅ Заявок: ' + orderData.length); }
+        }
+        
+        // ЗАМЕТКИ
+        var noteResp = await fetch(SUPABASE_URL + '/rest/v1/notes?select=*', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (noteResp.ok) {
+            var noteData = await noteResp.json();
+            if (noteData.length > 0) { notes = noteData; console.log('✅ Заметок: ' + noteData.length); }
+        }
+        
+        // ЗАДАЧИ ЭЛЕКТРИКА
+        var taskResp = await fetch(SUPABASE_URL + '/rest/v1/electrician_tasks?select=*', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (taskResp.ok) {
+            var taskData = await taskResp.json();
+            if (taskData.length > 0) { electricianTasks = taskData; console.log('✅ Задач электрика: ' + taskData.length); }
+        }
+        
+        // ОТЧЕТЫ (ФОТО)
+        var reportResp = await fetch(SUPABASE_URL + '/rest/v1/reports?select=*', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+        if (reportResp.ok) {
+            var reportData = await reportResp.json();
+            if (reportData.length > 0) { reports = reportData; console.log('✅ Отчетов: ' + reportData.length); }
+        }
+        
+        saveDataToLocal();
+        console.log('✅ ПОЛНАЯ ЗАГРУЗКА ЗАВЕРШЕНА!');
+    } catch(e) {
+        console.error('❌ Ошибка загрузки:', e);
+    }
 }
 
 async function loadAllFromSupabase() {
@@ -325,51 +573,32 @@ function renderLogin() {
     </div>`;
 }
 
-// ============================================================
-// ВХОД (ИСПРАВЛЕН)
-// ============================================================
 window.login = function(r) {
-    // Для дизайнера, мастера, закупщика
     if (['designer', 'master', 'purchaser'].includes(r)) {
         if (!passwords[r]) passwords[r] = '30986';
         var p = prompt('Введите пароль для "' + getUserLabel(r) + '":');
         if (p !== passwords[r]) { alert('Неверный пароль'); return; }
         currentUser = r; render(); return;
     }
-    
-    // Для ролей с паролем (boss, wolf, electrician)
     if (passwords[r] && passwords[r].length > 0) {
         var p = prompt('Введите пароль для "' + getUserLabel(r) + '":');
         if (p !== passwords[r]) { alert('Неверный пароль'); return; }
-        currentUser = r; render(); return;
     }
-    
-    // Для клиента — вход по паролю объекта
     if (r === 'client') {
         var pwd = prompt('Введите ПАРОЛЬ объекта:');
         if (pwd === null || pwd.trim() === '') { alert('Пароль не введён'); return; }
-        
         var found = null;
         for (var i = 0; i < objects.length; i++) {
-            var objPwd = String(passwords.objects[objects[i].id] || '');
-            var inputPwd = String(pwd).trim();
-            if (objPwd === inputPwd) { 
-                found = objects[i]; 
-                break; 
-            }
+            if (passwords.objects[objects[i].id] === pwd) { found = objects[i]; break; }
         }
-        
-        if (!found) { 
-            alert('Неверный пароль. Объект не найден.'); 
-            return; 
-        }
+        if (!found) { alert('Неверный пароль. Объект не найден.'); return; }
         currentUser = r;
         currentObjectId = found.id;
         render();
-        return;
+    } else {
+        currentUser = r;
+        render();
     }
-    
-    alert('Ошибка входа');
 };
 
 // ============================================================
@@ -413,15 +642,15 @@ function renderBoss() {
 }
 
 // ============================================================
-// ВСЕ ОСТАЛЬНЫЕ ФУНКЦИИ (ТВОЙ КОД)
+// ВСЕ ОСТАЛЬНЫЕ ФУНКЦИИ (ВСТАВЬ СВОЙ КОД)
 // ============================================================
-// ВСТАВЬ СЮДА ВСЕ СВОИ ФУНКЦИИ:
+// Здесь должны быть все твои функции:
 // renderBossObjects (уже есть выше), renderWolf, renderWolfObjects,
 // renderClient, renderClientRecommend, renderClientDesign, renderClientWorks, renderClientChecks,
 // renderElectrician, renderElectricianObjects, renderElectricianDesign, renderElectricianTasks,
 // renderSchedule, renderBossNotes, renderWolfNotes, renderNotesCalendar,
 // renderBossChecks, renderWolfChecks, renderBossPurchases, renderWolfPurchases,
-// renderPasswords (уже есть выше), и все функции действий
+// renderPasswords, и все функции действий
 
 // ============================================================
 // ЗАПУСК
