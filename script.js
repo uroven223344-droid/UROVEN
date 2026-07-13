@@ -1,194 +1,5 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>СтройУчёт</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background: #0d0d0d; 
-            color: #e0e0e0; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding: 10px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .card { 
-            background: #161616; 
-            border: 1px solid #2a2a2a; 
-            border-radius: 12px; 
-            padding: 16px; 
-            margin-bottom: 12px;
-        }
-        .flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-        .btn { 
-            background: #282828; 
-            color: #e0e0e0; 
-            border: 1px solid #3a3a3a; 
-            padding: 6px 14px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        .btn:hover { background: #3a3a3a; }
-        .btn-primary { background: #c9a959; color: #0d0d0d; border-color: #c9a959; }
-        .btn-primary:hover { background: #b8963a; }
-        .btn-sm { padding: 4px 10px; font-size: 11px; }
-        .btn-danger { background: #a04040; color: #fff; border-color: #a04040; }
-        .btn-danger:hover { background: #803030; }
-        .tab-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
-        .tab { 
-            padding: 6px 14px; 
-            background: #1a1a1a; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 13px; 
-            color: #888;
-            transition: all 0.2s;
-            border: 1px solid transparent;
-        }
-        .tab:hover { background: #282828; color: #e0e0e0; }
-        .tab.active { background: #282828; color: #c9a959; border-color: #c9a959; }
-        .badge { 
-            background: #1a1a1a; 
-            color: #888; 
-            padding: 2px 10px; 
-            border-radius: 12px; 
-            font-size: 11px;
-            border: 1px solid #282828;
-        }
-        .work-block { 
-            background: #0d0d0d; 
-            border-radius: 6px; 
-            padding: 6px 10px; 
-            margin-bottom: 4px;
-            border: 1px solid #1a1a1a;
-            cursor: grab;
-        }
-        .work-block.dragging { opacity: 0.5; }
-        .work-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; flex-wrap: wrap; gap: 4px; }
-        .work-title { color: #e0e0e0; font-size: 13px; }
-        .work-quantity { color: #666; font-size: 11px; }
-        .work-detail { display: none; padding: 6px 0 2px 0; }
-        .work-detail.open { display: block; }
-        .work-arrow { display: inline-block; transition: transform 0.3s; font-size: 10px; color: #555; }
-        .work-arrow.open { transform: rotate(90deg); }
-        .arrow { display: inline-block; transition: transform 0.3s; font-size: 12px; color: #555; }
-        .arrow.open { transform: rotate(90deg); }
-        .object-detail { display: none; padding-top: 10px; border-top: 1px solid #1a1a1a; margin-top: 8px; }
-        .object-detail.open { display: block; }
-        .photo-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-        .photo-grid img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #282828; cursor: pointer; }
-        .pw { position: relative; display: inline-block; }
-        .pw .del { 
-            position: absolute; 
-            top: -6px; 
-            right: -6px; 
-            background: #a04040; 
-            color: #fff; 
-            border: none; 
-            border-radius: 50%; 
-            width: 18px; 
-            height: 18px; 
-            font-size: 12px; 
-            cursor: pointer; 
-            line-height: 1;
-        }
-        .file-wrap { display: inline-flex; align-items: center; gap: 4px; background: #1a1a1a; padding: 4px 8px; border-radius: 4px; margin: 2px; }
-        .file-wrap img { max-width: 80px; max-height: 80px; border-radius: 4px; cursor: pointer; }
-        .month-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .nav-btn { background: #1a1a1a; color: #e0e0e0; border: 1px solid #282828; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-        .day { 
-            background: #0d0d0d; 
-            border-radius: 4px; 
-            padding: 6px 4px; 
-            text-align: center; 
-            cursor: pointer; 
-            font-size: 13px; 
-            color: #888;
-            border: 1px solid #1a1a1a;
-            min-height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-        .day:hover { background: #1a1a1a; }
-        .day.today { border-color: #c9a959; background: #1a1a1a; }
-        .day.has-tasks { border-color: #c9a959; }
-        .day.other-month { opacity: 0.3; }
-        .day-number { font-weight: 500; }
-        .indicator { display: inline-block; width: 8px; height: 8px; background: #c9a959; border-radius: 50%; box-shadow: 0 0 8px rgba(201,169,89,0.5); }
-        .obj-filter-tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
-        .obj-filter-tabs .tab { background: #0d0d0d; border: 1px solid #1a1a1a; }
-        .obj-filter-tabs .tab.active { background: #282828; color: #c9a959; border-color: #c9a959; }
-        .checks-total { display: flex; gap: 16px; margin: 8px 0; flex-wrap: wrap; }
-        .check-item.paid { border-color: #4caf50; }
-        .check-file { max-width: 100%; max-height: 200px; border-radius: 6px; cursor: pointer; }
-        .object-selector { background: #161616; color: #e0e0e0; border: 1px solid #282828; border-radius: 6px; padding: 6px 10px; width: 100%; max-width: 300px; }
-        .modal { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); 
-            z-index: 10000; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px;
-        }
-        .modal img { max-width: 90%; max-height: 90%; border-radius: 8px; }
-        .login-header { margin-bottom: 16px; }
-        .slogan { font-size: 22px; font-weight: 600; color: #c9a959; }
-        .slogan small { display: block; font-size: 13px; font-weight: 300; color: #888; margin-top: 2px; }
-        hr { border-color: #1a1a1a; margin: 12px 0; }
-        .icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; color: #666; padding: 2px 4px; transition: color 0.2s; }
-        .icon-btn:hover { color: #c9a959; }
-        .icon-btn.danger:hover { color: #a04040; }
-        .drag-handle { color: #333; font-size: 12px; cursor: grab; }
-        .photo-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 4px; }
-        .status-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #0d0d0d;
-            border-top: 1px solid #1a1a1a;
-            padding: 4px 12px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #555;
-            z-index: 999;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-        .status-bar .online { color: #4caf50; }
-        .status-bar .offline { color: #a04040; }
-        @media (max-width: 600px) {
-            body { padding: 6px; }
-            .card { padding: 12px; }
-            .tab { font-size: 11px; padding: 4px 10px; }
-            .btn { font-size: 12px; padding: 4px 10px; }
-        }
-    </style>
-</head>
-<body>
-
-<div id="app"></div>
-
-<div class="status-bar" id="statusBar">
-    <span id="statusSync">✅ Синхронизация: OK</span>
-    <span id="statusOnline">🌐 Онлайн</span>
-    <span id="statusCount">📦 Объектов: 0</span>
-</div>
-
-<script>
 // ============================================================
-// СТРОЙУЧЁТ — ПОЛНАЯ СИНХРОНИЗАЦИЯ
+// СТРОЙУЧЁТ — ФИНАЛЬНАЯ ВЕРСИЯ (ПОЛНАЯ СИНХРОНИЗАЦИЯ)
 // ============================================================
 
 console.log('🚀 СтройУчёт загружается...');
@@ -254,7 +65,7 @@ var calendarOffset = 0;
 // ============================================================
 function escapeHtml(s) { if (!s) return ''; var m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }; return String(s).replace(/[&<>"']/g, function(c) { return m[c]; }); }
 function getUserLabel(r) { var m = { boss: 'Руководитель', wolf: 'Волк', client: 'Клиент', designer: 'Дизайнер', master: 'Мастер', purchaser: 'Закупщик', electrician: 'Электрик' }; return m[r] || r; }
-function getObject(id) { for (var i = 0; i < objects.length; i++) { if (objects[i].id == id) return objects[i]; } return null; }
+function getObject(id) { for (var i = 0; i < objects.length; i++) { if (objects[i].id === id) return objects[i]; } return null; }
 function fmt(d) { if (!d) return ''; var dt = new Date(d); if (isNaN(dt.getTime())) return d; return dt.toLocaleDateString(); }
 function fmtTime(d) { if (!d) return ''; var dt = new Date(d); if (isNaN(dt.getTime())) return d; return dt.toLocaleString(); }
 function isValidDate(d) { var r = /^\d{2}\.\d{2}\.\d{4}$/; if (!r.test(d)) return false; var p = d.split('.'); var dt = new Date(+p[2], +p[1] - 1, +p[0]); return dt && dt.getFullYear() == +p[2] && dt.getMonth() == +p[1] - 1 && dt.getDate() == +p[0]; }
@@ -269,22 +80,13 @@ function showToast(msg) {
     var t = document.createElement('div');
     t.id = 'toast';
     t.textContent = msg;
-    t.style.cssText = 'position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#222;color:#e0e0e0;padding:10px 20px;border-radius:8px;border:1px solid #c9a959;z-index:9999;font-size:14px;max-width:90%;text-align:center;';
+    t.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#e0e0e0;padding:12px 24px;border-radius:8px;border:1px solid #c9a959;z-index:9999;font-size:16px;max-width:90%;text-align:center;';
     document.body.appendChild(t);
     setTimeout(function() { t.remove(); }, 3000);
 }
 
-function updateStatusBar() {
-    var syncEl = document.getElementById('statusSync');
-    var onlineEl = document.getElementById('statusOnline');
-    var countEl = document.getElementById('statusCount');
-    if (syncEl) syncEl.textContent = pendingActions.length === 0 ? '✅ Синхронизация: OK' : '⏳ ' + pendingActions.length + ' действий ожидают';
-    if (onlineEl) { onlineEl.textContent = isOnline() ? '🌐 Онлайн' : '📡 Офлайн'; onlineEl.className = isOnline() ? 'online' : 'offline'; }
-    if (countEl) countEl.textContent = '📦 Объектов: ' + objects.length;
-}
-
 // ============================================================
-// ЗАГРУЗКА/СОХРАНЕНИЕ (ПОЛНАЯ СИНХРОНИЗАЦИЯ)
+// ЗАГРУЗКА/СОХРАНЕНИЕ
 // ============================================================
 function loadPendingActions() {
     try { var data = localStorage.getItem('pendingActions'); if (data) pendingActions = JSON.parse(data); } catch(e) { pendingActions = []; }
@@ -310,10 +112,8 @@ function saveDataToLocal() {
             electricianTasks: electricianTasks,
             passwords: passwords
         }));
-        console.log('✅ Локально сохранено, объектов: ' + objects.length);
-    } catch(e) { console.error('Save error:', e); }
+    } catch(e) { console.error('Save local error:', e); }
     if (isOnline()) syncToSupabase();
-    updateStatusBar();
 }
 
 function loadDataFromLocal() {
@@ -329,10 +129,8 @@ function loadDataFromLocal() {
             notes = d.notes || [];
             electricianTasks = d.electricianTasks || [];
             passwords = d.passwords || { boss: '30986', wolf: '30986', client: '30986', master: '30986', designer: '30986', purchaser: '30986', electrician: '30986', objects: {} };
-            console.log('✅ Загружено из localStorage, объектов: ' + objects.length);
         }
-    } catch(e) { console.error('Load error:', e); }
-    
+    } catch(e) {}
     if (!objects.length) {
         var n = Date.now();
         objects.push({
@@ -351,10 +149,9 @@ function loadDataFromLocal() {
         });
         passwords.objects[n] = 'demo123';
     }
-    
     for (var i = 0; i < objects.length; i++) {
         var o = objects[i];
-        for (var j = 0; j < (o.works || []).length; j++) {
+        for (var j = 0; j < o.works.length; j++) {
             var w = o.works[j];
             if (w.quantity === undefined) w.quantity = '';
             if (w.unit === undefined) w.unit = '';
@@ -371,7 +168,6 @@ function loadDataFromLocal() {
         if (o.schedule === undefined) o.schedule = [];
         if (o.notes === undefined) o.notes = '';
         if (o.contractors === undefined) o.contractors = [];
-        if (!passwords.objects[o.id]) passwords.objects[o.id] = Math.random().toString(36).substring(2, 8).toUpperCase();
     }
     for (var r = 0; r < recommendations.length; r++) {
         if (!recommendations[r].photos) recommendations[r].photos = [];
@@ -381,6 +177,10 @@ function loadDataFromLocal() {
         if (!electricianTasks[t].photos) electricianTasks[t].photos = [];
         if (electricianTasks[t].done === undefined) electricianTasks[t].done = false;
         if (electricianTasks[t].objectId === undefined) electricianTasks[t].objectId = null;
+    }
+    for (var oi = 0; oi < objects.length; oi++) {
+        var obj = objects[oi];
+        if (!passwords.objects[obj.id]) passwords.objects[obj.id] = Math.random().toString(36).substring(2, 8).toUpperCase();
     }
     loadUiState();
 }
@@ -413,7 +213,6 @@ async function syncToSupabase() {
                 });
             }
         }
-        console.log('✅ Объекты синхронизированы');
         
         // ПАРОЛИ (роли)
         for (var role in passwords) {
@@ -438,7 +237,6 @@ async function syncToSupabase() {
                 }
             }
         }
-        console.log('✅ Пароли ролей синхронизированы');
         
         // ПАРОЛИ ОБЪЕКТОВ
         for (var objId in passwords.objects) {
@@ -462,7 +260,6 @@ async function syncToSupabase() {
                 }
             }
         }
-        console.log('✅ Пароли объектов синхронизированы');
         
         // РЕКОМЕНДАЦИИ
         for (var i = 0; i < recommendations.length; i++) {
@@ -485,7 +282,6 @@ async function syncToSupabase() {
                 });
             }
         }
-        console.log('✅ Рекомендации синхронизированы');
         
         // ДИЗАЙН-ПРОЕКТЫ
         for (var i = 0; i < designProjects.length; i++) {
@@ -508,7 +304,6 @@ async function syncToSupabase() {
                 });
             }
         }
-        console.log('✅ Дизайн-проекты синхронизированы');
         
         // ЧЕКИ
         for (var i = 0; i < checks.length; i++) {
@@ -531,7 +326,6 @@ async function syncToSupabase() {
                 });
             }
         }
-        console.log('✅ Чеки синхронизированы');
         
         // ЗАЯВКИ
         for (var i = 0; i < purchaseOrders.length; i++) {
@@ -554,7 +348,6 @@ async function syncToSupabase() {
                 });
             }
         }
-        console.log('✅ Заявки синхронизированы');
         
         // ЗАМЕТКИ
         for (var i = 0; i < notes.length; i++) {
@@ -577,7 +370,6 @@ async function syncToSupabase() {
                 });
             }
         }
-        console.log('✅ Заметки синхронизированы');
         
         // ЗАДАЧИ ЭЛЕКТРИКА
         for (var i = 0; i < electricianTasks.length; i++) {
@@ -600,7 +392,6 @@ async function syncToSupabase() {
                 });
             }
         }
-        console.log('✅ Задачи электрика синхронизированы');
         
         // ОТЧЕТЫ (ФОТО)
         for (var i = 0; i < reports.length; i++) {
@@ -623,24 +414,21 @@ async function syncToSupabase() {
                 });
             }
         }
-        console.log('✅ Отчеты синхронизированы');
         
-        console.log('✅ ПОЛНАЯ СИНХРОНИЗАЦИЯ ЗАВЕРШЕНА!');
-        showToast('✅ Все данные синхронизированы');
+        console.log('✅ ПОЛНАЯ СИНХРОНИЗАЦИЯ ВЫПОЛНЕНА');
         pendingActions = [];
         savePendingActions();
-        updateStatusBar();
     } catch(e) {
         console.error('❌ Ошибка синхронизации:', e);
-        showToast('⚠️ Ошибка синхронизации');
     }
     isSyncing = false;
 }
 
 async function loadFromSupabase() {
     if (!isOnline()) return;
-    console.log('🔄 ПОЛНАЯ ЗАГРУЗКА из Supabase...');
     try {
+        console.log('🔄 ПОЛНАЯ ЗАГРУЗКА ИЗ SUPABASE...');
+        
         // ОБЪЕКТЫ
         var resp = await fetch(SUPABASE_URL + '/rest/v1/objects?select=*', {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
@@ -652,10 +440,14 @@ async function loadFromSupabase() {
                     var item = data[i];
                     var existing = null;
                     for (var j = 0; j < objects.length; j++) {
-                        if (objects[j].id == item.id) { existing = objects[j]; break; }
+                        if (objects[j].id === item.id) { existing = objects[j]; break; }
                     }
                     if (!existing) objects.push(item);
-                    else { for (var key in item) { if (item.hasOwnProperty(key)) existing[key] = item[key]; } }
+                    else {
+                        for (var key in item) {
+                            if (item.hasOwnProperty(key)) existing[key] = item[key];
+                        }
+                    }
                 }
                 console.log('✅ Загружено объектов: ' + data.length);
             }
@@ -740,11 +532,8 @@ async function loadFromSupabase() {
         
         saveDataToLocal();
         console.log('✅ ПОЛНАЯ ЗАГРУЗКА ЗАВЕРШЕНА!');
-        showToast('✅ Все данные загружены');
-        updateStatusBar();
     } catch(e) {
         console.error('❌ Ошибка загрузки:', e);
-        showToast('⚠️ Ошибка загрузки данных');
     }
 }
 
@@ -853,15 +642,9 @@ function renderBoss() {
 }
 
 // ============================================================
-// ТВОИ ФУНКЦИИ РЕНДЕРИНГА (ВСТАВЬ СЮДА ВСЁ, ЧТО БЫЛО В ТВОЁМ КОДЕ)
+// ВСЕ ОСТАЛЬНЫЕ ФУНКЦИИ — ТВОЙ ПОЛНЫЙ КОД
 // ============================================================
-// Здесь должны быть:
-// renderBossObjects (уже есть выше), renderWolf, renderWolfObjects,
-// renderClient, renderClientRecommend, renderClientDesign, renderClientWorks, renderClientChecks,
-// renderElectrician, renderElectricianObjects, renderElectricianDesign, renderElectricianTasks,
-// renderSchedule, renderBossNotes, renderWolfNotes, renderNotesCalendar,
-// renderBossChecks, renderWolfChecks, renderBossPurchases, renderWolfPurchases,
-// renderPasswords, и все остальные функции
+// ВСТАВЬ СЮДА ВСЕ СВОИ ФУНКЦИИ (renderBossObjects, renderWolf, renderWolfObjects, renderClient, renderElectrician, renderSchedule, renderBossNotes, renderWolfNotes, renderBossChecks, renderWolfChecks, renderBossPurchases, renderWolfPurchases, renderPasswords, и все функции действий)
 
 // ============================================================
 // ЗАПУСК
@@ -901,7 +684,3 @@ window.addEventListener('offline', function() {
 
 console.log('✅ СТРОЙУЧЁТ ЗАПУЩЕН');
 console.log('🔑 Пароль по умолчанию: 30986');
-
-</script>
-</body>
-</html>
